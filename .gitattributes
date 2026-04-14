@@ -1,0 +1,31 @@
+# Auto-detect text files and normalize line endings
+* text=auto
+
+# Rust
+*.rs text diff=rust
+*.toml text
+Cargo.lock text -diff
+
+# Frontend
+*.ts text diff=typescript
+*.tsx text diff=typescript
+*.js text
+*.json text
+*.css text
+*.html text
+
+# Shell scripts
+*.sh text eol=lf
+
+# Markdown / docs
+*.md text
+
+# Binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.zip binary

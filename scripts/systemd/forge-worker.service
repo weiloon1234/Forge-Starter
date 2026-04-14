@@ -1,0 +1,21 @@
+[Unit]
+Description=Forge Starter — Background Worker
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=simple
+User=forge
+Group=forge
+WorkingDirectory=/opt/forge-starter
+Environment=PROCESS=worker
+EnvironmentFile=/opt/forge-starter/.env
+ExecStart=/opt/forge-starter/bin/forge-starter
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=forge-worker
+
+[Install]
+WantedBy=multi-user.target

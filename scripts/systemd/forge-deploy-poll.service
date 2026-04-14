@@ -1,0 +1,18 @@
+[Unit]
+Description=Forge Starter — Deployment Poller
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/forge-starter
+ExecStart=/opt/forge-starter/scripts/deploy-poll.sh
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=forge-deploy-poll
+
+[Install]
+WantedBy=multi-user.target

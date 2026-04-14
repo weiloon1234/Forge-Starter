@@ -1,0 +1,3 @@
+[scheduler]
+tick_interval_ms = 1000
+leader_lease_ttl_ms = 5000

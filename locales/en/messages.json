@@ -1,0 +1,32 @@
+{
+    "greeting": "Hello, {{name}}!",
+    "item_count": "You have {{count}} items",
+
+    "auth": {
+        "invalid_credentials": "Invalid email or password",
+        "session_expired": "Session expired",
+        "refresh_token_required": "Refresh token is required"
+    },
+
+    "error": {
+        "not_found": "Resource not found",
+        "user_not_found": "User not found",
+        "something_went_wrong": "Something went wrong",
+        "multipart_not_supported": "Multipart not supported",
+        "validation_failed": "Validation failed"
+    },
+
+    "form": {
+        "select_placeholder": "Select...",
+        "search_placeholder": "Search...",
+        "select_date": "Select date",
+        "select_time": "Select time",
+        "date": "Date",
+        "time": "Time",
+        "hour": "Hour",
+        "minute": "Minute",
+        "no_options": "No options",
+        "drop_files": "Drop files here or click to browse",
+        "submit": "Submit"
+    }
+}

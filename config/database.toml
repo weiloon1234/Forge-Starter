@@ -1,0 +1,8 @@
+[database]
+url = "postgres://forge:secret@127.0.0.1:5432/forge_starter"
+# read_url = ""
+# schema = "public"
+# min_connections = 1
+# max_connections = 10
+# log_queries = false
+# slow_query_threshold_ms = 500

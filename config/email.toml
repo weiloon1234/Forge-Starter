@@ -1,0 +1,9 @@
+[email]
+default = "log"
+
+[email.from]
+address = "noreply@example.com"
+name = "Forge Starter"
+
+[email.mailers.log]
+driver = "log"

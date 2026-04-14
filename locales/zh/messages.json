@@ -1,0 +1,52 @@
+{
+    "greeting": "你好，{{name}}！",
+    "item_count": "你有 {{count}} 个项目",
+
+    "Forge Starter": "Forge 入门",
+    "Admin Portal": "管理后台",
+    "User Portal": "用户门户",
+
+    "Welcome": "欢迎",
+    "Save": "保存",
+    "Cancel": "取消",
+    "Delete": "删除",
+    "Confirm": "确认",
+    "Close": "关闭",
+    "Loading": "加载中",
+    "Previous": "上一步",
+    "Next": "下一步",
+
+    "Log in": "登录",
+    "Log out": "退出登录",
+    "Email": "邮箱",
+    "Password": "密码",
+    "Forgot password?": "忘记密码？",
+
+    "auth": {
+        "invalid_credentials": "邮箱或密码错误",
+        "session_expired": "会话已过期",
+        "refresh_token_required": "需要刷新令牌"
+    },
+
+    "error": {
+        "not_found": "资源未找到",
+        "user_not_found": "用户未找到",
+        "something_went_wrong": "出了点问题",
+        "multipart_not_supported": "不支持多部分请求",
+        "validation_failed": "验证失败"
+    },
+
+    "form": {
+        "select_placeholder": "请选择...",
+        "search_placeholder": "搜索...",
+        "select_date": "选择日期",
+        "select_time": "选择时间",
+        "date": "日期",
+        "time": "时间",
+        "hour": "小时",
+        "minute": "分钟",
+        "no_options": "没有选项",
+        "drop_files": "拖放文件到此处或点击浏览",
+        "submit": "提交"
+    }
+}

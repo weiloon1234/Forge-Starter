@@ -1,0 +1,13 @@
+[storage]
+default = "r2"
+
+# Cloudflare R2 — primary storage + deployment artifacts
+# Deployments stored under _deployments/{app_name}/{environment}/
+[storage.disks.r2]
+driver = "s3"
+key = ""
+secret = ""
+region = "auto"
+bucket = ""
+endpoint = ""
+visibility = "private"

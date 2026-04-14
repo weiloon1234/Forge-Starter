@@ -1,0 +1,4 @@
+[app]
+name = "forge-starter"
+environment = "development"
+timezone = "UTC"

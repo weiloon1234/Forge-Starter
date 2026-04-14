@@ -1,0 +1,139 @@
+## What This Is
+
+A Forge framework starter — multi-portal Rust backend + React frontends. Single binary, 4 runtime processes (HTTP, Worker, Scheduler, WebSocket). Forge handles infrastructure; app code stays in `src/domain/` and `src/portals/`.
+
+## Commands
+
+```bash
+make dev          # cargo run (HTTP server on :3000)
+make check        # cargo check (fast type-check)
+make build        # cargo build --release
+make api-docs     # Generate docs/api/ (LLM-friendly API reference)
+make migrate      # cargo run -- db:migrate
+make routes       # cargo run -- routes:list
+make deploy       # bash scripts/build.sh (Docker build + R2 upload)
+```
+
+## Project Structure
+
+```
+src/
+├── main.rs                  # PROCESS env switch → kernel
+├── lib.rs                   # Module declarations
+├── bootstrap/               # AppBuilder per kernel (http, cli, scheduler, worker, websocket)
+├── ids/                     # Typed ID constants (guards, permissions, jobs, schedules, channels)
+├── providers/               # ServiceProvider — DI registration (auth, jobs, events)
+├── portals/                 # HTTP routes — THIN handlers only (~5 lines each)
+│   ├── admin/               # Session auth: /admin/*
+│   └── user/                # Token auth: /api/v1/*
+├── domain/
+│   ├── models/              # #[derive(forge::Model)] + Authenticatable
+│   ├── services/            # Business logic lives HERE (portal-less)
+│   ├── jobs/                # Background jobs (impl Job)
+│   ├── events/              # Domain events + listeners/
+│   ├── enums/               # AppEnum types
+│   └── integrations/        # Third-party API wrappers
+├── commands/                # CLI commands
+├── schedules/               # Cron/interval tasks
+├── realtime/                # WebSocket channels
+└── validation/              # Custom validation rules
+```
+
+## Architecture Rules
+
+1. **Portals are THIN** — extract request, validate, call service, return response. No business logic in route handlers.
+2. **Services are portal-less** — `domain/services/` contains all orchestration. Both admin and user portals call the same service functions.
+3. **Portal validates shape, service validates meaning, model enforces truth.**
+4. **One rule for IDs** — every framework concept has a typed ID in `src/ids/`. Add new IDs there, not inline.
+5. **Binary name is `app`** — never rename `Cargo.toml`. App identity comes from `.env` / `config/app.toml`.
+
+## Key Patterns
+
+**Adding a new portal** (e.g., merchant):
+1. `src/portals/merchant/` — mod.rs, routes, requests.rs, resources.rs
+2. `src/ids/guards.rs` — add `Guard::Merchant`
+3. `src/ids/permissions.rs` — add merchant permissions
+4. `config/auth.toml` — add `[auth.guards.merchant]`
+5. `src/domain/models/merchant.rs` — Model + Authenticatable
+6. `frontend/merchant/` — Vite React SPA
+
+**Adding a new model:**
+1. `src/domain/models/` — `#[derive(Serialize, forge::Model)]` with `#[forge(model = "table_name")]`
+2. `database/migrations/` — create migration file
+3. Register in `providers/app_service_provider.rs` if authenticatable
+
+**Adding a new job:**
+1. `src/domain/jobs/` — impl `Job` trait
+2. `src/ids/jobs.rs` — add `JobId` constant
+3. Register: `registrar.register_job::<MyJob>()` in provider
+
+**Adding a new event:**
+1. `src/domain/events/` — impl `Event` trait
+2. `src/domain/events/listeners/` — impl `EventListener`
+3. Register: `registrar.listen_event::<E, _>(Listener)` in event provider
+
+## Forge Framework API
+
+Run `make api-docs` to generate `docs/api/` — 31 modules of structured API reference. Load only the module you need:
+- `docs/api/modules/database.md` — models, queries, relations
+- `docs/api/modules/auth.md` — guards, tokens, sessions, policies
+- `docs/api/modules/http.md` — routes, middleware, resources
+- `docs/api/modules/validation.md` — 38+ rules
+- `docs/api/modules/jobs.md` — background processing
+- `docs/api/index.md` — full module index
+
+## Deployment
+
+See `DEPLOY.md` for the complete deployment guide. Key files:
+- `scripts/setup.sh` — server provisioning (PostgreSQL, Redis, Nginx, SSL, systemd)
+- `scripts/build.sh` — Docker build + R2 upload
+- `scripts/deploy-poll.sh` — server-side auto-deploy daemon
+- `config/storage.toml` — R2 bucket config (shared for storage + deployments)
+
+## Translation Rules
+
+Translation files in `locales/` are shared between Rust backend and React frontend. **Same files, same `{{variable}}` syntax.**
+
+**English is the fallback AND the key.** Rules:
+
+1. **Do NOT translate English when key = value.** `"Hello": "Hello"` is pointless — skip it. The key itself is returned as fallback.
+2. **DO translate English when key ≠ display text.** `"Credit 1": "Cash Point"` — the key is a code, the value is what the user sees. Write this in `en.json`.
+3. **DO write English when parameterized.** `"greeting": "Hello, {{name}}!"` — always write parameterized translations in English because the key alone is not readable.
+4. **Every other locale MUST have every key.** If `ms.json` is missing a key that `en.json` or code uses, that is a bug. All non-English locale files must be complete — equal row count, every key present.
+5. **Every user-facing text MUST be translated.** If the user will see it on screen, use `t("key")`. No raw strings in UI — labels, placeholders, buttons, errors, toasts, messages.
+6. **NEVER concatenate translated text.** Do NOT write `` `Special ${t("offer")}` `` — instead write `t("special_offer")` with the full sentence as one key. Concatenation breaks word order in other languages.
+7. **Always parameterize.** Write `t("welcome_user", { name })` not `` `${t("welcome")} ${name}` ``. Parameters go inside `{{}}` in the JSON.
+8. **Group parameterized translations together** in the JSON file. Keep related keys in nearby lines for context.
+9. **Backend error messages MUST use translation keys.** Any `Error::http(...)`, `Error::not_found(...)`, validation message, or API response text that the user will see must use `t!(i18n, "key")`, not a raw English string. The frontend displays these in toasts and error UI — they must be translatable.
+
+**Example:**
+```json
+// locales/en/messages.json — only keys that need values
+{
+    "greeting": "Hello, {{name}}!",
+    "item_count": "You have {{count}} items",
+    "credit_label": "Cash Point"
+}
+// "Save", "Cancel", "Delete" — skip in English (key = value fallback)
+
+// locales/ms/messages.json — MUST have every key
+{
+    "greeting": "Helo, {{name}}!",
+    "item_count": "Anda mempunyai {{count}} item",
+    "credit_label": "Mata Tunai",
+    "Save": "Simpan",
+    "Cancel": "Batal",
+    "Delete": "Padam"
+}
+```
+
+## Do NOT
+
+- Do not rename `Cargo.toml` package name or `[[bin]]` name
+- Do not put business logic in portal route handlers
+- Do not hardcode string IDs — use typed constants from `src/ids/`
+- Do not install new dependencies without asking
+- Do not modify `scripts/systemd/` static files — setup.sh generates services dynamically
+- Do not write raw user-facing strings — always use `t("key")` for any text the user sees
+- Do not concatenate translations — use parameterized keys instead
+- Do not return raw string error messages from backend — use `t!(i18n, "key")` for any API response text the user will see

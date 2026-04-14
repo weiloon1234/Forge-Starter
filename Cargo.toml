@@ -1,0 +1,25 @@
+[package]
+name = "forge-starter"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "app"
+path = "src/main.rs"
+
+[dependencies]
+async-trait = "0.1"
+axum = "0.8"
+forge = { path = "../Forge" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1.37", features = ["macros", "rt-multi-thread"] }
+tower-http = { version = "0.6", features = ["fs"] }
+
+[dependencies.ts-rs]
+version = "10"
+features = ["serde-compat"]
+
+[build-dependencies]
+forge-build = { path = "../Forge/forge-build" }

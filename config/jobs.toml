@@ -1,0 +1,6 @@
+[jobs]
+queue = "default"
+max_retries = 5
+poll_interval_ms = 100
+max_concurrent_jobs = 0
+timeout_seconds = 300

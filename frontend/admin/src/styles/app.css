@@ -1,0 +1,39 @@
+@import "tailwindcss";
+@import "./forms.css";
+
+@theme {
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+  --color-primary-light: #e0e7ff;
+  --color-danger: #dc2626;
+  --color-danger-light: #fef2f2;
+  --color-success: #16a34a;
+  --color-success-light: #f0fdf4;
+  --color-warning: #d97706;
+  --color-warning-hover: #b45309;
+  --color-warning-light: #fffbeb;
+  --color-danger-hover: #b91c1c;
+  --color-border: #d1d5db;
+  --color-border-focus: #4f46e5;
+  --color-bg: #ffffff;
+  --color-bg-muted: #f9fafb;
+  --color-bg-input: #ffffff;
+  --color-text: #111827;
+  --color-text-muted: #6b7280;
+  --color-text-error: #dc2626;
+  --color-text-hint: #9ca3af;
+  --color-text-on-primary: #ffffff;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  color: var(--color-text);
+  background: var(--color-bg-muted);
+}
+
+/* Sonner toast theming — uses portal color variables */
+[data-sonner-toaster] {
+  --normal-bg: var(--color-bg);
+  --normal-text: var(--color-text);
+  --normal-border: var(--color-border);
+}
