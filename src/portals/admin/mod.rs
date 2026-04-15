@@ -1,7 +1,7 @@
 use forge::prelude::*;
 use crate::ids::guards::Guard;
 use crate::ids::permissions::Permission;
-use crate::portals::admin::requests::{AdminLoginRequest, ChangeAdminPasswordRequest, UpdateAdminProfileRequest};
+use crate::portals::admin::requests::{AdminLoginRequest, ChangeAdminPasswordRequest, UpdateAdminLocaleRequest, UpdateAdminProfileRequest};
 use crate::portals::admin::responses::{AdminMeResponse, AdminUserResponse};
 use crate::types::MessageResponse;
 
@@ -79,6 +79,7 @@ pub fn register(r: &mut HttpRegistrar) -> Result<()> {
                         .put()
                         .summary("Update admin locale preference")
                         .tag("admin:profile")
+                        .request::<UpdateAdminLocaleRequest>()
                         .response::<MessageResponse>(200)),
             );
             r.route_named_with_options(

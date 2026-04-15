@@ -7,7 +7,7 @@ interface ModalBodyProps {
 
 export function ModalBody({ children, className }: ModalBodyProps) {
   return (
-    <div className={`sf-modal-body sf-modal-fields ${className ?? ""}`}>
+    <div className={`sf-modal-body ${className ?? ""}`}>
       {children}
     </div>
   );

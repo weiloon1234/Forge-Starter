@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
@@ -23,9 +23,12 @@ export function Sidebar({ open, onClose }: SidebarProps) {
     return initial;
   });
 
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+
   useEffect(() => {
-    onClose();
-  }, [pathname, onClose]);
+    onCloseRef.current();
+  }, [pathname]);
 
   const toggleExpand = (key: string) => {
     setExpanded((prev) => {

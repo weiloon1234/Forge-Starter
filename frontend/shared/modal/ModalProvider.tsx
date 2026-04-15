@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../store/createStore";
 import { modalStore, modal } from "./store";
 import { X } from "lucide-react";
@@ -6,6 +7,7 @@ import { X } from "lucide-react";
 const Z_BASE = 1000;
 
 export function ModalProvider() {
+  const { t } = useTranslation();
   const { stack } = useStore(modalStore);
 
   // Escape closes top-most
@@ -62,7 +64,7 @@ export function ModalProvider() {
                     type="button"
                     className="sf-modal-close"
                     onClick={handleClose}
-                    aria-label="Close"
+                    aria-label={t("Close")}
                   >
                     <X size={18} />
                   </button>

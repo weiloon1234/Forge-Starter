@@ -1,15 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { useForm } from "@shared/hooks";
 import { Input, Button } from "@shared/components";
-import { useLocale, localeStore } from "@shared/i18n";
+import { useLocale, localeStore, LOCALE_LABELS } from "@shared/i18n";
 import { Shield } from "lucide-react";
 import { auth } from "@/auth";
 import type { AdminLoginRequest } from "@shared/types/generated";
-
-const LOCALE_LABELS: Record<string, string> = {
-  en: "EN",
-  zh: "中文",
-};
 
 export function LoginPage() {
   const { t } = useTranslation();

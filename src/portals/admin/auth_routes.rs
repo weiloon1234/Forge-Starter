@@ -26,12 +26,5 @@ pub async fn me(
     State(_app): State<AppContext>,
     AuthenticatedModel(admin): Auth<Admin>,
 ) -> impl IntoResponse {
-    Json(AdminMeResponse {
-        id: admin.id.to_string(),
-        username: admin.username.clone(),
-        email: admin.email.clone(),
-        name: admin.name.clone(),
-        admin_type: admin.admin_type.clone(),
-        locale: admin.locale.clone(),
-    })
+    Json(AdminMeResponse::from(&admin))
 }

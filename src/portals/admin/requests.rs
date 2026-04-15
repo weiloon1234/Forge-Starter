@@ -124,3 +124,31 @@ impl FromMultipart for ChangeAdminPasswordRequest {
         Err(Error::http(415, "multipart not supported"))
     }
 }
+
+#[derive(Debug, Deserialize, ts_rs::TS, forge::ApiSchema)]
+#[ts(export)]
+pub struct UpdateAdminLocaleRequest {
+    pub locale: String,
+}
+
+#[async_trait]
+impl RequestValidator for UpdateAdminLocaleRequest {
+    async fn validate(&self, validator: &mut Validator) -> Result<()> {
+        validator
+            .field("locale", &self.locale)
+            .bail()
+            .required()
+            .in_list(["en", "zh"])
+            .apply()
+            .await?;
+
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl FromMultipart for UpdateAdminLocaleRequest {
+    async fn from_multipart(_multipart: &mut axum::extract::Multipart) -> Result<Self> {
+        Err(Error::http(415, "multipart not supported"))
+    }
+}

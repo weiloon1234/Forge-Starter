@@ -1,16 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { Globe, User, Lock, LogOut } from "lucide-react";
-import { useLocale, localeStore } from "@shared/i18n";
+import { useLocale, localeStore, LOCALE_LABELS } from "@shared/i18n";
 import { modal } from "@shared/modal";
 import { auth } from "@/auth";
 import { api } from "@/api";
 import { EditProfileModal } from "@/components/EditProfileModal";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
-
-const LOCALE_LABELS: Record<string, string> = {
-  en: "EN",
-  zh: "中文",
-};
 
 interface AccountDropdownProps {
   onClose: () => void;
@@ -47,6 +42,7 @@ export function AccountDropdown({ onClose }: AccountDropdownProps) {
                 type="button"
                 className={`sf-account-locale-btn ${locale === code ? "sf-account-locale-btn--active" : ""}`}
                 onClick={() => {
+                  if (code === locale) return;
                   localeStore.setLocale(code);
                   api.put("/profile/locale", { locale: code }).catch(() => {});
                 }}

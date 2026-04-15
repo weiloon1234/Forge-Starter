@@ -16,11 +16,9 @@ export function useForm<T extends Record<string, any>>(
 
   const initialRef = useRef(initialValues);
   const knownFields = useRef(new Set(Object.keys(initialValues)));
-  const valuesRef = useRef(values);
   const onSubmitRef = useRef(onSubmit);
   const validateRef = useRef(validate);
 
-  useEffect(() => { valuesRef.current = values; }, [values]);
   useEffect(() => { onSubmitRef.current = onSubmit; }, [onSubmit]);
   useEffect(() => { validateRef.current = validate; }, [validate]);
 
@@ -62,10 +60,8 @@ export function useForm<T extends Record<string, any>>(
       }
       if (busy) return;
 
-      const currentValues = valuesRef.current;
-
       if (validateRef.current) {
-        const validationErrors = validateRef.current(currentValues);
+        const validationErrors = validateRef.current(values);
         const hasErrors = Object.values(validationErrors).some(
           (errs) => errs && (errs as string[]).length > 0
         );
@@ -79,7 +75,7 @@ export function useForm<T extends Record<string, any>>(
       setBusy(true);
 
       try {
-        await onSubmitRef.current(currentValues);
+        await onSubmitRef.current(values);
       } catch (err: any) {
         if (err?.errors && typeof err.errors === "object") {
           const fieldErrs: Partial<Record<keyof T, string[]>> = {};
@@ -102,7 +98,7 @@ export function useForm<T extends Record<string, any>>(
         setBusy(false);
       }
     },
-    [busy, clearErrors]
+    [busy, values, clearErrors]
   );
 
   const field = useCallback(

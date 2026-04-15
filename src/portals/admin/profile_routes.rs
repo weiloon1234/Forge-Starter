@@ -1,6 +1,6 @@
 use forge::prelude::*;
 use crate::domain::models::Admin;
-use crate::portals::admin::requests::{ChangeAdminPasswordRequest, UpdateAdminProfileRequest};
+use crate::portals::admin::requests::{ChangeAdminPasswordRequest, UpdateAdminLocaleRequest, UpdateAdminProfileRequest};
 use crate::portals::admin::responses::AdminMeResponse;
 
 pub async fn update_profile(
@@ -20,28 +20,17 @@ pub async fn update_profile(
         .save(&app)
         .await?;
 
-    Ok(Json(AdminMeResponse {
-        id: updated.id.to_string(),
-        username: updated.username.clone(),
-        email: updated.email.clone(),
-        name: updated.name.clone(),
-        admin_type: updated.admin_type.clone(),
-        locale: updated.locale.clone(),
-    }))
+    Ok(Json(AdminMeResponse::from(&updated)))
 }
 
 pub async fn update_locale(
     State(app): State<AppContext>,
     AuthenticatedModel(admin): Auth<Admin>,
-    Json(body): Json<serde_json::Value>,
+    Validated(req): Validated<UpdateAdminLocaleRequest>,
 ) -> Result<impl IntoResponse> {
-    let locale = body["locale"]
-        .as_str()
-        .ok_or_else(|| Error::http(422, "Locale is required"))?;
-
     admin
         .update()
-        .set(Admin::LOCALE, locale)
+        .set(Admin::LOCALE, req.locale.as_str())
         .save(&app)
         .await?;
 

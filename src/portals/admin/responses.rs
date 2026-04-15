@@ -2,6 +2,7 @@ use serde::Serialize;
 use ts_rs::TS;
 
 use crate::domain::enums::AdminType;
+use crate::domain::models::Admin;
 
 /// Admin view of a user (includes internal fields like status).
 #[derive(Serialize, TS, forge::ApiSchema)]
@@ -25,4 +26,17 @@ pub struct AdminMeResponse {
     pub name: String,
     pub admin_type: AdminType,
     pub locale: String,
+}
+
+impl From<&Admin> for AdminMeResponse {
+    fn from(admin: &Admin) -> Self {
+        Self {
+            id: admin.id.to_string(),
+            username: admin.username.clone(),
+            email: admin.email.clone(),
+            name: admin.name.clone(),
+            admin_type: admin.admin_type.clone(),
+            locale: admin.locale.clone(),
+        }
+    }
 }
