@@ -9,9 +9,12 @@ impl MigrationFile for Entry {
         ctx.raw_execute(
             r#"CREATE TABLE admins (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                username TEXT NOT NULL UNIQUE,
                 email TEXT NOT NULL UNIQUE,
                 name TEXT NOT NULL,
+                admin_type TEXT NOT NULL DEFAULT 'admin',
                 password_hash TEXT NOT NULL,
+                locale TEXT NOT NULL DEFAULT 'en',
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )"#,

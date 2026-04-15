@@ -3,7 +3,7 @@ use forge::prelude::*;
 use forge::validation::FromMultipart;
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize, ts_rs::TS)]
+#[derive(Debug, Deserialize, ts_rs::TS, forge::ApiSchema)]
 #[ts(export)]
 pub struct LoginRequest {
     pub email: String,
@@ -38,7 +38,7 @@ impl FromMultipart for LoginRequest {
     }
 }
 
-#[derive(Debug, Deserialize, ts_rs::TS)]
+#[derive(Debug, Deserialize, ts_rs::TS, forge::ApiSchema)]
 #[ts(export)]
 pub struct UpdateProfileRequest {
     pub name: String,

@@ -1,27 +1,32 @@
 import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
+import { RouterProvider } from "react-router-dom";
 import { Toaster } from "sonner";
 import { ModalProvider } from "@shared/modal";
+import { localeStore } from "@shared/i18n";
 import { auth } from "@/auth";
+import { api } from "@/api";
+import { LoginPage } from "@/pages/LoginPage";
+import { router } from "@/router";
 
 export default function App() {
-  const { t } = useTranslation();
-  const { user, authenticated, busy } = auth.useAuth();
+  const { authenticated, busy } = auth.useAuth();
 
   useEffect(() => {
     auth.check();
+    return auth.onAuthChange((user) => {
+      if (!user) return;
+      const currentLocale = localeStore.locale;
+      if (user.locale !== currentLocale) {
+        api.put("/profile/locale", { locale: currentLocale }).catch(() => {});
+      }
+    });
   }, []);
 
   if (busy) return null;
 
   return (
     <>
-      <div className="max-w-xl mx-auto py-16 px-4">
-        <h1 className="text-2xl font-bold">{t("Admin Portal")}</h1>
-        <p className="mt-2" style={{ color: "var(--color-text-muted)" }}>
-          {authenticated ? t("greeting", { name: user?.name }) : t("Forge Starter")}
-        </p>
-      </div>
+      {authenticated ? <RouterProvider router={router} /> : <LoginPage />}
       <ModalProvider />
       <Toaster position="top-right" richColors />
     </>

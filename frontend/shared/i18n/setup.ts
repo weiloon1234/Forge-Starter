@@ -18,10 +18,14 @@ import { localeStore, localeStoreRaw } from "./localeStore";
  *
  * The `{{variable}}` syntax is shared with Forge backend — same JSON files, same placeholders.
  */
+let initialized = false;
+
 export function initI18n(
   resources: Record<string, Record<string, any>>,
   options?: { defaultLocale?: string; defaultNS?: string }
 ) {
+  if (initialized) return i18n;
+  initialized = true;
   const defaultLocale = options?.defaultLocale ?? "en";
   const defaultNS = options?.defaultNS ?? "messages";
 

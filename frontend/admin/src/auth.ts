@@ -1,8 +1,8 @@
 import { createAuth } from "@shared/auth";
-import { api } from "./api";
-import type { AdminUserResponse } from "@shared/types/generated";
+import { api } from "@/api";
+import type { AdminMeResponse } from "@shared/types/generated";
 
-export const auth = createAuth<AdminUserResponse>({
+export const auth = createAuth<AdminMeResponse>({
   api,
   mode: "session",
   paths: {

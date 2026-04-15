@@ -15,6 +15,5 @@ pub fn builder() -> AppBuilder {
             Csrf::new().exclude("/api").build(),
             SecurityHeaders::new().build(),
         ])
-        .serve_spa("public/user")
         .enable_observability()
 }

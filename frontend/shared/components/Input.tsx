@@ -1,4 +1,33 @@
 import type { InputProps } from "../types/form";
+import { FieldMessages, fieldClasses } from "./FieldMessages";
+
+// ── Money: digits + max one decimal point ───────────────
+function sanitizeMoney(raw: string): string {
+  let result = "";
+  let hasDot = false;
+  for (const ch of raw) {
+    if (ch >= "0" && ch <= "9") {
+      result += ch;
+    } else if (ch === "." && !hasDot) {
+      hasDot = true;
+      result += ch;
+    }
+  }
+  return result;
+}
+
+// ── ATM: keying 1234 displays as 12.34 ─────────────────
+function formatAtm(digits: string): string {
+  if (digits.length === 0) return "";
+  if (digits.length === 1) return "0.0" + digits;
+  if (digits.length === 2) return "0." + digits;
+  const integer = digits.slice(0, -2).replace(/^0+/, "") || "0";
+  return integer + "." + digits.slice(-2);
+}
+
+function rawAtmDigits(formatted: string): string {
+  return formatted.replace(/\D/g, "");
+}
 
 export function Input({
   name,
@@ -24,30 +53,49 @@ export function Input({
   rows,
   inputRef,
 }: InputProps) {
-  const hasErrors = errors && errors.length > 0;
-  const fieldClasses = [
-    "sf-field",
-    hasErrors && "sf-field--error",
-    disabled && "sf-field--disabled",
-    className,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const hasErrors = !!(errors && errors.length > 0);
+  const isMoney = type === "money";
+  const isAtm = type === "atm";
+  const isTextarea = type === "textarea";
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    onChange?.(e.target.value);
+    let val = e.target.value;
+
+    if (isMoney) {
+      val = sanitizeMoney(val);
+    } else if (isAtm) {
+      val = formatAtm(rawAtmDigits(val));
+    }
+
+    onChange?.(val);
   };
+
+  const handleKeyDown = isAtm
+    ? (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Backspace") {
+          e.preventDefault();
+          const trimmed = rawAtmDigits(value ?? "").slice(0, -1);
+          onChange?.(formatAtm(trimmed));
+          return;
+        }
+        // Block non-digit keys (allow ctrl/meta combos for copy/paste)
+        if (e.key.length === 1 && (e.key < "0" || e.key > "9") && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+        }
+      }
+    : undefined;
 
   const handleMouseDown = () => {
     onPrefocus?.();
   };
 
-  const isTextarea = type === "textarea";
+  const nativeType = isMoney || isAtm ? "text" : type;
+  const inputMode = isMoney || isAtm ? ("decimal" as const) : undefined;
 
   return (
-    <div className={fieldClasses}>
+    <div className={fieldClasses({ hasErrors, disabled, className })}>
       {label && (
         <label
           className={`sf-label${required ? " sf-label--required" : ""}`}
@@ -83,16 +131,18 @@ export function Input({
           <input
             id={name}
             name={name}
-            type={type}
+            type={nativeType}
+            inputMode={inputMode}
             className="sf-input"
             value={value}
             defaultValue={defaultValue}
             onChange={handleChange}
+            onKeyDown={handleKeyDown}
             onFocus={onFocus}
             onBlur={onBlur}
             onMouseDown={handleMouseDown}
             onTouchStart={handleMouseDown}
-            placeholder={placeholder}
+            placeholder={placeholder ?? (isAtm ? "0.00" : undefined)}
             disabled={disabled}
             readOnly={readOnly}
             autoFocus={autoFocus}
@@ -103,25 +153,7 @@ export function Input({
         </div>
       )}
 
-      {hints && hints.length > 0 && (
-        <div className="sf-hints">
-          {hints.map((hint, i) => (
-            <p key={i} className="sf-hint">
-              {hint}
-            </p>
-          ))}
-        </div>
-      )}
-
-      {hasErrors && (
-        <div className="sf-errors">
-          {errors.map((err, i) => (
-            <p key={i} className="sf-error">
-              {err}
-            </p>
-          ))}
-        </div>
-      )}
+      <FieldMessages hints={hints} errors={errors} />
     </div>
   );
 }

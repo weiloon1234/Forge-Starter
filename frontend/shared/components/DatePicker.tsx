@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { DayPicker } from "react-day-picker";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import type { DatePickerProps } from "../types/form";
+import { FieldMessages, fieldClasses } from "./FieldMessages";
 
 function formatDate(date: Date | null | undefined): string {
   if (!date) return "";
@@ -48,15 +49,10 @@ export function DatePicker({
     return () => document.removeEventListener("keydown", handler);
   }, [open]);
 
-  const fieldClasses = [
-    "sf-field",
-    hasErrors && "sf-field--error",
-    disabled && "sf-field--disabled",
-    className,
-  ].filter(Boolean).join(" ");
+  const classes = fieldClasses({ hasErrors: !!hasErrors, disabled, className });
 
   return (
-    <div className={fieldClasses} ref={containerRef}>
+    <div className={classes} ref={containerRef}>
       {label && (
         <label className={`sf-label${required ? " sf-label--required" : ""}`} htmlFor={name}>
           {label}
@@ -117,16 +113,7 @@ export function DatePicker({
         </div>
       )}
 
-      {hints && hints.length > 0 && (
-        <div className="sf-hints">
-          {hints.map((hint, i) => <p key={i} className="sf-hint">{hint}</p>)}
-        </div>
-      )}
-      {hasErrors && (
-        <div className="sf-errors">
-          {errors.map((err, i) => <p key={i} className="sf-error">{err}</p>)}
-        </div>
-      )}
+      <FieldMessages hints={hints} errors={errors} />
     </div>
   );
 }

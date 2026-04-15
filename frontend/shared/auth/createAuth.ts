@@ -38,7 +38,8 @@ export function createAuth<TUser>(config: AuthConfig<TUser>): AuthActor<TUser> {
     busy: true, // true until initial check() completes
   });
 
-  // Refresh token kept in memory only (not localStorage — more secure)
+  // Refresh token: memory only (not persisted — more secure against XSS)
+  // Access token: localStorage (via setToken in createApi.ts)
   let refreshToken: string | null = null;
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -107,7 +108,10 @@ export function createAuth<TUser>(config: AuthConfig<TUser>): AuthActor<TUser> {
         // Queue this request — it will be retried after refresh completes
         return new Promise((resolve, reject) => {
           pendingRequests.push({ resolve, reject });
-        }).then(() => api(originalRequest!));
+        }).then(() => {
+          delete originalRequest!.headers?.Authorization;
+          return api(originalRequest!);
+        });
       }
 
       isRefreshing = true;
@@ -120,7 +124,8 @@ export function createAuth<TUser>(config: AuthConfig<TUser>): AuthActor<TUser> {
         pendingRequests.forEach(({ resolve }) => resolve(undefined));
         pendingRequests = [];
 
-        // Retry the original request with new token
+        // Retry with fresh token (clear stale header so interceptor re-attaches)
+        delete originalRequest.headers?.Authorization;
         return api(originalRequest);
       } catch {
         isRefreshing = false;
@@ -138,30 +143,20 @@ export function createAuth<TUser>(config: AuthConfig<TUser>): AuthActor<TUser> {
 
   // ── Public API ─────────────────────────────────────
 
-  async function login(credentials: {
-    email: string;
-    password: string;
-  }): Promise<TUser> {
-    store.setState({ busy: true });
+  async function login(credentials: Record<string, string>): Promise<TUser> {
+    // Don't set auth store busy here — the form's own busy handles loading state.
+    // Setting busy would unmount the login page (App.tsx returns null when busy).
 
-    try {
-      const { data } = await api.post(paths.login, credentials);
+    const { data } = await api.post(paths.login, credentials);
 
-      if (mode === "token" && data.access_token) {
-        // Token mode — store tokens from response
-        storeTokens(data as TokenPairResponse);
-      }
-      // Session mode — cookie set by browser automatically
-
-      // Fetch user profile
-      const user = await fetchMe();
-      if (!user) throw new Error("Failed to fetch user profile");
-
-      return user;
-    } catch (err) {
-      clearAuth();
-      throw err;
+    if (mode === "token" && data.access_token) {
+      storeTokens(data as TokenPairResponse);
     }
+
+    const user = await fetchMe();
+    if (!user) throw new Error("Failed to fetch user profile");
+
+    return user;
   }
 
   async function logout(): Promise<void> {

@@ -1,5 +1,7 @@
+# Development defaults — override in .env for production:
+#   DATABASE__URL=postgres://user:pass@host:5432/dbname
 [database]
-url = "postgres://forge:secret@127.0.0.1:5432/forge_starter"
+url = "postgres://postgres:postgres@127.0.0.1:5432/forge_starter"
 # read_url = ""
 # schema = "public"
 # min_connections = 1

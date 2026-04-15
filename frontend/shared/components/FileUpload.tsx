@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import type { FileUploadProps } from "../types/form";
+import { FieldMessages, fieldClasses } from "./FieldMessages";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -32,7 +33,6 @@ export function FileUpload({
   const [dragover, setDragover] = useState(false);
   const [localErrors, setLocalErrors] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
-  const objectUrls = useRef<string[]>([]);
 
   const files = useMemo(() => {
     if (!value) return [];
@@ -44,19 +44,17 @@ export function FileUpload({
     return errs.length > 0 ? errs : undefined;
   }, [propErrors, localErrors]);
 
-  const hasErrors = allErrors && allErrors.length > 0;
+  const hasErrors = !!(allErrors && allErrors.length > 0);
+
+  const previewUrls = useMemo(() => {
+    return files.map((f) => (isImage(f) ? URL.createObjectURL(f) : null));
+  }, [files]);
 
   useEffect(() => {
     return () => {
-      objectUrls.current.forEach((url) => URL.revokeObjectURL(url));
+      previewUrls.forEach((url) => { if (url) URL.revokeObjectURL(url); });
     };
-  }, []);
-
-  const createObjectURL = (file: File): string => {
-    const url = URL.createObjectURL(file);
-    objectUrls.current.push(url);
-    return url;
-  };
+  }, [previewUrls]);
 
   const validate = (incoming: File[]): File[] => {
     const errors: string[] = [];
@@ -128,14 +126,7 @@ export function FileUpload({
     if (fileList) addFiles(Array.from(fileList));
   };
 
-  const fieldClasses = [
-    "sf-field",
-    hasErrors && "sf-field--error",
-    disabled && "sf-field--disabled",
-    className,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const classes = fieldClasses({ hasErrors, disabled, className });
 
   const dropzoneClasses = [
     "sf-file-dropzone",
@@ -145,7 +136,7 @@ export function FileUpload({
     .join(" ");
 
   return (
-    <div className={fieldClasses}>
+    <div className={classes}>
       {label && (
         <label className={`sf-label${required ? " sf-label--required" : ""}`}>
           {label}
@@ -180,10 +171,10 @@ export function FileUpload({
         <div className="sf-file-list">
           {files.map((file, i) => (
             <div key={i} className="sf-file-item">
-              {preview && isImage(file) ? (
+              {preview && previewUrls[i] ? (
                 <img
                   className="sf-file-preview"
-                  src={createObjectURL(file)}
+                  src={previewUrls[i]}
                   alt={file.name}
                 />
               ) : (
@@ -206,25 +197,7 @@ export function FileUpload({
         </div>
       )}
 
-      {hints && hints.length > 0 && (
-        <div className="sf-hints">
-          {hints.map((hint, i) => (
-            <p key={i} className="sf-hint">
-              {hint}
-            </p>
-          ))}
-        </div>
-      )}
-
-      {hasErrors && (
-        <div className="sf-errors">
-          {allErrors.map((err, i) => (
-            <p key={i} className="sf-error">
-              {err}
-            </p>
-          ))}
-        </div>
-      )}
+      <FieldMessages hints={hints} errors={allErrors} />
     </div>
   );
 }

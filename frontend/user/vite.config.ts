@@ -19,8 +19,7 @@ export default defineConfig({
   },
   server: {
     port: 5174,
-    proxy: {
-      "/api": "http://localhost:3000",
-    },
+    cors: true,
+    origin: "http://localhost:5174",
   },
 });

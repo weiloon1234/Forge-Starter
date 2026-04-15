@@ -14,6 +14,8 @@
 | Need | Use | Import |
 |------|-----|--------|
 | Text / Email / Password / Number / URL / Tel / Search input | `<Input>` | `@shared/components` |
+| Money input (digits + max one dot: `123.45`) | `<Input type="money">` | `@shared/components` |
+| ATM-style input (key `1234` → displays `12.34`) | `<Input type="atm">` | `@shared/components` |
 | Multi-line text | `<Input type="textarea">` | `@shared/components` |
 | Dropdown / searchable / async options | `<Select>` | `@shared/components` |
 | Single checkbox | `<Checkbox>` | `@shared/components` |
@@ -24,7 +26,8 @@
 | Time picker (HH:mm) | `<TimePicker>` | `@shared/components` |
 | Date + Time combined | `<DateTimePicker>` | `@shared/components` |
 | Button (primary/secondary/danger/warning/ghost/plain/link) | `<Button>` | `@shared/components` |
-| Image viewer with navigation | `<Lightbox>` | `@shared/components` |
+| Image viewer with title/subtitle | `<Lightbox>` | `@shared/components` |
+| Server-side data table | `<DataTable>` | `@shared/components` |
 | Build form from JSON config | `<FormBuilder>` | `@shared/components` |
 | Render field by type | `<FormField>` | `@shared/components` |
 
@@ -49,6 +52,8 @@
 | Auth actor (per-portal) | `auth.login/logout/useAuth` | `@/auth` |
 | Create auth actor | `createAuth<T>({ api, mode, paths })` | `@shared/auth` |
 | Check auth on mount | `auth.check()` | `@/auth` |
+| Data table (server-side) | `<DataTable>` | `@shared/components` |
+| Infinite scroll (paginated) | `useInfiniteScroll({ api, url })` | `@shared/hooks` |
 
 ## When to Use What
 
@@ -103,7 +108,9 @@ localeStore.setLocale("ms");  // saves to cookie + updates all components
 ```
 shared/components/ → render sf-* class names only (no Tailwind utilities)
                                     ↓
-each portal's styles/forms.css → @layer components { .sf-* { @apply ... } }
+shared/styles/forms.css → base sf-* definitions (SSOT, imported by both portals)
+                                    ↓
+each portal's styles/forms.css → @import shared base + portal-specific overrides
                                     ↓
 each portal's styles/app.css → @theme { --color-primary: ...; }
 ```
@@ -115,12 +122,15 @@ Same component, different look per portal. To customize a component's appearance
 ```
 frontend/
 ├── shared/                  ← imported as @shared
-│   ├── components/          ← all UI components
-│   ├── hooks/               ← useForm, useDebounce
+│   ├── components/          ← UI components + FieldMessages helper
+│   ├── hooks/               ← useForm, useDebounce, useDataTable, useInfiniteScroll
 │   ├── store/               ← createStore, useStore
 │   ├── modal/               ← modal.open/close, ModalProvider
+│   ├── auth/                ← createAuth factory
 │   ├── api/                 ← createApi factory
 │   ├── i18n/                ← initI18n, localeStore, useLocale
+│   ├── utils/               ← cookie helpers, shared utilities
+│   ├── styles/forms.css     ← SSOT base sf-* classes (imported by portals)
 │   ├── types/
 │   │   ├── form.ts          ← all component prop types
 │   │   └── generated/       ← auto from Rust DTOs (make types)
@@ -128,14 +138,16 @@ frontend/
 ├── admin/
 │   └── src/
 │       ├── api.ts           ← createApi({ baseURL: "/admin" })
+│       ├── auth.ts          ← createAuth session mode
 │       ├── styles/app.css   ← indigo theme + sonner theme
-│       ├── styles/forms.css ← sf-* class definitions
+│       ├── styles/forms.css ← imports shared base + admin overrides
 │       └── App.tsx           ← <ModalProvider /> + <Toaster />
 └── user/
     └── src/
         ├── api.ts           ← createApi({ baseURL: "/api/v1" })
+        ├── auth.ts          ← createAuth token mode
         ├── styles/app.css   ← blue theme + sonner theme
-        ├── styles/forms.css ← sf-* class definitions
+        ├── styles/forms.css ← imports shared base + user overrides
         └── App.tsx           ← <ModalProvider /> + <Toaster />
 ```
 

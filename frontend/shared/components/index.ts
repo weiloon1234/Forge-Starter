@@ -9,5 +9,7 @@ export { FileUpload } from "./FileUpload";
 export { DatePicker } from "./DatePicker";
 export { TimePicker } from "./TimePicker";
 export { DateTimePicker } from "./DateTimePicker";
+export { FieldMessages, fieldClasses } from "./FieldMessages";
 export { FormField } from "./FormField";
 export { FormBuilder } from "./FormBuilder";
+export { DataTable } from "./DataTable";

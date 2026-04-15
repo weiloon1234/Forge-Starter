@@ -1,16 +1,20 @@
 use async_trait::async_trait;
 use forge::prelude::*;
 
+use crate::domain::enums::AdminType;
 use crate::ids::guards::Guard;
 
 #[derive(forge::Model)]
 #[forge(model = "admins")]
 pub struct Admin {
     pub id: ModelId<Self>,
+    pub username: String,
     pub email: String,
     pub name: String,
+    pub admin_type: AdminType,
     #[forge(write_mutator = "hash_password")]
     pub password_hash: String,
+    pub locale: String,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }

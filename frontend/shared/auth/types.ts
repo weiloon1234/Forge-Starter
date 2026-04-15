@@ -24,7 +24,7 @@ export interface AuthState<TUser> {
 
 export interface AuthActor<TUser> {
   /** Login with credentials. Returns the user on success. */
-  login(credentials: { email: string; password: string }): Promise<TUser>;
+  login(credentials: Record<string, string>): Promise<TUser>;
   /** Logout — clears token/session + user store. */
   logout(): Promise<void>;
   /** Refresh token (token mode only). Auto-called before expiry. */

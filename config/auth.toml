@@ -16,7 +16,8 @@ rotate_refresh_tokens = true
 [auth.sessions]
 ttl_minutes = 120
 cookie_name = "forge_session"
-cookie_secure = true
+# Development: false (HTTP). Production override: AUTH__SESSIONS__COOKIE_SECURE=true
+cookie_secure = false
 cookie_path = "/"
 sliding_expiry = true
 remember_ttl_days = 30

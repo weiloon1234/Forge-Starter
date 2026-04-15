@@ -1,0 +1,874 @@
+/* ── Browser Reset ──────────────────────────────────────── */
+@layer base {
+  /* Kill all default outlines — we handle focus via sf-input-wrapper box-shadow */
+  input,
+  textarea,
+  select,
+  button {
+    outline: none;
+  }
+  input:focus,
+  textarea:focus,
+  select:focus,
+  button:focus {
+    outline: none;
+  }
+
+  /* Chrome/Safari autofill — kill the yellow/blue background */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px var(--color-bg-input) inset;
+    -webkit-text-fill-color: var(--color-text);
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  /* Number input — remove spinners */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  /* Search input — remove cancel button */
+  input[type="search"]::-webkit-search-cancel-button,
+  input[type="search"]::-webkit-search-decoration {
+    -webkit-appearance: none;
+  }
+
+  /* Edge — remove password reveal */
+  input::-ms-reveal,
+  input::-ms-clear {
+    display: none;
+  }
+
+  /* Remove default checkbox/radio appearance (we style our own) */
+  input[type="checkbox"],
+  input[type="radio"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+}
+
+@layer components {
+  /* Field wrapper */
+  .sf-field {
+    @apply mb-5;
+  }
+  .sf-field--disabled {
+    @apply opacity-50 pointer-events-none;
+  }
+
+  /* Label */
+  .sf-label {
+    @apply block text-sm font-medium mb-1.5;
+    color: var(--color-text);
+  }
+  .sf-label--required::after {
+    content: " *";
+    color: var(--color-danger);
+  }
+
+  /* Input wrapper (for prefix/suffix) */
+  .sf-input-wrapper {
+    @apply flex items-center rounded-lg border overflow-hidden;
+    border-color: var(--color-border);
+    background: var(--color-bg-input);
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .sf-input-wrapper:focus-within {
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+  }
+  .sf-field--error .sf-input-wrapper {
+    border-color: var(--color-danger);
+  }
+  .sf-field--error .sf-input-wrapper:focus-within {
+    box-shadow: 0 0 0 3px var(--color-danger-light);
+  }
+
+  /* Input element */
+  .sf-input {
+    @apply flex-1 px-3 py-2.5 text-sm outline-none bg-transparent;
+    color: var(--color-text);
+  }
+  .sf-input::placeholder {
+    color: var(--color-text-hint);
+  }
+
+  /* Textarea */
+  .sf-textarea {
+    @apply w-full px-3 py-2.5 text-sm outline-none rounded-lg border resize-y;
+    border-color: var(--color-border);
+    background: var(--color-bg-input);
+    color: var(--color-text);
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .sf-textarea:focus {
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+  }
+  .sf-field--error .sf-textarea {
+    border-color: var(--color-danger);
+  }
+
+  /* Prefix / Suffix */
+  .sf-input-prefix,
+  .sf-input-suffix {
+    @apply px-3 text-sm shrink-0;
+    color: var(--color-text-muted);
+  }
+  .sf-input-prefix {
+    @apply border-r;
+    border-color: var(--color-border);
+    background: var(--color-bg-muted);
+  }
+  .sf-input-suffix {
+    @apply border-l;
+    border-color: var(--color-border);
+    background: var(--color-bg-muted);
+  }
+
+  /* Hints */
+  .sf-hints {
+    @apply mt-1.5;
+  }
+  .sf-hint {
+    @apply text-xs;
+    color: var(--color-text-hint);
+  }
+
+  /* Errors */
+  .sf-errors {
+    @apply mt-1.5;
+  }
+  .sf-error {
+    @apply text-xs;
+    color: var(--color-text-error);
+  }
+
+  /* Select trigger */
+  .sf-select-trigger {
+    @apply flex items-center justify-between w-full px-3 py-2.5 text-sm rounded-lg border cursor-pointer;
+    border-color: var(--color-border);
+    background: var(--color-bg-input);
+    color: var(--color-text);
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .sf-select-trigger:focus {
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+    outline: none;
+  }
+  .sf-field--error .sf-select-trigger {
+    border-color: var(--color-danger);
+  }
+  .sf-select-placeholder {
+    color: var(--color-text-hint);
+  }
+  .sf-select-arrow {
+    @apply ml-2 shrink-0;
+    color: var(--color-text-muted);
+  }
+
+  /* Select dropdown */
+  .sf-select-dropdown {
+    @apply absolute z-50 mt-1 w-full rounded-lg border shadow-lg overflow-hidden;
+    border-color: var(--color-border);
+    background: var(--color-bg);
+  }
+  .sf-select-search {
+    @apply w-full px-3 py-2 text-sm border-b outline-none;
+    border-color: var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+  .sf-select-options {
+    @apply max-h-60 overflow-y-auto;
+  }
+  .sf-select-option {
+    @apply px-3 py-2 text-sm cursor-pointer flex items-center justify-between;
+    color: var(--color-text);
+  }
+  .sf-select-option:hover {
+    background: var(--color-primary-light);
+  }
+  .sf-select-option--selected {
+    color: var(--color-primary);
+    font-weight: 500;
+  }
+  .sf-select-option--disabled {
+    @apply opacity-50 pointer-events-none;
+  }
+  .sf-select-group-label {
+    @apply px-3 py-1.5 text-xs font-semibold uppercase tracking-wider;
+    color: var(--color-text-muted);
+  }
+  .sf-select-empty {
+    @apply px-3 py-4 text-sm text-center;
+    color: var(--color-text-muted);
+  }
+  .sf-select-loading {
+    @apply px-3 py-4 text-sm text-center;
+    color: var(--color-text-muted);
+  }
+  .sf-select-backdrop {
+    @apply fixed inset-0 z-40;
+  }
+
+  /* Checkbox */
+  .sf-checkbox {
+    @apply flex items-start gap-2.5 cursor-pointer;
+  }
+  .sf-checkbox-input {
+    @apply mt-0.5 h-4 w-4 rounded border shrink-0 appearance-none cursor-pointer;
+    border-color: var(--color-border);
+    background: var(--color-bg-input);
+    transition: background 150ms ease, border-color 150ms ease;
+  }
+  .sf-checkbox-input:checked {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  .sf-checkbox-label {
+    @apply text-sm;
+    color: var(--color-text);
+  }
+
+  /* Radio */
+  .sf-radio {
+    @apply flex items-start gap-2.5 cursor-pointer;
+  }
+  .sf-radio-input {
+    @apply mt-0.5 h-4 w-4 rounded-full border shrink-0 appearance-none cursor-pointer;
+    border-color: var(--color-border);
+    background: var(--color-bg-input);
+    transition: background 150ms ease, border-color 150ms ease;
+  }
+  .sf-radio-input:checked {
+    border-color: var(--color-primary);
+    border-width: 5px;
+    background: var(--color-bg-input);
+  }
+  .sf-radio-label {
+    @apply text-sm;
+    color: var(--color-text);
+  }
+  .sf-radio-group {
+    @apply flex flex-col gap-2;
+  }
+
+  /* File upload */
+  .sf-file-dropzone {
+    @apply flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 cursor-pointer;
+    border-color: var(--color-border);
+    background: var(--color-bg-muted);
+    transition: border-color 150ms ease, background 150ms ease;
+  }
+  .sf-file-dropzone:hover,
+  .sf-file-dropzone--dragover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+  }
+  .sf-field--error .sf-file-dropzone {
+    border-color: var(--color-danger);
+  }
+  .sf-file-dropzone-text {
+    @apply text-sm mt-2;
+    color: var(--color-text-muted);
+  }
+  .sf-file-dropzone-icon {
+    @apply text-2xl;
+    color: var(--color-text-hint);
+  }
+  .sf-file-list {
+    @apply mt-3 space-y-2;
+  }
+  .sf-file-item {
+    @apply flex items-center gap-3 rounded-lg border p-2;
+    border-color: var(--color-border);
+    background: var(--color-bg);
+  }
+  .sf-file-preview {
+    @apply w-12 h-12 rounded object-cover shrink-0;
+    background: var(--color-bg-muted);
+  }
+  .sf-file-info {
+    @apply flex-1 min-w-0;
+  }
+  .sf-file-name {
+    @apply text-sm truncate;
+    color: var(--color-text);
+  }
+  .sf-file-size {
+    @apply text-xs;
+    color: var(--color-text-muted);
+  }
+  .sf-file-remove {
+    @apply p-1 rounded shrink-0 cursor-pointer;
+    color: var(--color-text-muted);
+  }
+  .sf-file-remove:hover {
+    color: var(--color-danger);
+    background: var(--color-danger-light);
+  }
+
+  /* ── Button ─────────────────────────────────────────── */
+
+  /* Base */
+  .sf-button {
+    @apply relative inline-flex items-center justify-center font-medium rounded-lg cursor-pointer select-none;
+    transition: background 150ms ease, color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  }
+
+  /* Sizes */
+  .sf-button--sm {
+    @apply px-3 py-1.5 text-xs gap-1.5;
+  }
+  .sf-button--md {
+    @apply px-4 py-2.5 text-sm gap-2;
+  }
+  .sf-button--lg {
+    @apply px-6 py-3 text-base gap-2.5;
+  }
+
+  /* Icon-only (square) */
+  .sf-button--icon-only.sf-button--sm {
+    @apply p-1.5;
+  }
+  .sf-button--icon-only.sf-button--md {
+    @apply p-2.5;
+  }
+  .sf-button--icon-only.sf-button--lg {
+    @apply p-3;
+  }
+
+  /* Full width */
+  .sf-button--full-width {
+    @apply w-full;
+  }
+
+  /* ── Variants ──────────────────────────────────────── */
+
+  /* Primary — filled, primary color */
+  .sf-button--primary {
+    background: var(--color-primary);
+    color: var(--color-text-on-primary);
+  }
+  .sf-button--primary:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+  }
+  .sf-button--primary:focus-visible {
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+  }
+
+  /* Secondary — outlined */
+  .sf-button--secondary {
+    @apply border;
+    border-color: var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+  .sf-button--secondary:hover:not(:disabled) {
+    background: var(--color-bg-muted);
+    border-color: var(--color-text-muted);
+  }
+  .sf-button--secondary:focus-visible {
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+  }
+
+  /* Danger — destructive red */
+  .sf-button--danger {
+    background: var(--color-danger);
+    color: var(--color-text-on-primary);
+  }
+  .sf-button--danger:hover:not(:disabled) {
+    background: var(--color-danger-hover);
+  }
+  .sf-button--danger:focus-visible {
+    box-shadow: 0 0 0 3px var(--color-danger-light);
+  }
+
+  /* Warning — amber */
+  .sf-button--warning {
+    background: var(--color-warning);
+    color: var(--color-text-on-primary);
+  }
+  .sf-button--warning:hover:not(:disabled) {
+    background: var(--color-warning-hover);
+  }
+  .sf-button--warning:focus-visible {
+    box-shadow: 0 0 0 3px var(--color-warning-light);
+  }
+
+  /* Ghost — transparent bg, subtle hover */
+  .sf-button--ghost {
+    background: transparent;
+    color: var(--color-text);
+  }
+  .sf-button--ghost:hover:not(:disabled) {
+    background: var(--color-bg-muted);
+  }
+  .sf-button--ghost:focus-visible {
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+  }
+
+  /* Plain — just text, zero chrome */
+  .sf-button--plain {
+    @apply p-0 rounded-none;
+    background: transparent;
+    color: var(--color-text-muted);
+  }
+  .sf-button--plain:hover:not(:disabled) {
+    color: var(--color-text);
+  }
+
+  /* Link — looks like a hyperlink */
+  .sf-button--link {
+    @apply p-0 rounded-none;
+    background: transparent;
+    color: var(--color-primary);
+  }
+  .sf-button--link:hover:not(:disabled) {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+  }
+
+  /* ── States ────────────────────────────────────────── */
+
+  .sf-button--disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  .sf-button--busy {
+    @apply cursor-wait;
+  }
+
+  /* Content visibility during busy */
+  .sf-button-content {
+    @apply inline-flex items-center;
+    gap: inherit;
+  }
+  .sf-button-content--hidden {
+    @apply invisible;
+  }
+
+  /* Prefix / Suffix */
+  .sf-button-prefix,
+  .sf-button-suffix {
+    @apply shrink-0 flex items-center;
+  }
+
+  /* Loading spinner — centered over content */
+  .sf-button-spinner {
+    @apply absolute inset-0 flex items-center justify-center;
+  }
+  .sf-button-spinner::after {
+    content: "";
+    @apply block rounded-full;
+    width: 1em;
+    height: 1em;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-right-color: currentColor;
+    animation: sf-spin 0.6s linear infinite;
+  }
+
+  @keyframes sf-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* ── Modal ─────────────────────────────────────────── */
+
+  .sf-modal-overlay {
+    @apply fixed inset-0 flex items-end sm:items-center justify-center sm:p-4;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .sf-modal-container {
+    @apply flex flex-col w-full max-h-[90vh] rounded-t-xl sm:rounded-xl shadow-xl sm:max-w-lg;
+    background: var(--color-bg);
+  }
+
+  .sf-modal-header {
+    @apply flex items-center justify-between px-6 py-4 border-b flex-shrink-0;
+    border-color: var(--color-border);
+  }
+
+  .sf-modal-header-title {
+    @apply text-lg font-semibold;
+    color: var(--color-text);
+  }
+
+  .sf-modal-close {
+    @apply flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer border-none;
+    color: var(--color-text-muted);
+    background: transparent;
+    transition: color 150ms ease, background 150ms ease;
+  }
+  .sf-modal-close:hover {
+    color: var(--color-text);
+    background: var(--color-bg-muted);
+  }
+
+  .sf-modal-body {
+    @apply flex-1 overflow-y-auto px-6 py-4;
+  }
+
+  .sf-modal-footer {
+    @apply flex justify-end gap-3 px-6 py-4 border-t flex-shrink-0;
+    border-color: var(--color-border);
+  }
+
+  .sf-modal-fields {
+    @apply space-y-1;
+  }
+
+  /* ── Lightbox ──────────────────────────────────────── */
+
+  .sf-lightbox-overlay {
+    @apply fixed inset-0 flex items-center justify-center;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.9);
+  }
+
+  .sf-lightbox-image {
+    @apply max-w-full max-h-[90vh] object-contain select-none;
+  }
+
+  .sf-lightbox-close {
+    @apply absolute top-4 right-4 p-2 rounded-full cursor-pointer;
+    color: rgba(255, 255, 255, 0.8);
+    transition: color 150ms ease;
+  }
+  .sf-lightbox-close:hover {
+    color: #ffffff;
+  }
+
+  .sf-lightbox-prev,
+  .sf-lightbox-next {
+    @apply absolute top-1/2 -translate-y-1/2 p-2 rounded-full cursor-pointer;
+    color: rgba(255, 255, 255, 0.8);
+    transition: color 150ms ease, background 150ms ease;
+  }
+  .sf-lightbox-prev:hover,
+  .sf-lightbox-next:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .sf-lightbox-prev {
+    @apply left-4;
+  }
+  .sf-lightbox-next {
+    @apply right-4;
+  }
+
+  .sf-lightbox-counter {
+    @apply absolute bottom-4 left-1/2 -translate-x-1/2 text-sm px-3 py-1 rounded-full;
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  /* ── Date Picker ───────────────────────────────────── */
+
+  .sf-datepicker-trigger {
+    @apply flex items-center justify-between w-full px-3 py-2.5 text-sm rounded-lg border cursor-pointer;
+    border-color: var(--color-border);
+    background: var(--color-bg-input);
+    color: var(--color-text);
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .sf-datepicker-trigger:focus {
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+    outline: none;
+  }
+  .sf-field--error .sf-datepicker-trigger {
+    border-color: var(--color-danger);
+  }
+  .sf-datepicker-placeholder {
+    color: var(--color-text-hint);
+  }
+  .sf-datepicker-icon {
+    color: var(--color-text-muted);
+  }
+  .sf-datepicker-dropdown {
+    @apply absolute z-50 mt-1 rounded-lg border shadow-lg p-3;
+    border-color: var(--color-border);
+    background: var(--color-bg);
+  }
+
+  /* Calendar (react-day-picker) */
+  .sf-calendar {
+    color: var(--color-text);
+  }
+  .sf-calendar-caption {
+    @apply flex items-center justify-between mb-2;
+  }
+  .sf-calendar-caption-label {
+    @apply text-sm font-medium;
+  }
+  .sf-calendar-nav {
+    @apply flex gap-1;
+  }
+  .sf-calendar-nav-btn {
+    @apply p-1 rounded cursor-pointer;
+    color: var(--color-text-muted);
+    transition: background 150ms ease;
+  }
+  .sf-calendar-nav-btn:hover {
+    background: var(--color-bg-muted);
+  }
+  .sf-calendar-grid {
+    @apply border-collapse;
+  }
+  .sf-calendar-weekday {
+    @apply text-xs font-medium py-1 w-9 text-center;
+    color: var(--color-text-muted);
+  }
+  .sf-calendar-day {
+    @apply text-center;
+  }
+  .sf-calendar-day-btn {
+    @apply w-9 h-9 text-sm rounded-lg cursor-pointer;
+    transition: background 150ms ease, color 150ms ease;
+  }
+  .sf-calendar-day-btn:hover {
+    background: var(--color-bg-muted);
+  }
+  .sf-calendar-day--selected .sf-calendar-day-btn {
+    background: var(--color-primary);
+    color: var(--color-text-on-primary);
+  }
+  .sf-calendar-day--today .sf-calendar-day-btn {
+    font-weight: 600;
+    border: 1px solid var(--color-primary);
+  }
+  .sf-calendar-day--outside .sf-calendar-day-btn {
+    color: var(--color-text-hint);
+  }
+  .sf-calendar-day--disabled .sf-calendar-day-btn {
+    @apply opacity-30 cursor-not-allowed;
+  }
+
+  /* ── Time Picker ───────────────────────────────────── */
+
+  .sf-timepicker {
+    @apply flex items-center gap-1 px-3 py-2 rounded-lg border;
+    border-color: var(--color-border);
+    background: var(--color-bg-input);
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .sf-timepicker:focus-within {
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+  }
+  .sf-field--error .sf-timepicker {
+    border-color: var(--color-danger);
+  }
+  .sf-timepicker-icon {
+    @apply shrink-0;
+    color: var(--color-text-muted);
+  }
+  .sf-timepicker-select {
+    @apply text-sm bg-transparent cursor-pointer px-1 py-0.5 rounded;
+    color: var(--color-text);
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+  .sf-timepicker-select:focus {
+    outline: none;
+    background: var(--color-bg-muted);
+  }
+  .sf-timepicker-separator {
+    @apply text-sm font-medium;
+    color: var(--color-text-muted);
+  }
+
+  /* ── DateTime Picker ───────────────────────────────── */
+
+  .sf-datetime {
+    @apply flex gap-2;
+  }
+  .sf-datetime > * {
+    @apply flex-1;
+  }
+  /* Nested pickers inside datetime should not have their own field wrapper margins */
+  .sf-datetime .sf-field {
+    @apply mb-0;
+  }
+
+  /* ── Lightbox Caption ──────────────────────────────── */
+
+  .sf-lightbox-caption {
+    @apply absolute bottom-12 left-1/2 -translate-x-1/2 text-center px-4 py-2 rounded-lg max-w-lg;
+    background: rgba(0, 0, 0, 0.6);
+  }
+  .sf-lightbox-title {
+    @apply text-sm font-medium;
+    color: #ffffff;
+  }
+  .sf-lightbox-subtitle {
+    @apply text-xs mt-0.5;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  /* ── DataTable ─────────────────────────────────────── */
+
+  .sf-datatable {
+    @apply rounded-xl border overflow-hidden;
+    border-color: var(--color-border);
+    background: var(--color-bg);
+  }
+
+  .sf-datatable-header {
+    @apply flex items-center justify-between px-5 py-4 border-b;
+    border-color: var(--color-border);
+  }
+  .sf-datatable-title {
+    @apply text-lg font-semibold;
+    color: var(--color-text);
+  }
+  .sf-datatable-subtitle {
+    @apply text-sm mt-0.5;
+    color: var(--color-text-muted);
+  }
+  .sf-datatable-controls {
+    @apply flex items-center gap-3;
+  }
+  .sf-datatable-autorefresh {
+    @apply flex items-center gap-1.5 text-xs cursor-pointer select-none;
+    color: var(--color-text-muted);
+  }
+  .sf-datatable-download {
+    @apply p-1.5 rounded-lg cursor-pointer;
+    color: var(--color-text-muted);
+    transition: color 150ms ease, background 150ms ease;
+  }
+  .sf-datatable-download:hover {
+    color: var(--color-text);
+    background: var(--color-bg-muted);
+  }
+  .sf-datatable-perpage {
+    @apply text-xs rounded-lg border px-2 py-1 bg-transparent cursor-pointer;
+    border-color: var(--color-border);
+    color: var(--color-text);
+  }
+
+  /* Filters */
+  .sf-datatable-filters {
+    @apply flex flex-wrap gap-3 px-5 py-3 border-b;
+    border-color: var(--color-border);
+    background: var(--color-bg-muted);
+  }
+  .sf-datatable-filters .sf-field {
+    @apply mb-0 min-w-48;
+  }
+
+  /* Table */
+  .sf-datatable-table-wrapper {
+    @apply relative overflow-x-auto;
+  }
+  .sf-datatable-table {
+    @apply w-full text-sm;
+  }
+  .sf-datatable-thead {
+    border-bottom: 1px solid var(--color-border);
+  }
+  .sf-datatable-th {
+    @apply px-4 py-3 text-left text-xs font-medium uppercase tracking-wider select-none;
+    color: var(--color-text-muted);
+    background: var(--color-bg-muted);
+  }
+  .sf-datatable-th--sortable {
+    @apply cursor-pointer;
+    transition: color 150ms ease;
+  }
+  .sf-datatable-th--sortable:hover {
+    color: var(--color-text);
+  }
+  .sf-datatable-th--sorted {
+    color: var(--color-primary);
+  }
+  .sf-datatable-tbody {
+    @apply divide-y;
+    --tw-divide-opacity: 1;
+    --tw-divide-color: var(--color-border);
+  }
+  .sf-datatable-tr {
+    transition: background 100ms ease;
+  }
+  .sf-datatable-tr:hover {
+    background: var(--color-bg-muted);
+  }
+  .sf-datatable-td {
+    @apply px-4 py-3;
+    color: var(--color-text);
+  }
+  .sf-datatable-tfoot {
+    border-top: 2px solid var(--color-border);
+    background: var(--color-bg-muted);
+  }
+  .sf-datatable-tfoot td {
+    @apply px-4 py-2.5 text-sm font-semibold;
+    color: var(--color-text);
+  }
+  .sf-datatable-empty {
+    @apply px-4 py-12 text-center;
+    color: var(--color-text-muted);
+  }
+  .sf-datatable-loading {
+    @apply absolute inset-0 flex items-center justify-center bg-white/60;
+  }
+  .sf-datatable-error {
+    @apply px-5 py-3 text-sm;
+    color: var(--color-text-error);
+  }
+
+  /* Pagination */
+  .sf-datatable-pagination {
+    @apply flex items-center justify-between px-5 py-3 border-t;
+    border-color: var(--color-border);
+  }
+  .sf-datatable-pagination-info {
+    @apply text-xs;
+    color: var(--color-text-muted);
+  }
+  .sf-datatable-pagination-buttons {
+    @apply flex items-center gap-1;
+  }
+  .sf-datatable-pagination-btn {
+    @apply p-1.5 rounded-lg cursor-pointer;
+    color: var(--color-text-muted);
+    transition: color 150ms ease, background 150ms ease;
+  }
+  .sf-datatable-pagination-btn:hover:not(:disabled) {
+    color: var(--color-text);
+    background: var(--color-bg-muted);
+  }
+  .sf-datatable-pagination-btn:disabled {
+    @apply opacity-30 cursor-not-allowed;
+  }
+  .sf-datatable-pagination-btn--active {
+    background: var(--color-primary);
+    color: var(--color-text-on-primary);
+  }
+  .sf-datatable-pagination-btn--active:hover {
+    background: var(--color-primary-hover);
+    color: var(--color-text-on-primary);
+  }
+}

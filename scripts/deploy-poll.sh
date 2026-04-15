@@ -331,6 +331,14 @@ deploy_version() {
         log_info "Deployed .env from bucket."
     fi
 
+    # Run database migrations before starting services
+    log_info "Running database migrations..."
+    if sudo -u forge PROCESS=cli "$BINARY" db:migrate 2>&1; then
+        log_info "Migrations complete."
+    else
+        log_error "Migration failed. Starting services with current schema."
+    fi
+
     # Start services
     start_services
 

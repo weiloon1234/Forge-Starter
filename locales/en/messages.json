@@ -4,9 +4,24 @@
 
     "auth": {
         "invalid_credentials": "Invalid email or password",
+        "logged_in": "Logged in",
+        "logged_out": "Logged out",
         "session_expired": "Session expired",
         "refresh_token_required": "Refresh token is required"
     },
+
+    "admin_type": {
+        "super_admin": "Super Admin",
+        "developer": "Developer",
+        "admin": "Admin"
+    },
+
+    "login_brand_desc": "Secure administration panel. Sign in with your credentials to manage the system.",
+    "login_subtitle": "Enter your credentials to continue",
+
+    "page_not_found_desc": "The page you're looking for doesn't exist or has been moved.",
+    "error_page_desc": "An unexpected error occurred. Please try again.",
+    "Back to dashboard": "Back to dashboard",
 
     "error": {
         "not_found": "Resource not found",

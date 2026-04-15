@@ -1,10 +1,13 @@
 import axios, { type AxiosInstance, type AxiosError } from "axios";
 import { toast } from "sonner";
+import { localeStore } from "../i18n/localeStore";
 
 // ── Types ──────────────────────────────────────────────
 
 interface ApiConfig {
   baseURL: string;
+  /** URL paths that should never toast (auth probing endpoints). */
+  silentPaths?: string[];
 }
 
 interface ApiErrorResponse {
@@ -63,18 +66,19 @@ export function getToken(): string | null {
 
 // ── Factory ────────────────────────────────────────────
 
-export function createApi({ baseURL }: ApiConfig): AxiosInstance {
+export function createApi({ baseURL, silentPaths = [] }: ApiConfig): AxiosInstance {
   const instance = axios.create({
     baseURL,
     headers: { Accept: "application/json" },
   });
 
-  // Request interceptor: attach auth token
+  // Request interceptor: attach auth token + locale
   instance.interceptors.request.use((config) => {
     const token = getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    config.headers["Accept-Language"] = localeStore.locale;
     return config;
   });
 
@@ -84,6 +88,7 @@ export function createApi({ baseURL }: ApiConfig): AxiosInstance {
     (error: AxiosError<ApiErrorResponse>) => {
       const data = error.response?.data;
       const status = error.response?.status;
+      const url = error.config?.url || "";
 
       // 422 Validation — toast + structured field errors
       if (status === 422 && data?.errors) {
@@ -91,13 +96,13 @@ export function createApi({ baseURL }: ApiConfig): AxiosInstance {
         return Promise.reject(new ApiFormError(data));
       }
 
-      // 401 Unauthorized
-      if (status === 401) {
-        toast.error(data?.message || "Session expired");
+      // Silent paths (auth probing: /me, /refresh) — no toast
+      const isSilent = silentPaths.some((p) => url === p || url.endsWith(p));
+      if (isSilent) {
         return Promise.reject(error);
       }
 
-      // Other errors
+      // All other errors — toast the message
       if (data?.message) {
         toast.error(data.message);
       } else {

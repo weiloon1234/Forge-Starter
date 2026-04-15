@@ -1,4 +1,12 @@
+# Development defaults — override in .env for production:
+#   APP__SIGNING_KEY=<your-production-key>
+#   CRYPT__KEY=<your-production-key>
+# Generate keys: cargo run -- key:generate
 [app]
 name = "forge-starter"
 environment = "development"
 timezone = "UTC"
+signing_key = "wxbNRcFjMvjQG7b8jWY5wYMHqk5nJd3pW5CmAwIFxWk="
+
+[crypt]
+key = "Xqkm5cfkcQj8gLQzkVpTPCFQZGs0hgbdzHcKs3DgpZk="

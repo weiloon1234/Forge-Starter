@@ -2,9 +2,9 @@
 @import "./forms.css";
 
 @theme {
-  --color-primary: #4f46e5;
-  --color-primary-hover: #4338ca;
-  --color-primary-light: #e0e7ff;
+  --color-primary: #334155;
+  --color-primary-hover: #1e293b;
+  --color-primary-light: #f1f5f9;
   --color-danger: #dc2626;
   --color-danger-light: #fef2f2;
   --color-success: #16a34a;
@@ -14,7 +14,7 @@
   --color-warning-light: #fffbeb;
   --color-danger-hover: #b91c1c;
   --color-border: #d1d5db;
-  --color-border-focus: #4f46e5;
+  --color-border-focus: #334155;
   --color-bg: #ffffff;
   --color-bg-muted: #f9fafb;
   --color-bg-input: #ffffff;
@@ -23,6 +23,13 @@
   --color-text-error: #dc2626;
   --color-text-hint: #9ca3af;
   --color-text-on-primary: #ffffff;
+
+  --color-sidebar-bg: #0f172a;
+  --color-sidebar-text: #94a3b8;
+  --color-sidebar-text-active: #ffffff;
+  --color-sidebar-hover: rgba(255, 255, 255, 0.06);
+  --color-sidebar-active: rgba(255, 255, 255, 0.10);
+  --color-sidebar-brand: #34d399;
 }
 
 body {
@@ -31,9 +38,459 @@ body {
   background: var(--color-bg-muted);
 }
 
-/* Sonner toast theming — uses portal color variables */
+/* Sonner toast theming */
 [data-sonner-toaster] {
   --normal-bg: var(--color-bg);
   --normal-text: var(--color-text);
   --normal-border: var(--color-border);
+}
+
+/* ── Login Page ──────────────────────────────────────── */
+
+.sf-login-page {
+  @apply min-h-screen flex;
+}
+
+/* Left branded panel */
+
+.sf-login-brand {
+  @apply hidden lg:flex w-[480px] flex-shrink-0 items-center justify-center p-12;
+  background: var(--color-sidebar-bg);
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(52, 211, 153, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(5, 150, 105, 0.08) 0%, transparent 50%);
+}
+
+.sf-login-brand-inner {
+  @apply max-w-xs text-center;
+}
+
+.sf-login-brand-icon {
+  @apply inline-flex items-center justify-center w-10 h-10 rounded-xl;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-sidebar-brand);
+}
+
+.sf-login-brand .sf-login-brand-icon {
+  @apply w-14 h-14 rounded-2xl mb-6;
+}
+
+.sf-login-brand-title {
+  @apply text-2xl font-bold;
+  color: var(--color-sidebar-text-active);
+}
+
+.sf-login-brand-desc {
+  @apply text-sm mt-3 leading-relaxed;
+  color: var(--color-sidebar-text);
+}
+
+/* Right form panel */
+
+.sf-login-main {
+  @apply flex-1 flex flex-col items-center justify-center px-6 py-12;
+  background: var(--color-sidebar-bg);
+}
+
+@media (min-width: 1024px) {
+  .sf-login-main {
+    background: var(--color-bg);
+  }
+}
+
+.sf-login-card {
+  @apply w-full max-w-sm rounded-2xl p-8;
+  background: var(--color-bg);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+@media (min-width: 1024px) {
+  .sf-login-card {
+    @apply rounded-none p-0;
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+/* Login top bar — mobile brand + locale switcher */
+
+.sf-login-topbar {
+  @apply flex items-center justify-between w-full max-w-sm mb-6;
+}
+
+.sf-login-mobile-header {
+  @apply flex items-center gap-3;
+}
+
+@media (min-width: 1024px) {
+  .sf-login-mobile-header {
+    @apply hidden;
+  }
+}
+
+.sf-login-locale {
+  @apply flex rounded-lg overflow-hidden border;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+@media (min-width: 1024px) {
+  .sf-login-locale {
+    border-color: var(--color-border);
+  }
+}
+
+.sf-login-mobile-title {
+  @apply text-lg font-semibold;
+  color: var(--color-sidebar-text-active);
+}
+
+.sf-login-title {
+  @apply text-xl font-bold;
+  color: var(--color-text);
+}
+
+.sf-login-subtitle {
+  @apply text-sm mt-1 mb-8;
+  color: var(--color-text-muted);
+}
+
+.sf-login-error {
+  @apply text-sm text-center px-3 py-2 rounded-lg mb-4;
+  color: var(--color-text-error);
+  background: var(--color-danger-light);
+}
+
+.sf-login-form {
+  @apply space-y-1;
+}
+
+/* ── Layout Shell ────────────────────────────────────── */
+
+.sf-layout {
+  @apply flex min-h-screen;
+}
+
+.sf-layout-main {
+  @apply flex flex-col flex-1 min-w-0;
+}
+
+.sf-layout-content {
+  @apply flex-1 p-6;
+}
+
+/* ── Sidebar ────────────────────────────────────────── */
+
+.sf-sidebar {
+  @apply fixed top-0 left-0 bottom-0 z-40 flex flex-col w-64 overflow-y-auto;
+  background: var(--color-sidebar-bg);
+  transform: translateX(-100%);
+  transition: transform 200ms ease;
+}
+
+.sf-sidebar--open {
+  transform: translateX(0);
+}
+
+@media (min-width: 1024px) {
+  .sf-sidebar {
+    @apply relative z-auto;
+    transform: none;
+  }
+}
+
+.sf-sidebar-backdrop {
+  @apply fixed inset-0 z-30;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+@media (min-width: 1024px) {
+  .sf-sidebar-backdrop {
+    display: none;
+  }
+}
+
+/* Sidebar Brand */
+
+.sf-sidebar-brand {
+  @apply flex items-center gap-3 px-5 py-5 border-b;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.sf-sidebar-brand-icon {
+  @apply flex items-center justify-center w-8 h-8 rounded-lg text-sm font-bold;
+  background: var(--color-sidebar-brand);
+  color: var(--color-sidebar-bg);
+}
+
+.sf-sidebar-brand-text {
+  @apply font-semibold text-sm;
+  color: var(--color-sidebar-text-active);
+}
+
+/* Sidebar Navigation */
+
+.sf-sidebar-nav {
+  @apply flex-1 px-3 py-4 space-y-1;
+}
+
+.sf-sidebar-item {
+  @apply flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium no-underline cursor-pointer;
+  color: var(--color-sidebar-text);
+  background: transparent;
+  border: none;
+  text-align: left;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.sf-sidebar-item:hover {
+  background: var(--color-sidebar-hover);
+  color: var(--color-sidebar-text-active);
+}
+
+.sf-sidebar-item--active {
+  background: var(--color-sidebar-active);
+  color: var(--color-sidebar-text-active);
+}
+
+.sf-sidebar-item--active-parent {
+  color: var(--color-sidebar-text-active);
+}
+
+.sf-sidebar-item-icon {
+  @apply w-5 h-5 flex-shrink-0;
+}
+
+/* Sidebar Chevron */
+
+.sf-sidebar-chevron {
+  @apply w-4 h-4 ml-auto flex-shrink-0;
+  transition: transform 200ms ease;
+}
+
+.sf-sidebar-chevron--open {
+  transform: rotate(180deg);
+}
+
+/* Sidebar Children */
+
+.sf-sidebar-children {
+  @apply ml-5 pl-3 border-l space-y-1 mt-1;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.sf-sidebar-child {
+  @apply flex items-center px-3 py-1.5 rounded-md text-sm no-underline;
+  color: var(--color-sidebar-text);
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.sf-sidebar-child:hover {
+  background: var(--color-sidebar-hover);
+  color: var(--color-sidebar-text-active);
+}
+
+.sf-sidebar-child--active {
+  color: var(--color-sidebar-text-active);
+  background: var(--color-sidebar-active);
+}
+
+/* ── Header ─────────────────────────────────────────── */
+
+.sf-header {
+  @apply flex items-center gap-4 px-6 h-14 border-b;
+  border-color: var(--color-border);
+  background: var(--color-bg);
+}
+
+.sf-header-hamburger {
+  @apply flex items-center justify-center w-9 h-9 rounded-lg border-none cursor-pointer;
+  color: var(--color-text-muted);
+  background: transparent;
+  transition: background 150ms ease;
+}
+
+.sf-header-hamburger:hover {
+  background: var(--color-bg-muted);
+}
+
+@media (min-width: 1024px) {
+  .sf-header-hamburger {
+    display: none;
+  }
+}
+
+.sf-header-spacer {
+  @apply flex-1;
+}
+
+/* ── Account Dropdown ────────────────────────────────── */
+
+.sf-account {
+  @apply relative;
+}
+
+.sf-account-trigger {
+  @apply flex items-center gap-3 px-3 py-1.5 rounded-lg border-none cursor-pointer;
+  background: transparent;
+  transition: background 150ms ease;
+}
+
+.sf-account-trigger:hover {
+  background: var(--color-bg-muted);
+}
+
+.sf-account-avatar {
+  @apply flex items-center justify-center w-8 h-8 rounded-full text-xs font-semibold;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.sf-account-info {
+  @apply flex flex-col items-start;
+}
+
+.sf-account-name {
+  @apply text-sm font-medium leading-tight;
+  color: var(--color-text);
+}
+
+.sf-account-role {
+  @apply text-xs leading-tight;
+  color: var(--color-text-muted);
+}
+
+.sf-account-chevron {
+  color: var(--color-text-hint);
+  transition: transform 200ms ease;
+}
+
+.sf-account-chevron--open {
+  transform: rotate(180deg);
+}
+
+.sf-account-dropdown {
+  @apply absolute right-0 top-full mt-2 w-56 rounded-xl border overflow-hidden;
+  border-color: var(--color-border);
+  background: var(--color-bg);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.04);
+  z-index: 50;
+}
+
+.sf-account-section {
+  @apply py-1.5 border-b;
+  border-color: var(--color-border);
+}
+
+.sf-account-section--last {
+  @apply border-b-0;
+}
+
+.sf-account-item {
+  @apply flex items-center gap-3 w-full px-4 py-2 text-sm no-underline border-none cursor-pointer;
+  color: var(--color-text);
+  background: transparent;
+  text-align: left;
+  transition: background 120ms ease;
+}
+
+.sf-account-item:hover {
+  background: var(--color-bg-muted);
+}
+
+.sf-account-item--danger:hover {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.sf-account-item-icon {
+  @apply flex-shrink-0;
+  color: var(--color-text-muted);
+}
+
+.sf-account-item:hover .sf-account-item-icon {
+  color: var(--color-text);
+}
+
+.sf-account-item--danger:hover .sf-account-item-icon {
+  color: var(--color-danger);
+}
+
+/* Locale Switcher */
+
+.sf-account-locale {
+  @apply flex items-center gap-3 px-4 py-2;
+}
+
+.sf-account-locale-label {
+  @apply text-sm flex-1;
+  color: var(--color-text);
+}
+
+.sf-account-locale-switcher {
+  @apply flex rounded-lg overflow-hidden border;
+  border-color: var(--color-border);
+}
+
+.sf-account-locale-btn {
+  @apply px-2.5 py-1 text-xs font-medium border-none cursor-pointer;
+  color: var(--color-text-muted);
+  background: transparent;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.sf-account-locale-btn:hover {
+  background: var(--color-bg-muted);
+}
+
+.sf-account-locale-btn--active {
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+}
+
+.sf-account-locale-btn--active:hover {
+  background: var(--color-primary-hover);
+  color: var(--color-text-on-primary);
+}
+
+/* ── Page Helpers ────────────────────────────────────── */
+
+.sf-page-title {
+  @apply text-xl font-semibold;
+  color: var(--color-text);
+}
+
+.sf-page-subtitle {
+  @apply text-sm mt-1;
+  color: var(--color-text-muted);
+}
+
+/* ── Status Pages (404, Error) ───────────────────────── */
+
+.sf-status-page {
+  @apply flex flex-col items-center justify-center text-center py-24 px-4;
+}
+
+.sf-status-page--fullscreen {
+  @apply min-h-screen py-0;
+}
+
+.sf-status-icon {
+  @apply flex items-center justify-center w-14 h-14 rounded-full mb-4;
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+.sf-status-code {
+  @apply text-6xl font-bold tracking-tight;
+  color: var(--color-border);
+}
+
+.sf-status-title {
+  @apply text-lg font-semibold mt-2;
+  color: var(--color-text);
+}
+
+.sf-status-desc {
+  @apply text-sm mt-2 mb-6 max-w-sm;
+  color: var(--color-text-muted);
 }

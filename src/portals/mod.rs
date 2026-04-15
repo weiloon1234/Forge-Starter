@@ -1,6 +1,7 @@
 use forge::prelude::*;
 
 pub mod admin;
+pub mod spa;
 pub mod user;
 
 /// Register all API routes.
@@ -11,20 +12,22 @@ pub fn register(r: &mut HttpRegistrar) -> Result<()> {
     Ok(())
 }
 
-/// Register SPA static file serving for multi-portal frontends.
+/// Register SPA handlers — serves dynamic HTML per portal.
+/// Dev: loads from Vite dev server (hot reload). Prod: serves built assets.
 pub fn register_spa(r: &mut HttpRegistrar) -> Result<()> {
-    use tower_http::services::{ServeDir, ServeFile};
+    use tower_http::services::ServeDir;
 
-    // Admin portal SPA — served under /admin, catches unmatched /admin/* paths.
-    // nest_service on the underlying axum Router accepts any Service, avoiding
-    // the Router<()> vs Router<AppContext> state mismatch.
-    let admin_spa = ServeDir::new("public/admin")
-        .fallback(ServeFile::new("public/admin/index.html"));
-    let admin_router = Router::<AppContext>::new().nest_service("/admin", admin_spa);
-    r.merge(admin_router);
+    // Admin portal: SPA handler + static assets
+    r.route("/admin", get(spa::admin_spa));
+    r.route("/admin/{*path}", get(spa::admin_spa));
+    let admin_assets = Router::<AppContext>::new()
+        .nest_service("/admin/assets", ServeDir::new("public/admin/assets"));
+    r.merge(admin_assets);
 
-    // User portal SPA is served via serve_spa("public/user") in bootstrap/http.rs
-    // as the global fallback (catches all other unmatched routes)
+    // User portal: SPA handler as fallback + static assets
+    let user_assets = Router::<AppContext>::new()
+        .nest_service("/assets", ServeDir::new("public/user/assets"));
+    r.merge(user_assets);
 
     Ok(())
 }

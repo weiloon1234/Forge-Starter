@@ -1,4 +1,6 @@
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import axios from "axios";
+import { toast } from "sonner";
 import type { UseFormConfig, UseFormReturn, FieldBinding } from "../types/form";
 
 export function useForm<T extends Record<string, any>>(
@@ -10,8 +12,17 @@ export function useForm<T extends Record<string, any>>(
   const [errors, setErrorsState] = useState<Partial<Record<keyof T, string[]>>>({});
   const [touched, setTouched] = useState<Partial<Record<keyof T, boolean>>>({});
   const [busy, setBusy] = useState(false);
+  const [formErrors, setFormErrors] = useState<string[]>([]);
 
   const initialRef = useRef(initialValues);
+  const knownFields = useRef(new Set(Object.keys(initialValues)));
+  const valuesRef = useRef(values);
+  const onSubmitRef = useRef(onSubmit);
+  const validateRef = useRef(validate);
+
+  useEffect(() => { valuesRef.current = values; }, [values]);
+  useEffect(() => { onSubmitRef.current = onSubmit; }, [onSubmit]);
+  useEffect(() => { validateRef.current = validate; }, [validate]);
 
   const dirty = useMemo(() => {
     return Object.keys(initialRef.current).some(
@@ -33,22 +44,28 @@ export function useForm<T extends Record<string, any>>(
 
   const clearErrors = useCallback(() => {
     setErrorsState({});
+    setFormErrors([]);
   }, []);
 
   const reset = useCallback(() => {
     setValuesState({ ...initialRef.current });
     setErrorsState({});
+    setFormErrors([]);
     setTouched({});
   }, []);
 
   const handleSubmit = useCallback(
     async (e?: React.FormEvent) => {
-      if (e) e.preventDefault();
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
       if (busy) return;
 
-      // Run client-side validation if provided
-      if (validate) {
-        const validationErrors = validate(values);
+      const currentValues = valuesRef.current;
+
+      if (validateRef.current) {
+        const validationErrors = validateRef.current(currentValues);
         const hasErrors = Object.values(validationErrors).some(
           (errs) => errs && (errs as string[]).length > 0
         );
@@ -62,20 +79,30 @@ export function useForm<T extends Record<string, any>>(
       setBusy(true);
 
       try {
-        await onSubmit(values);
+        await onSubmitRef.current(currentValues);
       } catch (err: any) {
-        // ApiFormError (422) has .errors as Record<string, string[]>
-        // Auto-wires to <Input errors={...} /> display
         if (err?.errors && typeof err.errors === "object") {
-          setErrorsState(err.errors);
-        } else {
-          throw err;
+          const fieldErrs: Partial<Record<keyof T, string[]>> = {};
+          const orphan: string[] = [];
+
+          for (const [field, messages] of Object.entries(err.errors)) {
+            if (knownFields.current.has(field)) {
+              fieldErrs[field as keyof T] = messages as string[];
+            } else {
+              orphan.push(...(messages as string[]));
+            }
+          }
+
+          setErrorsState(fieldErrs);
+          setFormErrors(orphan);
+        } else if (!axios.isAxiosError(err)) {
+          toast.error(err?.message || "Something went wrong");
         }
       } finally {
         setBusy(false);
       }
     },
-    [busy, values, validate, onSubmit, clearErrors]
+    [busy, clearErrors]
   );
 
   const field = useCallback(
@@ -84,7 +111,6 @@ export function useForm<T extends Record<string, any>>(
       value: values[name] ?? "",
       onChange: (value: any) => {
         setValuesState((prev) => ({ ...prev, [name]: value }));
-        // Clear field error on change
         setErrorsState((prev) => {
           if (!prev[name]) return prev;
           const next = { ...prev };
@@ -106,6 +132,7 @@ export function useForm<T extends Record<string, any>>(
     touched,
     busy,
     dirty,
+    formErrors,
     field,
     handleSubmit,
     reset,

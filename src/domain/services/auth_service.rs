@@ -14,11 +14,11 @@ pub async fn login_with_token(
         .where_(User::EMAIL.eq(email))
         .first(&*db)
         .await?
-        .ok_or_else(|| Error::http(401, "invalid credentials"))?;
+        .ok_or_else(|| Error::http(401, "Invalid credentials"))?;
 
     let hash = app.hash()?;
     if !hash.check(password, &user.password_hash)? {
-        return Err(Error::http(401, "invalid credentials"));
+        return Err(Error::http(401, "Invalid credentials"));
     }
 
     let tokens = user.create_token(app).await?;
@@ -26,23 +26,23 @@ pub async fn login_with_token(
     Ok(tokens)
 }
 
-/// Session-based login for the admin portal. Returns session ID and admin.
+/// Session-based login for the admin portal (by username).
 pub async fn login_with_session(
     app: &AppContext,
-    email: &str,
+    username: &str,
     password: &str,
 ) -> Result<(String, Admin)> {
     let db = app.database()?;
 
     let admin = Admin::model_query()
-        .where_(Admin::EMAIL.eq(email))
+        .where_(Admin::USERNAME.eq(username))
         .first(&*db)
         .await?
-        .ok_or_else(|| Error::http(401, "invalid credentials"))?;
+        .ok_or_else(|| Error::http(401, "Invalid credentials"))?;
 
     let hash = app.hash()?;
     if !hash.check(password, &admin.password_hash)? {
-        return Err(Error::http(401, "invalid credentials"));
+        return Err(Error::http(401, "Invalid credentials"));
     }
 
     let sessions = app.sessions()?;

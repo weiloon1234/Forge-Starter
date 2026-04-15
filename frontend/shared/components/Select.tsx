@@ -1,6 +1,7 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 import type { SelectProps, SelectOption } from "../types/form";
 import { useDebounce } from "../hooks/useDebounce";
+import { FieldMessages, fieldClasses } from "./FieldMessages";
 
 export function Select({
   name,
@@ -23,24 +24,18 @@ export function Select({
   const [query, setQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const hasErrors = errors && errors.length > 0;
-  const fieldClasses = [
-    "sf-field",
-    hasErrors && "sf-field--error",
-    disabled && "sf-field--disabled",
-    className,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const hasErrors = !!(errors && errors.length > 0);
 
   const selectedValues = useMemo(() => {
     if (value == null) return [];
     return Array.isArray(value) ? value : [value];
   }, [value]);
 
-  const debouncedSearch = useDebounce((q: string) => {
-    onSearch?.(q);
-  }, 300);
+  const stableOnSearch = useCallback(
+    (q: string) => { onSearch?.(q); },
+    [onSearch]
+  );
+  const debouncedSearch = useDebounce(stableOnSearch, 300);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const q = e.target.value;
@@ -113,7 +108,7 @@ export function Select({
     filteredOptions.length === 0 && !loading;
 
   return (
-    <div className={fieldClasses} onKeyDown={handleKeyDown}>
+    <div className={fieldClasses({ hasErrors, disabled, className })} onKeyDown={handleKeyDown}>
       {label && (
         <label
           className={`sf-label${required ? " sf-label--required" : ""}`}
@@ -194,25 +189,7 @@ export function Select({
         </>
       )}
 
-      {hints && hints.length > 0 && (
-        <div className="sf-hints">
-          {hints.map((hint, i) => (
-            <p key={i} className="sf-hint">
-              {hint}
-            </p>
-          ))}
-        </div>
-      )}
-
-      {hasErrors && (
-        <div className="sf-errors">
-          {errors.map((err, i) => (
-            <p key={i} className="sf-error">
-              {err}
-            </p>
-          ))}
-        </div>
-      )}
+      <FieldMessages hints={hints} errors={errors} />
     </div>
   );
 }

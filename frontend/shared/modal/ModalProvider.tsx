@@ -55,13 +55,19 @@ export function ModalProvider() {
             }}
           >
             <div className="sf-modal-container">
-              <button
-                className="sf-modal-close"
-                onClick={handleClose}
-                aria-label="Close"
-              >
-                <X size={20} />
-              </button>
+              {entry.title && (
+                <div className="sf-modal-header">
+                  <h2 className="sf-modal-header-title">{entry.title}</h2>
+                  <button
+                    type="button"
+                    className="sf-modal-close"
+                    onClick={handleClose}
+                    aria-label="Close"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              )}
               <Component {...(entry.props ?? {})} onClose={handleClose} />
             </div>
           </div>

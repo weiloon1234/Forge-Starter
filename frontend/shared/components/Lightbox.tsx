@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import type { LightboxImage } from "../types/form";
 
 interface LightboxProps {
   open: boolean;
   onClose: () => void;
-  images: string[];
+  images: (string | LightboxImage)[];
   initialIndex?: number;
   alt?: string;
 }
@@ -18,12 +19,17 @@ export function Lightbox({
 }: LightboxProps) {
   const [index, setIndex] = useState(initialIndex);
 
+  const normalizedImages = useMemo(
+    () => images.map((img) => (typeof img === "string" ? { src: img } : img)),
+    [images],
+  );
+
   useEffect(() => {
     if (open) setIndex(initialIndex);
   }, [open, initialIndex]);
 
   const hasPrev = index > 0;
-  const hasNext = index < images.length - 1;
+  const hasNext = index < normalizedImages.length - 1;
 
   const prev = useCallback(() => {
     if (hasPrev) setIndex((i) => i - 1);
@@ -62,13 +68,17 @@ export function Lightbox({
   // Preload adjacent images
   useEffect(() => {
     if (!open) return;
-    [images[index - 1], images[index + 1]].filter(Boolean).forEach((src) => {
-      const img = new Image();
-      img.src = src;
-    });
-  }, [open, index, images]);
+    [normalizedImages[index - 1], normalizedImages[index + 1]]
+      .filter(Boolean)
+      .forEach((item) => {
+        const img = new Image();
+        img.src = item.src;
+      });
+  }, [open, index, normalizedImages]);
 
-  if (!open || images.length === 0) return null;
+  if (!open || normalizedImages.length === 0) return null;
+
+  const current = normalizedImages[index];
 
   return (
     <div
@@ -97,10 +107,17 @@ export function Lightbox({
 
       <img
         className="sf-lightbox-image"
-        src={images[index]}
+        src={current.src}
         alt={alt}
         draggable={false}
       />
+
+      {(current.title || current.subtitle) && (
+        <div className="sf-lightbox-caption">
+          {current.title && <div className="sf-lightbox-title">{current.title}</div>}
+          {current.subtitle && <div className="sf-lightbox-subtitle">{current.subtitle}</div>}
+        </div>
+      )}
 
       {hasNext && (
         <button
@@ -112,9 +129,9 @@ export function Lightbox({
         </button>
       )}
 
-      {images.length > 1 && (
+      {normalizedImages.length > 1 && (
         <div className="sf-lightbox-counter">
-          {index + 1} / {images.length}
+          {index + 1} / {normalizedImages.length}
         </div>
       )}
     </div>

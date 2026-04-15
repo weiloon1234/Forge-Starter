@@ -1,4 +1,5 @@
 import type { CheckboxGroupProps } from "../types/form";
+import { FieldMessages, fieldClasses } from "./FieldMessages";
 
 export function CheckboxGroup({
   name,
@@ -12,15 +13,7 @@ export function CheckboxGroup({
   required,
   className,
 }: CheckboxGroupProps) {
-  const hasErrors = errors && errors.length > 0;
-  const fieldClasses = [
-    "sf-field",
-    hasErrors && "sf-field--error",
-    disabled && "sf-field--disabled",
-    className,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const hasErrors = !!(errors && errors.length > 0);
 
   const handleToggle = (optValue: string) => {
     const next = value.includes(optValue)
@@ -30,7 +23,7 @@ export function CheckboxGroup({
   };
 
   return (
-    <div className={fieldClasses}>
+    <div className={fieldClasses({ hasErrors, disabled, className })}>
       {label && (
         <label className={`sf-label${required ? " sf-label--required" : ""}`}>
           {label}
@@ -51,25 +44,7 @@ export function CheckboxGroup({
         </label>
       ))}
 
-      {hints && hints.length > 0 && (
-        <div className="sf-hints">
-          {hints.map((hint, i) => (
-            <p key={i} className="sf-hint">
-              {hint}
-            </p>
-          ))}
-        </div>
-      )}
-
-      {hasErrors && (
-        <div className="sf-errors">
-          {errors.map((err, i) => (
-            <p key={i} className="sf-error">
-              {err}
-            </p>
-          ))}
-        </div>
-      )}
+      <FieldMessages hints={hints} errors={errors} />
     </div>
   );
 }

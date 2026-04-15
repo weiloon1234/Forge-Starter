@@ -5,14 +5,33 @@ A Forge framework starter — multi-portal Rust backend + React frontends. Singl
 ## Commands
 
 ```bash
+make setup        # First-time: generate keys, publish migrations, run migrations
 make dev          # cargo run (HTTP server on :3000)
 make check        # cargo check (fast type-check)
 make build        # cargo build --release
 make api-docs     # Generate docs/api/ (LLM-friendly API reference)
+make types        # Generate TypeScript types from Rust DTOs
 make migrate      # cargo run -- db:migrate
 make routes       # cargo run -- routes:list
 make deploy       # bash scripts/build.sh (Docker build + R2 upload)
 ```
+
+## Config + .env Override
+
+Config files in `config/*.toml` hold **development defaults** (safe to commit). Production overrides via `.env` using double-underscore notation:
+
+```
+config/database.toml:  [database] url = "postgres://..."
+.env override:         DATABASE__URL=postgres://production:...
+
+config/app.toml:       [app] signing_key = "dev-key"
+.env override:         APP__SIGNING_KEY=production-key
+
+config/crypt:          [crypt] key = "dev-key"
+.env override:         CRYPT__KEY=production-key
+```
+
+Every TOML config value is overridable. Nested: `AUTH__TOKENS__ACCESS_TOKEN_TTL_MINUTES=30`.
 
 ## Project Structure
 

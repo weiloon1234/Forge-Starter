@@ -1,6 +1,6 @@
 import { createStore } from "../store/createStore";
 import type { ComponentType } from "react";
-import type { ModalEntry, ModalState } from "./types";
+import type { ModalEntry, ModalOptions, ModalState } from "./types";
 
 let counter = 0;
 
@@ -10,19 +10,20 @@ export const modal = {
   /**
    * Open a modal. Returns the modal ID for targeted close.
    *
-   *   const id = modal.open(ConfirmDialog, { title: "Sure?" });
-   *   modal.close(id);
+   *   modal.open(EditProfile, { name: "Wei" }, { title: "My Profile" });
+   *   modal.open(ConfirmDialog, { message: "Sure?" });
    */
   open<P extends Record<string, any>>(
     component: ComponentType<P & { onClose: () => void }>,
     props?: Omit<P, "onClose">,
-    options?: { onClose?: () => void }
+    options?: ModalOptions
   ): string {
     const id = `modal-${++counter}`;
     const entry: ModalEntry = {
       id,
       component,
       props,
+      title: options?.title,
       onClose: options?.onClose,
     };
     store.setState((prev) => ({

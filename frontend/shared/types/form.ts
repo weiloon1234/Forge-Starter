@@ -25,7 +25,8 @@ export interface FieldBase {
 
 export type InputType =
   | "text" | "email" | "password" | "number"
-  | "tel" | "url" | "search" | "textarea";
+  | "tel" | "url" | "search" | "textarea"
+  | "money" | "atm";
 
 export interface InputProps extends FieldBase {
   type?: InputType;
@@ -149,6 +150,7 @@ export interface DateTimePickerProps extends FieldBase {
 export type FieldType =
   | "text" | "email" | "password" | "number"
   | "tel" | "url" | "search" | "textarea"
+  | "money" | "atm"
   | "select" | "checkbox" | "checkbox-group"
   | "radio" | "file"
   | "date" | "time" | "datetime";
@@ -187,6 +189,56 @@ export interface FieldConfig {
   preview?: boolean;
 }
 
+// ── DataTable ───────────────────────────────────────────
+
+export interface LightboxImage {
+  src: string;
+  title?: string;
+  subtitle?: string;
+}
+
+export interface DataTableColumn<T> {
+  key: keyof T | string;
+  label: string;
+  sortable?: boolean;
+  cellClassName?: string;
+  headerClassName?: string;
+  render?: (row: T) => ReactNode;
+  footer?: (rows: T[]) => ReactNode;
+}
+
+export interface DataTableProps<T> {
+  url: string;
+  title?: string;
+  subtitle?: string;
+  columns: DataTableColumn<T>[];
+  downloadUrl?: string;
+  exportUrl?: string;
+  refreshInterval?: number;
+  defaultPerPage?: number;
+  footerSums?: string[];
+  className?: string;
+}
+
+export interface DataTableSort {
+  field: string;
+  direction: "asc" | "desc";
+}
+
+export interface DataTableFilter {
+  field: string;
+  op: string;
+  value: string | boolean | number | string[];
+}
+
+export interface DataTableMeta {
+  columns: Array<{ name: string; label: string; sortable: boolean; filterable: boolean }>;
+  pagination: { page: number; per_page: number; total: number; total_pages: number };
+  filters: any[];
+  applied_filters: any[];
+  sorts: Array<{ field: string; direction: string }>;
+}
+
 // ── useForm ─────────────────────────────────────────────
 
 export interface UseFormConfig<T extends Record<string, any>> {
@@ -209,6 +261,8 @@ export interface UseFormReturn<T extends Record<string, any>> {
   touched: Partial<Record<keyof T, boolean>>;
   busy: boolean;
   dirty: boolean;
+  /** Errors for fields not present in this form (orphan server errors). Show at top of form. */
+  formErrors: string[];
   field: (name: keyof T) => FieldBinding;
   handleSubmit: (e?: React.FormEvent) => Promise<void>;
   reset: () => void;
@@ -226,3 +280,4 @@ export interface FormBuilderProps<T extends Record<string, any>> {
   submitLabel?: string;
   className?: string;
 }
+
