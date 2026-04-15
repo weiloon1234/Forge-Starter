@@ -26,6 +26,7 @@ export function DataTable<T>({
   footerSums,
   className,
   showIndex = true,
+  refreshRef,
 }: Props<T>) {
   const { t } = useTranslation();
   const {
@@ -34,6 +35,10 @@ export function DataTable<T>({
     setPage, setPerPage, toggleSort, setFilters,
     refresh,
   } = useDataTable<T>({ api, url, defaultPerPage });
+
+  useEffect(() => {
+    if (refreshRef) refreshRef.current = refresh;
+  }, [refresh, refreshRef]);
 
   // ── Auto-refresh ────────────────────────────────────────
 

@@ -5,6 +5,7 @@ use crate::portals::admin::requests::UpdateCountryRequest;
 
 pub async fn update(
     State(app): State<AppContext>,
+    i18n: I18n,
     Path(iso2): Path<String>,
     Validated(req): Validated<UpdateCountryRequest>,
 ) -> Result<impl IntoResponse> {
@@ -13,7 +14,7 @@ pub async fn update(
         .where_(Country::ISO2.eq(iso2.as_str()))
         .first(&*db)
         .await?
-        .ok_or_else(|| Error::not_found("Country not found"))?;
+        .ok_or_else(|| Error::not_found(forge::t!(i18n, "error.not_found")))?;
 
     let mut update = country.update();
     update = update.set(Country::STATUS, req.status.as_str());

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Eye } from "lucide-react";
 import { DataTable } from "@shared/components";
@@ -21,7 +21,7 @@ interface CountryRow {
 
 export function CountryPage() {
   const { t } = useTranslation();
-  const [refreshKey, setRefreshKey] = useState(0);
+  const tableRefresh = useRef<(() => void) | null>(null);
 
   const openEdit = (row: CountryRow) => {
     modal.open(EditCountryModal, {
@@ -31,7 +31,7 @@ export function CountryPage() {
       conversionRate: row.conversion_rate,
     }, {
       title: `${row.flag_emoji ?? ""} ${row.name}`.trim(),
-      onClose: () => setRefreshKey((k) => k + 1),
+      onClose: () => tableRefresh.current?.(),
     });
   };
 
@@ -89,12 +89,12 @@ export function CountryPage() {
 
       <div className="mt-4">
         <DataTable<CountryRow>
-          key={refreshKey}
           api={api}
           url="/datatables/admin.countries/query"
           columns={columns}
           downloadUrl="/datatables/admin.countries/download"
           defaultPerPage={20}
+          refreshRef={tableRefresh}
         />
       </div>
     </div>

@@ -4,9 +4,10 @@ use crate::portals::user::requests::LoginRequest;
 
 pub async fn login(
     State(app): State<AppContext>,
+    i18n: I18n,
     Validated(req): Validated<LoginRequest>,
 ) -> Result<impl IntoResponse> {
-    let tokens = auth_service::login_with_token(&app, &req.email, &req.password).await?;
+    let tokens = auth_service::login_with_token(&app, &i18n, &req.email, &req.password).await?;
     Ok(Json(tokens))
 }
 

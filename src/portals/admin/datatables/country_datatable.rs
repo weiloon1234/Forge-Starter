@@ -22,7 +22,7 @@ impl ModelDatatable for CountryDatatable {
             DatatableColumn::field(Country::REGION).label("Region").sortable().exportable(),
             DatatableColumn::field(Country::CALLING_CODE).label("Calling Code").sortable().exportable(),
             DatatableColumn::field(Country::PRIMARY_CURRENCY_CODE).label("Currency").sortable().filterable().exportable(),
-            DatatableColumn::field(Country::CONVERSION_RATE).label("Conversion Rate").sortable().exportable(),
+            DatatableColumn::field(Country::CONVERSION_RATE).label("Conversion rate").sortable().exportable(),
             DatatableColumn::field(Country::STATUS).label("Status").sortable().filterable().exportable(),
         ]
     }

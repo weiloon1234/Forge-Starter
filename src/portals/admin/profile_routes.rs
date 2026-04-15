@@ -5,12 +5,13 @@ use crate::portals::admin::responses::AdminMeResponse;
 
 pub async fn update_profile(
     State(app): State<AppContext>,
+    i18n: I18n,
     AuthenticatedModel(admin): Auth<Admin>,
     Validated(req): Validated<UpdateAdminProfileRequest>,
 ) -> Result<impl IntoResponse> {
     let hash = app.hash()?;
     if !hash.check(&req.current_password, &admin.password_hash)? {
-        return Err(Error::http(422, "Current password is incorrect"));
+        return Err(Error::http(422, forge::t!(i18n, "auth.invalid_credentials")));
     }
 
     let updated = admin
@@ -39,12 +40,13 @@ pub async fn update_locale(
 
 pub async fn change_password(
     State(app): State<AppContext>,
+    i18n: I18n,
     AuthenticatedModel(admin): Auth<Admin>,
     Validated(req): Validated<ChangeAdminPasswordRequest>,
 ) -> Result<impl IntoResponse> {
     let hash = app.hash()?;
     if !hash.check(&req.current_password, &admin.password_hash)? {
-        return Err(Error::http(422, "Current password is incorrect"));
+        return Err(Error::http(422, forge::t!(i18n, "auth.invalid_credentials")));
     }
 
     admin
@@ -53,5 +55,5 @@ pub async fn change_password(
         .save(&app)
         .await?;
 
-    Ok(Json(serde_json::json!({ "message": "Password changed" })))
+    Ok(Json(serde_json::json!({ "message": "ok" })))
 }

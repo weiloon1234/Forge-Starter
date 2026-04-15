@@ -1,6 +1,7 @@
 use axum::extract::Path;
 use axum::http::Uri;
 use forge::prelude::*;
+use percent_encoding::percent_decode_str;
 
 fn parse_request(uri: &Uri) -> DatatableRequest {
     let query_str = uri.query().unwrap_or("");
@@ -11,8 +12,8 @@ fn parse_request(uri: &Uri) -> DatatableRequest {
     let mut search = None;
 
     for pair in query_str.split('&') {
-        let Some((key, value)) = pair.split_once('=') else { continue };
-        let value = percent_decode(value);
+        let Some((key, raw)) = pair.split_once('=') else { continue };
+        let value = percent_decode_str(raw).decode_utf8_lossy().replace('+', " ");
         match key {
             "page" => { page = value.parse().unwrap_or(1); }
             "per_page" => { per_page = value.parse().unwrap_or(20); }
@@ -26,33 +27,9 @@ fn parse_request(uri: &Uri) -> DatatableRequest {
     DatatableRequest { page, per_page, sort, filters, search }
 }
 
-fn percent_decode(s: &str) -> String {
-    let mut result = Vec::new();
-    let bytes = s.as_bytes();
-    let mut i = 0;
-    while i < bytes.len() {
-        if bytes[i] == b'%' && i + 2 < bytes.len() {
-            if let Ok(byte) = u8::from_str_radix(
-                std::str::from_utf8(&bytes[i + 1..i + 3]).unwrap_or(""),
-                16,
-            ) {
-                result.push(byte);
-                i += 3;
-                continue;
-            }
-        } else if bytes[i] == b'+' {
-            result.push(b' ');
-            i += 1;
-            continue;
-        }
-        result.push(bytes[i]);
-        i += 1;
-    }
-    String::from_utf8(result).unwrap_or_default()
-}
-
 pub async fn query(
     State(app): State<AppContext>,
+    i18n: I18n,
     CurrentActor(actor): CurrentActor,
     Path(id): Path<String>,
     uri: Uri,
@@ -60,12 +37,13 @@ pub async fn query(
     let request = parse_request(&uri);
     let registry = app.datatables()?;
     let dt = registry.get(&id)
-        .ok_or_else(|| Error::not_found("datatable not found"))?;
+        .ok_or_else(|| Error::not_found(forge::t!(i18n, "error.not_found")))?;
     Ok(Json(dt.json(&app, Some(&actor), request).await?))
 }
 
 pub async fn download(
     State(app): State<AppContext>,
+    i18n: I18n,
     CurrentActor(actor): CurrentActor,
     Path(id): Path<String>,
     uri: Uri,
@@ -73,6 +51,6 @@ pub async fn download(
     let request = parse_request(&uri);
     let registry = app.datatables()?;
     let dt = registry.get(&id)
-        .ok_or_else(|| Error::not_found("datatable not found"))?;
+        .ok_or_else(|| Error::not_found(forge::t!(i18n, "error.not_found")))?;
     dt.download(&app, Some(&actor), request).await
 }

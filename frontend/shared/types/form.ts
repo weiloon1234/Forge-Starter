@@ -220,6 +220,7 @@ export interface DataTableProps<T> {
   footerSums?: string[];
   className?: string;
   showIndex?: boolean;
+  refreshRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 export interface DataTableSort {

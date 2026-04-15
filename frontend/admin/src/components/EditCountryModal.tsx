@@ -46,7 +46,7 @@ export function EditCountryModal({ iso2, status, conversionRate, onClose }: Edit
         <Input
           {...form.field("conversion_rate")}
           type="number"
-          label={t("Conversion Rate")}
+          label={t("Conversion rate")}
           placeholder="0.00"
         />
       </ModalBody>

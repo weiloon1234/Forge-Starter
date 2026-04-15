@@ -6,9 +6,10 @@ use crate::portals::admin::responses::AdminMeResponse;
 
 pub async fn login(
     State(app): State<AppContext>,
+    i18n: I18n,
     Validated(req): Validated<AdminLoginRequest>,
 ) -> Result<impl IntoResponse> {
-    let tokens = auth_service::admin_login_with_token(&app, &req.username, &req.password).await?;
+    let tokens = auth_service::admin_login_with_token(&app, &i18n, &req.username, &req.password).await?;
     Ok(Json(tokens))
 }
 
