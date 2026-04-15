@@ -1,5 +1,5 @@
-import { createStore, useStore } from "../store/createStore";
-import { getCookie, setCookie } from "../utils/cookie";
+import { createStore, useStore } from "@shared/store/createStore";
+import { getCookie, setCookie } from "@shared/utils/cookie";
 
 const COOKIE_NAME = "locale";
 

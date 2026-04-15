@@ -1,15 +1,14 @@
 use serde::Serialize;
-use ts_rs::TS;
 
 /// Simple message response (login success, logout, etc.).
-#[derive(Serialize, TS, forge::ApiSchema)]
+#[derive(Serialize, ts_rs::TS, forge::ApiSchema)]
 #[ts(export)]
 pub struct MessageResponse {
     pub message: String,
 }
 
 /// Forge API error response shape (422 validation, 4xx/5xx errors).
-#[derive(Serialize, TS)]
+#[derive(Serialize, ts_rs::TS, forge::TS)]
 #[ts(export)]
 pub struct ApiError {
     pub message: String,
@@ -21,7 +20,7 @@ pub struct ApiError {
 }
 
 /// Individual field validation error.
-#[derive(Serialize, TS)]
+#[derive(Serialize, ts_rs::TS, forge::TS)]
 #[ts(export)]
 pub struct FieldError {
     pub field: String,
@@ -29,19 +28,8 @@ pub struct FieldError {
     pub message: String,
 }
 
-/// Token pair response from Forge auth.
-#[derive(Serialize, TS, forge::ApiSchema)]
-#[ts(export)]
-pub struct TokenPair {
-    pub access_token: String,
-    pub refresh_token: String,
-    #[ts(type = "number")]
-    pub expires_in: u64,
-    pub token_type: String,
-}
-
 /// Pagination metadata.
-#[derive(Serialize, TS)]
+#[derive(Serialize, ts_rs::TS, forge::TS)]
 #[ts(export)]
 pub struct PaginationMeta {
     #[ts(type = "number")]
@@ -55,7 +43,7 @@ pub struct PaginationMeta {
 }
 
 /// Datatable query response.
-#[derive(Serialize, TS)]
+#[derive(Serialize, ts_rs::TS, forge::TS)]
 #[ts(export)]
 pub struct DatatableResponse {
     #[ts(type = "Record<string, any>[]")]
@@ -71,7 +59,7 @@ pub struct DatatableResponse {
 }
 
 /// Datatable column metadata.
-#[derive(Serialize, TS)]
+#[derive(Serialize, ts_rs::TS, forge::TS)]
 #[ts(export)]
 pub struct DatatableColumnResponse {
     pub name: String,
@@ -81,7 +69,7 @@ pub struct DatatableColumnResponse {
 }
 
 /// Datatable pagination metadata.
-#[derive(Serialize, TS)]
+#[derive(Serialize, ts_rs::TS, forge::TS)]
 #[ts(export)]
 pub struct DatatablePaginationResponse {
     #[ts(type = "number")]

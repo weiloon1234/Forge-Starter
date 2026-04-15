@@ -1,6 +1,6 @@
 import type { AxiosError } from "axios";
-import { createStore, useStore } from "../store/createStore";
-import { setToken, getToken } from "../api/createApi";
+import { createStore, useStore } from "@shared/store/createStore";
+import { setToken, getToken } from "@shared/api/createApi";
 import type { AuthConfig, AuthState, AuthActor } from "./types";
 
 interface TokenPairResponse {

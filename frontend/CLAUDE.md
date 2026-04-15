@@ -36,9 +36,14 @@
 | Need | Use | Import |
 |------|-----|--------|
 | Form state + validation + submit | `useForm()` | `@shared/hooks` |
-| Open a modal from anywhere | `modal.open(Component, props)` | `@shared/modal` |
+| Open a modal | `modal.open(Component, props, { title })` | `@shared/modal` |
+| Modal body wrapper | `<ModalBody>` | `@shared/modal` |
+| Modal footer wrapper | `<ModalFooter>` | `@shared/modal` |
 | Close modal | `modal.close()` / `modal.closeAll()` | `@shared/modal` |
 | Render modal stack (once in App.tsx) | `<ModalProvider />` | `@shared/modal` |
+| Runtime config (app_url, ws_url, etc.) | `getConfig()` | `@shared/config` |
+| Locale display labels | `LOCALE_LABELS` | `@shared/i18n` |
+| WebSocket manager | `createWebSocket(config)` | `@shared/websocket` |
 | Toast notification | `toast.success()` / `toast.error()` | `sonner` |
 | Render toasts (once in App.tsx) | `<Toaster />` | `sonner` |
 | API calls (per-portal instance) | `api.get/post/put/patch/delete` | `@/api` |
@@ -58,6 +63,32 @@
 ## When to Use What
 
 **Modal** — for any content that overlays the page: confirm dialogs, edit forms, detail views. Use `modal.open()` from event handlers, not JSX. Every modal gets an overlay automatically.
+
+Modal structure: `modal.open(Component, props, { title: "..." })` renders a header (title + close) automatically. The component uses `<ModalBody>` and `<ModalFooter>` wrappers:
+
+```tsx
+import { ModalBody, ModalFooter } from "@shared/modal";
+
+function EditModal({ name, onClose }) {
+  const form = useForm({ initialValues: { name }, onSubmit: async (v) => { ... } });
+  return (
+    <>
+      <ModalBody>
+        <Input {...form.field("name")} label="Name" />
+      </ModalBody>
+      <ModalFooter>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button busy={form.busy} onClick={form.handleSubmit}>Save</Button>
+      </ModalFooter>
+    </>
+  );
+}
+
+// Open it:
+modal.open(EditModal, { name: "Wei" }, { title: "Edit Profile" });
+```
+
+No `<form>` element needed — call `form.handleSubmit` directly on button click. Header is fixed top, footer fixed bottom, body scrolls.
 
 **Lightbox** — specifically for viewing images. Use when clicking a thumbnail should show the full image. Supports image lists with arrow navigation.
 
@@ -125,10 +156,12 @@ frontend/
 │   ├── components/          ← UI components + FieldMessages helper
 │   ├── hooks/               ← useForm, useDebounce, useDataTable, useInfiniteScroll
 │   ├── store/               ← createStore, useStore
-│   ├── modal/               ← modal.open/close, ModalProvider
+│   ├── modal/               ← modal.open/close, ModalProvider, ModalBody, ModalFooter
 │   ├── auth/                ← createAuth factory
-│   ├── api/                 ← createApi factory
-│   ├── i18n/                ← initI18n, localeStore, useLocale
+│   ├── api/                 ← createApi factory (sends Accept-Language)
+│   ├── i18n/                ← initI18n, localeStore, useLocale, LOCALE_LABELS
+│   ├── websocket/           ← createWebSocket factory (token auth, auto-reconnect)
+│   ├── config/              ← getConfig() — reads window.__APP_CONFIG__ from SPA bootstrap
 │   ├── utils/               ← cookie helpers, shared utilities
 │   ├── styles/forms.css     ← SSOT base sf-* classes (imported by portals)
 │   ├── types/

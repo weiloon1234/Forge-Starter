@@ -1,4 +1,4 @@
-import type { FormBuilderProps } from "../types/form";
+import type { FormBuilderProps } from "@shared/types/form";
 import { FormField } from "./FormField";
 
 export function FormBuilder<T extends Record<string, any>>({

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
-import type { LightboxImage } from "../types/form";
+import type { LightboxImage } from "@shared/types/form";
 
 interface LightboxProps {
   open: boolean;

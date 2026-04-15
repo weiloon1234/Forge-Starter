@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import axios from "axios";
 import { toast } from "sonner";
-import type { UseFormConfig, UseFormReturn, FieldBinding } from "../types/form";
+import type { UseFormConfig, UseFormReturn, FieldBinding } from "@shared/types/form";
 
 export function useForm<T extends Record<string, any>>(
   config: UseFormConfig<T>

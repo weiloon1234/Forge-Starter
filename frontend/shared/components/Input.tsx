@@ -1,4 +1,4 @@
-import type { InputProps } from "../types/form";
+import type { InputProps } from "@shared/types/form";
 import { FieldMessages, fieldClasses } from "./FieldMessages";
 
 // ── Money: digits + max one decimal point ───────────────
@@ -37,6 +37,7 @@ export function Input({
   onChange,
   onFocus,
   onBlur,
+  onKeyDown,
   onPrefocus,
   placeholder,
   label,
@@ -115,6 +116,7 @@ export function Input({
           onChange={handleChange}
           onFocus={onFocus}
           onBlur={onBlur}
+          onKeyDown={onKeyDown}
           onMouseDown={handleMouseDown}
           onTouchStart={handleMouseDown}
           placeholder={placeholder}
@@ -137,7 +139,7 @@ export function Input({
             value={value}
             defaultValue={defaultValue}
             onChange={handleChange}
-            onKeyDown={handleKeyDown}
+            onKeyDown={handleKeyDown ?? onKeyDown}
             onFocus={onFocus}
             onBlur={onBlur}
             onMouseDown={handleMouseDown}

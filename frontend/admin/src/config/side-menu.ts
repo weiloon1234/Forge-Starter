@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, Users, Settings } from "lucide-react";
+import { LayoutDashboard, Users, MoreHorizontal, Settings } from "lucide-react";
 
 export type MenuItem = {
   key: string;
@@ -34,6 +34,18 @@ export const sideMenu: MenuItem[] = [
         label: "Admins",
         path: "/users/admins",
         permission: "admins.view",
+      },
+    ],
+  },
+  {
+    key: "other",
+    label: "Other",
+    icon: MoreHorizontal,
+    children: [
+      {
+        key: "other.countries",
+        label: "Countries",
+        path: "/countries",
       },
     ],
   },

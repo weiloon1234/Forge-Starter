@@ -3,7 +3,6 @@ use crate::ids::guards::Guard;
 use crate::ids::permissions::Permission;
 use crate::portals::user::requests::{LoginRequest, UpdateProfileRequest};
 use crate::portals::user::responses::UserResponse;
-use crate::types::TokenPair;
 
 pub mod auth_routes;
 pub mod datatables;

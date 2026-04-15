@@ -1,4 +1,4 @@
-import type { ButtonProps } from "../types/form";
+import type { ButtonProps } from "@shared/types/form";
 
 export function Button({
   children,

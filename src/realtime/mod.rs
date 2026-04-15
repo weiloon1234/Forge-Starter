@@ -10,5 +10,13 @@ pub fn register(registrar: &mut WebSocketRegistrar) -> Result<()> {
         WebSocketChannelOptions::new().guard(ids::guards::Guard::User),
     )?;
 
+    registrar.channel_with_options(
+        ids::channels::ADMIN_PRESENCE,
+        |_context: WebSocketContext, _payload: serde_json::Value| async move { Ok(()) },
+        WebSocketChannelOptions::new()
+            .guard(ids::guards::Guard::Admin)
+            .presence(true),
+    )?;
+
     Ok(())
 }

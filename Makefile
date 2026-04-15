@@ -16,7 +16,7 @@ help:
 	@echo "  make dev:admin    Admin frontend only (:5173)"
 	@echo "  make dev:user     User frontend only (:5174)"
 	@echo ""
-	@echo "  make build        Build release binary"
+	@echo "  make build        Build release binary + frontends"
 	@echo "  make check        Type-check without building"
 	@echo "  make api-docs     Generate API docs at docs/api/"
 	@echo "  make types        Generate TypeScript types from Rust DTOs"
@@ -34,13 +34,15 @@ setup:
 	PROCESS=cli cargo run -- db:migrate
 	@echo "Setup complete. Run 'make dev' to start."
 
-# Start everything — backend + all frontend portals (single terminal, Ctrl+C kills all)
-dev:
-	@echo "Starting backend (:3000) + admin (:5173) + user (:5174)..."
+# Start everything — generate types, then all processes + frontend portals
+dev: types
+	@echo "Starting backend (:3000) + websocket (:3010) + scheduler + admin (:5173) + user (:5174)..."
 	@echo "Visit http://localhost:5173/admin/ or http://localhost:5174/"
 	@trap 'kill 0' EXIT; \
 	(cd frontend/admin && exec npm run dev) & \
 	(cd frontend/user && exec npm run dev) & \
+	(PROCESS=websocket exec cargo run) & \
+	(PROCESS=scheduler exec cargo run) & \
 	cargo run
 
 # Backend API only
@@ -54,8 +56,10 @@ dev\:admin:
 dev\:user:
 	cd frontend/user && npm run dev
 
-# Release build
-build:
+# Release build — generate types, build frontends, then Rust binary
+build: types
+	cd frontend/admin && npm run build
+	cd frontend/user && npm run build
 	cargo build --release
 
 # Type-check only (fast)
@@ -67,15 +71,10 @@ check:
 api-docs:
 	cargo run -- docs:api
 
-# Generate TypeScript types from Rust DTOs
+# Generate TypeScript types (auto-discovered from ApiSchema + AppEnum + forge::TS derives)
 # Output: frontend/shared/types/generated/*.ts
 types:
-	TS_RS_EXPORT_DIR="$$(pwd)/frontend/shared/types/generated" cargo test export_typescript_bindings -- --nocapture
-	@echo "// Auto-generated barrel. Do not edit." > frontend/shared/types/generated/index.ts
-	@ls frontend/shared/types/generated/*.ts | grep -v index.ts | sed 's|.*/||;s|\.ts$$||' | while read name; do \
-		echo "export type { $$name } from \"./$$name\";" >> frontend/shared/types/generated/index.ts; \
-	done
-	@echo "TypeScript types generated at frontend/shared/types/generated/"
+	@PROCESS=cli cargo run -- types:export
 
 # Database migrations
 migrate:

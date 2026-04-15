@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useStore } from "../store/createStore";
+import { useStore } from "@shared/store/createStore";
 import { modalStore, modal } from "./store";
 import { X } from "lucide-react";
 

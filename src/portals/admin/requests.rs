@@ -127,6 +127,33 @@ impl FromMultipart for ChangeAdminPasswordRequest {
 
 #[derive(Debug, Deserialize, ts_rs::TS, forge::ApiSchema)]
 #[ts(export)]
+pub struct RefreshTokenRequest {
+    pub refresh_token: String,
+}
+
+#[async_trait]
+impl RequestValidator for RefreshTokenRequest {
+    async fn validate(&self, validator: &mut Validator) -> Result<()> {
+        validator
+            .field("refresh_token", &self.refresh_token)
+            .bail()
+            .required()
+            .apply()
+            .await?;
+
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl FromMultipart for RefreshTokenRequest {
+    async fn from_multipart(_multipart: &mut axum::extract::Multipart) -> Result<Self> {
+        Err(Error::http(415, "multipart not supported"))
+    }
+}
+
+#[derive(Debug, Deserialize, ts_rs::TS, forge::ApiSchema)]
+#[ts(export)]
 pub struct UpdateAdminLocaleRequest {
     pub locale: String,
 }
@@ -148,6 +175,35 @@ impl RequestValidator for UpdateAdminLocaleRequest {
 
 #[async_trait]
 impl FromMultipart for UpdateAdminLocaleRequest {
+    async fn from_multipart(_multipart: &mut axum::extract::Multipart) -> Result<Self> {
+        Err(Error::http(415, "multipart not supported"))
+    }
+}
+
+#[derive(Debug, Deserialize, ts_rs::TS, forge::ApiSchema)]
+#[ts(export)]
+pub struct UpdateCountryRequest {
+    pub status: String,
+    pub conversion_rate: Option<f64>,
+}
+
+#[async_trait]
+impl RequestValidator for UpdateCountryRequest {
+    async fn validate(&self, validator: &mut Validator) -> Result<()> {
+        validator
+            .field("status", &self.status)
+            .bail()
+            .required()
+            .in_list(["enabled", "disabled"])
+            .apply()
+            .await?;
+
+        Ok(())
+    }
+}
+
+#[async_trait]
+impl FromMultipart for UpdateCountryRequest {
     async fn from_multipart(_multipart: &mut axum::extract::Multipart) -> Result<Self> {
         Err(Error::http(415, "multipart not supported"))
     }

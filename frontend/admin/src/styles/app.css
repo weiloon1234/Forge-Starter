@@ -1,6 +1,24 @@
 @import "tailwindcss";
 @import "./forms.css";
 
+/* ── Inter Variable Font ─────────────────────────────── */
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../assets/fonts/InterVariable.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../assets/fonts/InterVariable-Italic.woff2") format("woff2");
+}
+
 @theme {
   --color-primary: #334155;
   --color-primary-hover: #1e293b;
@@ -33,7 +51,7 @@
 }
 
 body {
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
   color: var(--color-text);
   background: var(--color-bg-muted);
 }
@@ -323,6 +341,32 @@ body {
   @apply flex-1;
 }
 
+/* ── WebSocket Status ────────────────────────────────── */
+
+.sf-ws-status {
+  @apply w-2 h-2 rounded-full flex-shrink-0;
+  background: var(--color-border);
+  transition: background 300ms ease;
+}
+
+.sf-ws-status--connected {
+  background: var(--color-success);
+}
+
+.sf-ws-status--connecting {
+  background: var(--color-warning);
+  animation: sf-ws-pulse 1.5s ease-in-out infinite;
+}
+
+.sf-ws-status--disconnected {
+  background: var(--color-border);
+}
+
+@keyframes sf-ws-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
 /* ── Account Dropdown ────────────────────────────────── */
 
 .sf-account {
@@ -493,4 +537,31 @@ body {
 .sf-status-desc {
   @apply text-sm mt-2 mb-6 max-w-sm;
   color: var(--color-text-muted);
+}
+
+/* ── Status Badge ────────────────────────────────────── */
+
+.sf-status-badge {
+  @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border-none cursor-pointer;
+  transition: background 150ms ease;
+}
+
+.sf-status-badge--enabled {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.sf-status-badge--enabled:hover {
+  background: var(--color-success);
+  color: white;
+}
+
+.sf-status-badge--disabled {
+  background: var(--color-bg-muted);
+  color: var(--color-text-muted);
+}
+
+.sf-status-badge--disabled:hover {
+  background: var(--color-success-light);
+  color: var(--color-success);
 }

@@ -19,6 +19,18 @@
     "login_brand_desc": "Secure administration panel. Sign in with your credentials to manage the system.",
     "login_subtitle": "Enter your credentials to continue",
 
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "Conversion Rate": "Conversion Rate",
+    "Country updated": "Country updated",
+    "countries_subtitle": "Manage country status and conversion rates",
+
+    "refresh_in": "Refresh in {{seconds}}s",
+    "auto_refresh_every": "Auto refresh every {{seconds}}s",
+    "pagination_info": "Page {{page}} of {{totalPages}} ({{total}} rows)",
+    "No data": "No data",
+    "page": "page",
+
     "page_not_found_desc": "The page you're looking for doesn't exist or has been moved.",
     "error_page_desc": "An unexpected error occurred. Please try again.",
     "Back to dashboard": "Back to dashboard",

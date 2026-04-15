@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { DayPicker } from "react-day-picker";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
-import type { DatePickerProps } from "../types/form";
+import type { DatePickerProps } from "@shared/types/form";
 import { FieldMessages, fieldClasses } from "./FieldMessages";
 
 function formatDate(date: Date | null | undefined): string {

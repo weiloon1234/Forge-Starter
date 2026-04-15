@@ -1,4 +1,4 @@
-import { createStore } from "../store/createStore";
+import { createStore } from "@shared/store/createStore";
 import type { ComponentType } from "react";
 import type { ModalEntry, ModalOptions, ModalState } from "./types";
 

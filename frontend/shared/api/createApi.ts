@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance, type AxiosError } from "axios";
 import { toast } from "sonner";
-import { localeStore } from "../i18n/localeStore";
+import { localeStore } from "@shared/i18n/localeStore";
 
 // ── Types ──────────────────────────────────────────────
 

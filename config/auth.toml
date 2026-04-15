@@ -5,7 +5,7 @@ default_guard = "user"
 driver = "token"
 
 [auth.guards.admin]
-driver = "session"
+driver = "token"
 
 [auth.tokens]
 access_token_ttl_minutes = 15

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import type { FileUploadProps } from "../types/form";
+import type { FileUploadProps } from "@shared/types/form";
 import { FieldMessages, fieldClasses } from "./FieldMessages";
 
 function formatBytes(bytes: number): string {

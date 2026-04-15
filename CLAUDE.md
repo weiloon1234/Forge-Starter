@@ -43,8 +43,8 @@ src/
 ├── ids/                     # Typed ID constants (guards, permissions, jobs, schedules, channels)
 ├── providers/               # ServiceProvider — DI registration (auth, jobs, events)
 ├── portals/                 # HTTP routes — THIN handlers only (~5 lines each)
-│   ├── admin/               # Session auth: /admin/*
-│   └── user/                # Token auth: /api/v1/*
+│   ├── admin/               # Token auth: /api/v1/admin/*
+│   └── user/                # Token auth: /api/v1/user/*
 ├── domain/
 │   ├── models/              # #[derive(forge::Model)] + Authenticatable
 │   ├── services/            # Business logic lives HERE (portal-less)
@@ -90,6 +90,69 @@ src/
 1. `src/domain/events/` — impl `Event` trait
 2. `src/domain/events/listeners/` — impl `EventListener`
 3. Register: `registrar.listen_event::<E, _>(Listener)` in event provider
+
+## Runtime Config (SPA Bootstrap)
+
+The SPA handler (`src/portals/spa.rs`) injects `window.__APP_CONFIG__` into the HTML served to browsers. Available synchronously before React mounts — no API call needed.
+
+**Backend** — `runtime_config()` in `spa.rs` builds JSON from `AppContext`:
+```rust
+// Fields: app_url, ws_url, locales, default_locale
+// Extend here when adding new runtime config
+fn runtime_config(app: &AppContext) -> String { ... }
+```
+
+**Frontend** — typed accessor at `@shared/config`:
+```ts
+import { getConfig } from "@shared/config";
+const config = getConfig(); // { app_url, ws_url, locales, default_locale }
+```
+
+To add new config: add field to `runtime_config()` in `spa.rs` + `AppConfig` interface in `frontend/shared/config/index.ts`.
+
+## WebSocket
+
+WebSocket runs as a separate process on port 3010 (`PROCESS=websocket cargo run`). Config in `config/websocket.toml`.
+
+**Channels** are registered in `src/realtime/mod.rs`. Channel IDs in `src/ids/channels.rs`.
+
+**Auth**: Browser WebSocket API can't set headers. Token is passed via query param: `ws://host:3010/ws?token=xxx`. The framework extracts it automatically.
+
+**Token exchange**: Authenticated portals call `POST /auth/ws-token` to get a short-lived PAT for the WebSocket connection.
+
+**Frontend client** at `@shared/websocket`:
+```ts
+import { createWebSocket } from "@shared/websocket";
+
+const ws = createWebSocket({
+  url: config.ws_url,
+  getToken: async () => { /* fetch ws-token from API */ },
+});
+
+ws.connect();
+ws.subscribe("admin:presence");
+ws.on("admin:presence", "presence:join", (payload) => { ... });
+ws.useStatus(); // "connected" | "connecting" | "disconnected"
+```
+
+**Adding a new channel:**
+1. `src/ids/channels.rs` — add `ChannelId` constant
+2. `src/realtime/mod.rs` — register with `registrar.channel_with_options(...)`
+3. Frontend — `ws.subscribe("channel-name")` + `ws.on(...)` listeners
+
+## Custom Validation Rules
+
+Custom rules are registered in `src/bootstrap/app.rs`. Rule IDs in `src/ids/validation.rs`. Rules in `src/validation/rules.rs`.
+
+**Adding a new rule:**
+1. `src/validation/rules.rs` — struct implementing `ValidationRule` trait
+2. `src/ids/validation.rs` — add `ValidationRuleId` constant
+3. `src/validation/mod.rs` — export the struct
+4. `src/bootstrap/app.rs` — `.register_validation_rule(id, Rule)`
+5. `locales/*/validation.json` — add `validation.{code}` translation keys
+6. Usage: `.rule(ids::validation::MY_RULE)` in request validators
+
+Error codes from custom rules are translated via `validation.{code}` in locale files (same as built-in rules).
 
 ## Forge Framework API
 

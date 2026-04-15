@@ -1,9 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import type { AxiosInstance } from "axios";
 import { ChevronUp, ChevronDown, Download, RefreshCw, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from "lucide-react";
-import { useDataTable, serializeSorts } from "../hooks/useDataTable";
-import { getCookie, setCookie } from "../hooks/useDataTable";
-import type { DataTableProps, DataTableColumn, DataTableFilter } from "../types/form";
+import { useDataTable, serializeSorts } from "@shared/hooks/useDataTable";
+import { getCookie, setCookie } from "@shared/utils/cookie";
+import { Button } from "./Button";
+import { Input } from "./Input";
+import { Select } from "./Select";
+import { Checkbox } from "./Checkbox";
+import type { DataTableProps, DataTableColumn, DataTableFilter } from "@shared/types/form";
 
 interface Props<T> extends DataTableProps<T> {
   api: AxiosInstance;
@@ -16,12 +21,13 @@ export function DataTable<T>({
   subtitle,
   columns,
   downloadUrl,
-  exportUrl,
   refreshInterval,
   defaultPerPage = 20,
   footerSums,
   className,
+  showIndex = true,
 }: Props<T>) {
+  const { t } = useTranslation();
   const {
     rows, meta, loading, error,
     page, perPage, sorts, filters,
@@ -31,43 +37,37 @@ export function DataTable<T>({
 
   // ── Auto-refresh ────────────────────────────────────────
 
+  const interval = refreshInterval || 60;
   const cookieKey = `dt_autorefresh_${url}`;
   const [autoRefresh, setAutoRefresh] = useState(() => getCookie(cookieKey) === "1");
+  const [countdown, setCountdown] = useState(interval);
 
   useEffect(() => {
     setCookie(cookieKey, autoRefresh ? "1" : "0");
-    if (!autoRefresh || !refreshInterval) return;
-    const timer = setInterval(refresh, refreshInterval * 1000);
+    if (!autoRefresh) {
+      setCountdown(interval);
+      return;
+    }
+
+    setCountdown(interval);
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          refresh();
+          return interval;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
     return () => clearInterval(timer);
-  }, [autoRefresh, refreshInterval, refresh, cookieKey]);
+  }, [autoRefresh, interval, refresh, cookieKey]);
 
   // ── Filter state (local inputs before applying) ─────────
 
   const [filterValues, setFilterValues] = useState<Record<string, any>>({});
-
-  useEffect(() => {
-    if (!meta?.applied_filters) return;
-    const applied: Record<string, any> = {};
-    for (const af of meta.applied_filters) {
-      applied[af.field] = af.value;
-    }
-    setFilterValues(applied);
-  }, [meta?.applied_filters]);
-
-  const applyFilterChange = useCallback((field: string, value: any) => {
-    setFilterValues((prev) => {
-      const next = { ...prev, [field]: value };
-      const active: DataTableFilter[] = [];
-      for (const [f, v] of Object.entries(next)) {
-        if (v === "" || v === null || v === undefined) continue;
-        if (Array.isArray(v) && v.length === 0) continue;
-        active.push({ field: f, op: typeof v === "boolean" ? "Eq" : "Like", value: v });
-      }
-      setFilters(active);
-      return next;
-    });
-    setPage(1);
-  }, [setFilters, setPage]);
+  const filterValuesRef = useRef(filterValues);
+  useEffect(() => { filterValuesRef.current = filterValues; }, [filterValues]);
 
   // ── Download ────────────────────────────────────────────
 
@@ -118,59 +118,71 @@ export function DataTable<T>({
 
   // ── Render filters ─────────────────────────────────────
 
-  // Filter inputs use native elements intentionally — these are internal to the
-  // DataTable component, not page-level form fields. Shared form components
-  // (Input, Select, Checkbox) carry labels, margins, and field wrappers that
-  // don't fit inline filter cells in a table header.
-  const renderFilter = (filter: any) => {
-    const value = filterValues[filter.field] ?? "";
-
-    if (filter.kind === "select" || filter.options) {
-      return (
-        <div key={filter.field} className="sf-datatable-filter">
-          <label className="sf-datatable-filter-label">{filter.label}</label>
-          <select
-            className="sf-datatable-filter-select"
-            value={value}
-            onChange={(e) => applyFilterChange(filter.field, e.target.value)}
-          >
-            <option value="">All</option>
-            {(filter.options ?? []).map((opt: any) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
-      );
+  const applyAllFilters = useCallback(() => {
+    const active: DataTableFilter[] = [];
+    for (const [f, v] of Object.entries(filterValuesRef.current)) {
+      if (v === "" || v === null || v === undefined) continue;
+      if (Array.isArray(v) && v.length === 0) continue;
+      const op = typeof v === "boolean" ? "eq" : f.includes("|") ? "like_any" : "like";
+      const taggedValue = typeof v === "boolean" ? { bool: v }
+        : Array.isArray(v) ? { values: v }
+        : { text: String(v) };
+      active.push({ field: f, op, value: taggedValue });
     }
+    setFilters(active);
+    setPage(1);
+  }, [setFilters, setPage]);
 
-    if (filter.kind === "checkbox" || filter.kind === "boolean") {
+  const resetFilters = useCallback(() => {
+    setFilterValues({});
+    setFilters([]);
+    setPage(1);
+  }, [setFilters, setPage]);
+
+  const renderFilterField = (f: any) => {
+    const value = filterValues[f.name] ?? "";
+
+    if (f.kind === "select") {
+      const items = Array.isArray(f.options) ? f.options : f.options?.items ?? [];
+      const options = items.map((opt: any) => ({
+        value: opt.value,
+        label: t(opt.label),
+      }));
       return (
-        <div key={filter.field} className="sf-datatable-filter">
-          <label className="sf-datatable-filter-label">
-            <input
-              type="checkbox"
-              checked={!!value}
-              onChange={(e) => applyFilterChange(filter.field, e.target.checked)}
-            />
-            {" "}{filter.label}
-          </label>
-        </div>
-      );
-    }
-
-    // Default: text input (applies on Enter)
-    return (
-      <div key={filter.field} className="sf-datatable-filter">
-        <label className="sf-datatable-filter-label">{filter.label}</label>
-        <input
-          type="text"
-          className="sf-datatable-filter-input"
+        <Select
+          key={f.name}
+          name={f.name}
+          label={t(f.label)}
           value={value}
-          placeholder={filter.placeholder ?? ""}
-          onChange={(e) => setFilterValues(prev => ({ ...prev, [filter.field]: e.target.value }))}
-          onKeyDown={(e) => { if (e.key === "Enter") applyFilterChange(filter.field, (e.target as HTMLInputElement).value); }}
+          options={options}
+          placeholder={t("All")}
+          clearable
+          onChange={(v) => setFilterValues(prev => ({ ...prev, [f.name]: v }))}
         />
-      </div>
+      );
+    }
+
+    if (f.kind === "checkbox" || f.kind === "boolean") {
+      return (
+        <Checkbox
+          key={f.name}
+          name={f.name}
+          label={t(f.label)}
+          checked={!!value}
+          onChange={(v) => setFilterValues(prev => ({ ...prev, [f.name]: v }))}
+        />
+      );
+    }
+
+    return (
+      <Input
+        key={f.name}
+        name={f.name}
+        label={t(f.label)}
+        value={value}
+        placeholder={f.placeholder ? t(f.placeholder) : ""}
+        onChange={(v) => setFilterValues(prev => ({ ...prev, [f.name]: v }))}
+      />
     );
   };
 
@@ -186,16 +198,15 @@ export function DataTable<T>({
             {subtitle && <p className="sf-datatable-subtitle">{subtitle}</p>}
           </div>
           <div className="sf-datatable-controls">
-            {refreshInterval && (
-              <label className="sf-datatable-autorefresh">
-                <input
-                  type="checkbox"
-                  checked={autoRefresh}
-                  onChange={(e) => setAutoRefresh(e.target.checked)}
-                />
-                {" "}Auto-refresh
-              </label>
-            )}
+            <label className="sf-datatable-autorefresh">
+              <input
+                type="checkbox"
+                className="sf-checkbox-input"
+                checked={autoRefresh}
+                onChange={(e) => setAutoRefresh(e.target.checked)}
+              />
+              {autoRefresh ? ` ${t("refresh_in", { seconds: countdown })}` : ` ${t("auto_refresh_every", { seconds: interval })}`}
+            </label>
             {downloadUrl && (
               <button className="sf-datatable-download" onClick={handleDownload} type="button">
                 <Download size={16} />
@@ -206,8 +217,8 @@ export function DataTable<T>({
               value={perPage}
               onChange={(e) => setPerPage(Number(e.target.value))}
             >
-              {[10, 20, 50, 100].map(n => (
-                <option key={n} value={n}>{n} / page</option>
+              {[10, 20, 50, 100, 300, 500, 1000].map(n => (
+                <option key={n} value={n}>{n} / {t("page")}</option>
               ))}
             </select>
           </div>
@@ -217,7 +228,19 @@ export function DataTable<T>({
       {/* Filters */}
       {meta && meta.filters.length > 0 && (
         <div className="sf-datatable-filters">
-          {meta.filters.map(renderFilter)}
+          {meta.filters.map((row: any, ri: number) => (
+            <div key={ri} className="sf-datatable-filter-row">
+              {(row.fields ?? [row]).map(renderFilterField)}
+            </div>
+          ))}
+          <div className="sf-datatable-filter-actions">
+            <Button variant="primary" size="sm" onClick={applyAllFilters}>
+              {t("Search")}
+            </Button>
+            <Button variant="secondary" size="sm" onClick={resetFilters}>
+              {t("Reset")}
+            </Button>
+          </div>
         </div>
       )}
 
@@ -231,6 +254,7 @@ export function DataTable<T>({
         <table className="sf-datatable-table">
           <thead className="sf-datatable-thead">
             <tr>
+              {showIndex && <th className="sf-datatable-th sf-datatable-th--index">#</th>}
               {columns.map((col) => {
                 const key = String(col.key);
                 const dir = getSortDirection(key);
@@ -263,13 +287,18 @@ export function DataTable<T>({
           <tbody className="sf-datatable-tbody">
             {rows.length === 0 && !loading ? (
               <tr>
-                <td className="sf-datatable-empty" colSpan={columns.length}>
-                  No data
+                <td className="sf-datatable-empty" colSpan={columns.length + (showIndex ? 1 : 0)}>
+                  {t("No data")}
                 </td>
               </tr>
             ) : (
               rows.map((row, i) => (
                 <tr className="sf-datatable-tr" key={i}>
+                  {showIndex && (
+                    <td className="sf-datatable-td sf-datatable-td--index">
+                      {(page - 1) * perPage + i + 1}
+                    </td>
+                  )}
                   {columns.map((col) => {
                     const key = String(col.key);
                     return (
@@ -314,7 +343,7 @@ export function DataTable<T>({
       {totalPages > 1 && (
         <div className="sf-datatable-pagination">
           <span className="sf-datatable-pagination-info">
-            Page {page} of {totalPages} ({total} rows)
+            {t("pagination_info", { page, totalPages, total })}
           </span>
           <div className="sf-datatable-pagination-buttons">
             <button

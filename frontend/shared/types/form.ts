@@ -35,6 +35,7 @@ export interface InputProps extends FieldBase {
   onChange?: (value: string) => void;
   onFocus?: () => void;
   onBlur?: () => void;
+  onKeyDown?: (e: React.KeyboardEvent) => void;
   onPrefocus?: () => void;
   placeholder?: string;
   readOnly?: boolean;
@@ -55,6 +56,7 @@ export interface SelectProps extends FieldBase {
   placeholder?: string;
   multiple?: boolean;
   searchable?: boolean;
+  clearable?: boolean;
   onSearch?: (query: string) => void | Promise<void>;
   loading?: boolean;
 }
@@ -213,11 +215,11 @@ export interface DataTableProps<T> {
   subtitle?: string;
   columns: DataTableColumn<T>[];
   downloadUrl?: string;
-  exportUrl?: string;
   refreshInterval?: number;
   defaultPerPage?: number;
   footerSums?: string[];
   className?: string;
+  showIndex?: boolean;
 }
 
 export interface DataTableSort {
@@ -228,7 +230,7 @@ export interface DataTableSort {
 export interface DataTableFilter {
   field: string;
   op: string;
-  value: string | boolean | number | string[];
+  value: any;
 }
 
 export interface DataTableMeta {

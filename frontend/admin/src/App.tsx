@@ -5,6 +5,7 @@ import { ModalProvider } from "@shared/modal";
 import { localeStore } from "@shared/i18n";
 import { auth } from "@/auth";
 import { api } from "@/api";
+import { ws } from "@/websocket";
 import { LoginPage } from "@/pages/LoginPage";
 import { router } from "@/router";
 
@@ -14,11 +15,16 @@ export default function App() {
   useEffect(() => {
     auth.check();
     return auth.onAuthChange((user) => {
-      if (!user) return;
+      if (!user) {
+        ws.disconnect();
+        return;
+      }
       const currentLocale = localeStore.locale;
       if (user.locale !== currentLocale) {
         api.put("/profile/locale", { locale: currentLocale }).catch(() => {});
       }
+      ws.connect();
+      ws.subscribe("admin:presence");
     });
   }, []);
 

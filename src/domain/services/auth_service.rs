@@ -26,12 +26,12 @@ pub async fn login_with_token(
     Ok(tokens)
 }
 
-/// Session-based login for the admin portal (by username).
-pub async fn login_with_session(
+/// Token-based login for the admin portal (by username).
+pub async fn admin_login_with_token(
     app: &AppContext,
     username: &str,
     password: &str,
-) -> Result<(String, Admin)> {
+) -> Result<TokenPair> {
     let db = app.database()?;
 
     let admin = Admin::model_query()
@@ -45,8 +45,7 @@ pub async fn login_with_session(
         return Err(Error::http(401, "Invalid credentials"));
     }
 
-    let sessions = app.sessions()?;
-    let session_id = sessions.create::<Admin>(&admin.id.to_string()).await?;
+    let tokens = admin.create_token(app).await?;
 
-    Ok((session_id, admin))
+    Ok(tokens)
 }

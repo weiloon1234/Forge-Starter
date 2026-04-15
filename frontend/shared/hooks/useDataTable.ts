@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { AxiosInstance } from "axios";
-import type { DataTableSort, DataTableFilter, DataTableMeta } from "../types/form";
-import { getCookie, setCookie } from "../utils/cookie";
+import type { DataTableSort, DataTableFilter, DataTableMeta } from "@shared/types/form";
+import { getCookie, setCookie } from "@shared/utils/cookie";
 
 interface UseDataTableConfig {
   api: AxiosInstance;
@@ -30,7 +30,7 @@ const COOKIE_PREFIX = "dt_autorefresh_";
 export { getCookie, setCookie, COOKIE_PREFIX };
 
 export function serializeSorts(sorts: DataTableSort[]): any[] {
-  return sorts.map(s => ({ field: s.field, direction: s.direction === "asc" ? "Asc" : "Desc" }));
+  return sorts.map(s => ({ field: s.field, direction: s.direction }));
 }
 
 export function useDataTable<T>(config: UseDataTableConfig): UseDataTableReturn<T> {
@@ -84,6 +84,10 @@ export function useDataTable<T>(config: UseDataTableConfig): UseDataTableReturn<
 
   useEffect(() => { fetch(); }, [fetch]);
 
+  const fetchLatestRef = useRef(fetch);
+  useEffect(() => { fetchLatestRef.current = fetch; }, [fetch]);
+  const refresh = useCallback(() => fetchLatestRef.current(), []);
+
   const toggleSort = useCallback((field: string, multi = false) => {
     setSorts((prev) => {
       const existing = prev.find((s) => s.field === field);
@@ -111,6 +115,6 @@ export function useDataTable<T>(config: UseDataTableConfig): UseDataTableReturn<
     rows, meta, loading, error,
     page, perPage, sorts, filters,
     setPage, setPerPage: handleSetPerPage, toggleSort, setFilters,
-    refresh: fetch,
+    refresh,
   };
 }

@@ -25,6 +25,12 @@ impl Admin {
     }
 }
 
+impl HasToken for Admin {
+    fn token_actor_id(&self) -> String {
+        self.id.to_string()
+    }
+}
+
 #[async_trait]
 impl Authenticatable for Admin {
     fn guard() -> GuardId {

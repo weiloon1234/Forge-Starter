@@ -1,11 +1,12 @@
 use forge::prelude::*;
 use crate::ids::guards::Guard;
 use crate::ids::permissions::Permission;
-use crate::portals::admin::requests::{AdminLoginRequest, ChangeAdminPasswordRequest, UpdateAdminLocaleRequest, UpdateAdminProfileRequest};
+use crate::portals::admin::requests::{AdminLoginRequest, ChangeAdminPasswordRequest, UpdateAdminLocaleRequest, UpdateAdminProfileRequest, UpdateCountryRequest};
 use crate::portals::admin::responses::{AdminMeResponse, AdminUserResponse};
 use crate::types::MessageResponse;
 
 pub mod auth_routes;
+pub mod country_routes;
 pub mod datatable_routes;
 pub mod datatables;
 pub mod profile_routes;
@@ -25,10 +26,21 @@ pub fn register(r: &mut HttpRegistrar) -> Result<()> {
                 HttpRouteOptions::new()
                     .document(RouteDoc::new()
                         .post()
-                        .summary("Admin login (session)")
+                        .summary("Admin login (token)")
                         .tag("admin:auth")
                         .request::<AdminLoginRequest>()
-                        .response::<MessageResponse>(200)),
+                        .response::<TokenPair>(200)),
+            );
+            r.route_named_with_options(
+                "admin.auth.refresh",
+                "/auth/refresh",
+                post(auth_routes::refresh),
+                HttpRouteOptions::new()
+                    .document(RouteDoc::new()
+                        .post()
+                        .summary("Refresh admin access token")
+                        .tag("admin:auth")
+                        .response::<TokenPair>(200)),
             );
             r.route_named_with_options(
                 "admin.auth.logout",
@@ -41,6 +53,17 @@ pub fn register(r: &mut HttpRegistrar) -> Result<()> {
                         .summary("Admin logout")
                         .tag("admin:auth")
                         .response::<MessageResponse>(200)),
+            );
+            r.route_named_with_options(
+                "admin.auth.ws_token",
+                "/auth/ws-token",
+                post(auth_routes::ws_token),
+                HttpRouteOptions::new()
+                    .guard(Guard::Admin)
+                    .document(RouteDoc::new()
+                        .post()
+                        .summary("Get short-lived WebSocket token")
+                        .tag("admin:auth")),
             );
             r.route_named_with_options(
                 "admin.auth.me",
@@ -121,6 +144,20 @@ pub fn register(r: &mut HttpRegistrar) -> Result<()> {
                         .summary("Get user by ID")
                         .tag("admin:users")
                         .response::<AdminUserResponse>(200)),
+            );
+
+            // ── Countries ───────────────────────────────
+            r.route_named_with_options(
+                "admin.countries.update",
+                "/countries/{iso2}",
+                put(country_routes::update),
+                HttpRouteOptions::new()
+                    .guard(Guard::Admin)
+                    .document(RouteDoc::new()
+                        .put()
+                        .summary("Update country")
+                        .tag("admin:countries")
+                        .request::<UpdateCountryRequest>()),
             );
 
             // ── Datatables ──────────────────────────────

@@ -1,4 +1,4 @@
-import type { FieldConfig, FieldBinding } from "../types/form";
+import type { FieldConfig, FieldBinding } from "@shared/types/form";
 import { Input } from "./Input";
 import { Select } from "./Select";
 import { Checkbox } from "./Checkbox";

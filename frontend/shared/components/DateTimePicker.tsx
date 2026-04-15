@@ -1,6 +1,6 @@
 import { DatePicker } from "./DatePicker";
 import { TimePicker } from "./TimePicker";
-import type { DateTimePickerProps } from "../types/form";
+import type { DateTimePickerProps } from "@shared/types/form";
 
 function getTimeString(date: Date | null | undefined): string {
   if (!date) return "";

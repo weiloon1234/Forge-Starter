@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Menu, ChevronDown } from "lucide-react";
 import { auth } from "@/auth";
+import { ws } from "@/websocket";
 import { AccountDropdown } from "@/components/AccountDropdown";
 
 interface HeaderProps {
@@ -11,6 +12,7 @@ interface HeaderProps {
 export function Header({ onToggleSidebar }: HeaderProps) {
   const { t } = useTranslation();
   const { user } = auth.useAuth();
+  const wsStatus = ws.useStatus();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -41,6 +43,8 @@ export function Header({ onToggleSidebar }: HeaderProps) {
       </button>
 
       <div className="sf-header-spacer" />
+
+      <div className={`sf-ws-status sf-ws-status--${wsStatus}`} title={t(wsStatus)} />
 
       <div className="sf-account" ref={containerRef}>
         <button

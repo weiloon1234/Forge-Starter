@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use forge::prelude::*;
 use crate::domain::models::{User, Admin};
 use crate::domain::jobs::SendWelcomeEmail;
-use crate::portals::admin::datatables::UserDatatable;
+use crate::portals::admin::datatables::{CountryDatatable, UserDatatable};
 
 pub struct AppServiceProvider;
 
@@ -13,6 +13,7 @@ impl ServiceProvider for AppServiceProvider {
         registrar.register_authenticatable::<Admin>()?;
         registrar.register_job::<SendWelcomeEmail>()?;
         registrar.register_datatable::<UserDatatable>()?;
+        registrar.register_datatable::<CountryDatatable>()?;
         forge::register_generated_database!(registrar)?;
         Ok(())
     }

@@ -1,4 +1,4 @@
-import type { CheckboxProps } from "../types/form";
+import type { CheckboxProps } from "@shared/types/form";
 import { FieldMessages, fieldClasses } from "./FieldMessages";
 
 export function Checkbox({

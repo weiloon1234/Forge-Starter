@@ -4,9 +4,10 @@ import type { AdminMeResponse } from "@shared/types/generated";
 
 export const auth = createAuth<AdminMeResponse>({
   api,
-  mode: "session",
+  mode: "token",
   paths: {
     login: "/auth/login",
+    refresh: "/auth/refresh",
     logout: "/auth/logout",
     me: "/auth/me",
   },

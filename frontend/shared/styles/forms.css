@@ -156,11 +156,14 @@
 
   /* Select trigger */
   .sf-select-trigger {
-    @apply flex items-center justify-between w-full px-3 py-2.5 text-sm rounded-lg border cursor-pointer;
+    @apply flex items-center gap-2 w-full px-3 py-2.5 text-sm rounded-lg border cursor-pointer;
     border-color: var(--color-border);
     background: var(--color-bg-input);
     color: var(--color-text);
     transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .sf-select-trigger > span:first-child {
+    @apply flex-1 text-left truncate;
   }
   .sf-select-trigger:focus {
     border-color: var(--color-border-focus);
@@ -173,16 +176,27 @@
   .sf-select-placeholder {
     color: var(--color-text-hint);
   }
+  .sf-select-clear {
+    @apply ml-1 shrink-0 text-xs cursor-pointer rounded-full w-4 h-4 flex items-center justify-center;
+    color: var(--color-text-hint);
+    transition: color 150ms ease, background 150ms ease;
+  }
+  .sf-select-clear:hover {
+    color: var(--color-text);
+    background: var(--color-bg-muted);
+  }
   .sf-select-arrow {
-    @apply ml-2 shrink-0;
+    @apply ml-1 shrink-0;
     color: var(--color-text-muted);
   }
 
   /* Select dropdown */
   .sf-select-dropdown {
-    @apply absolute z-50 mt-1 w-full rounded-lg border shadow-lg overflow-hidden;
+    @apply rounded-lg border shadow-lg overflow-hidden;
     border-color: var(--color-border);
     background: var(--color-bg);
+    max-height: 240px;
+    overflow-y: auto;
   }
   .sf-select-search {
     @apply w-full px-3 py-2 text-sm border-b outline-none;
@@ -220,7 +234,8 @@
     color: var(--color-text-muted);
   }
   .sf-select-backdrop {
-    @apply fixed inset-0 z-40;
+    @apply fixed inset-0;
+    z-index: 9998;
   }
 
   /* Checkbox */
@@ -771,17 +786,27 @@
 
   /* Filters */
   .sf-datatable-filters {
-    @apply flex flex-wrap gap-3 px-5 py-3 border-b;
+    @apply px-5 py-3 space-y-2 border-b;
     border-color: var(--color-border);
     background: var(--color-bg-muted);
   }
+  .sf-datatable-filter-row {
+    @apply flex flex-wrap gap-3;
+  }
   .sf-datatable-filters .sf-field {
-    @apply mb-0 min-w-48;
+    @apply mb-0 min-w-48 flex-1 relative;
+  }
+  .sf-datatable-filter-actions {
+    @apply flex gap-2 pt-1;
+  }
+  .sf-datatable-filters .sf-select-dropdown {
+    @apply max-w-full;
   }
 
   /* Table */
   .sf-datatable-table-wrapper {
-    @apply relative overflow-x-auto;
+    @apply relative overflow-auto;
+    max-height: 70vh;
   }
   .sf-datatable-table {
     @apply w-full text-sm;
@@ -790,9 +815,15 @@
     border-bottom: 1px solid var(--color-border);
   }
   .sf-datatable-th {
-    @apply px-4 py-3 text-left text-xs font-medium uppercase tracking-wider select-none;
+    @apply px-4 py-3 text-left text-xs font-medium uppercase tracking-wider select-none whitespace-nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 1;
     color: var(--color-text-muted);
     background: var(--color-bg-muted);
+  }
+  .sf-datatable-th-content {
+    @apply inline-flex items-center gap-1;
   }
   .sf-datatable-th--sortable {
     @apply cursor-pointer;
@@ -804,10 +835,8 @@
   .sf-datatable-th--sorted {
     color: var(--color-primary);
   }
-  .sf-datatable-tbody {
-    @apply divide-y;
-    --tw-divide-opacity: 1;
-    --tw-divide-color: var(--color-border);
+  .sf-datatable-tbody tr + tr {
+    border-top: 1px solid var(--color-bg-muted);
   }
   .sf-datatable-tr {
     transition: background 100ms ease;
@@ -815,8 +844,23 @@
   .sf-datatable-tr:hover {
     background: var(--color-bg-muted);
   }
+  .sf-datatable-th--index,
+  .sf-datatable-td--index {
+    @apply w-12 text-center;
+    color: var(--color-text-hint);
+  }
+  .sf-datatable-action {
+    @apply flex items-center justify-center w-7 h-7 rounded-lg border-none cursor-pointer;
+    color: var(--color-text-muted);
+    background: transparent;
+    transition: color 150ms ease, background 150ms ease;
+  }
+  .sf-datatable-action:hover {
+    color: var(--color-text);
+    background: var(--color-bg-muted);
+  }
   .sf-datatable-td {
-    @apply px-4 py-3;
+    @apply px-4 py-3 whitespace-nowrap;
     color: var(--color-text);
   }
   .sf-datatable-tfoot {

@@ -1,4 +1,4 @@
-import type { RadioProps } from "../types/form";
+import type { RadioProps } from "@shared/types/form";
 import { FieldMessages, fieldClasses } from "./FieldMessages";
 
 export function Radio({

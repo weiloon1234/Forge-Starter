@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Clock } from "lucide-react";
-import type { TimePickerProps } from "../types/form";
+import type { TimePickerProps } from "@shared/types/form";
 import { FieldMessages, fieldClasses } from "./FieldMessages";
 
 function pad(n: number): string {
