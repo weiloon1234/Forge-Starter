@@ -79,17 +79,19 @@ portals/{portal}/
 
 ## Request DTO Rules
 
-Every request struct MUST derive:
+Simple JSON DTOs should prefer `#[derive(Validate)]` together with `forge::ApiSchema` and `ts_rs::TS`:
 ```rust
-#[derive(Debug, Deserialize, ts_rs::TS, forge::ApiSchema)]
+#[derive(Debug, Deserialize, ts_rs::TS, forge::ApiSchema, Validate)]
 #[ts(export)]
 pub struct CreateUserRequest {
+    #[validate(required, email)]
     pub email: String,
+    #[validate(required, min(2))]
     pub name: String,
 }
 ```
 
-Validation via `impl RequestValidator`:
+Use manual `impl RequestValidator` only when validation is runtime-driven, conditional, or depends on custom rule IDs:
 ```rust
 #[async_trait]
 impl RequestValidator for CreateUserRequest {
@@ -112,13 +114,13 @@ pub struct UserResponse { ... }
 
 ## Handler Rules
 
-Handlers are THIN — extract, validate, call service, return response:
+Handlers are THIN — extract, validate, call service, return response. For JSON-only endpoints, use `JsonValidated<T>`:
 
 ```rust
 pub async fn store(
     State(app): State<AppContext>,
     Auth(admin): Auth<Admin>,
-    Validated(req): Validated<CreateUserRequest>,
+    JsonValidated(req): JsonValidated<CreateUserRequest>,
 ) -> Result<impl IntoResponse> {
     let user = user_service::create(&app, &req).await?;
     Ok((StatusCode::CREATED, Json(UserResource::make(&user))))

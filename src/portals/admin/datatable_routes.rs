@@ -3,6 +3,8 @@ use axum::http::Uri;
 use forge::prelude::*;
 use percent_encoding::percent_decode_str;
 
+use crate::ids::permissions::Permission;
+
 fn parse_request(uri: &Uri) -> DatatableRequest {
     let query_str = uri.query().unwrap_or("");
     let mut page: u64 = 1;
@@ -12,19 +14,78 @@ fn parse_request(uri: &Uri) -> DatatableRequest {
     let mut search = None;
 
     for pair in query_str.split('&') {
-        let Some((key, raw)) = pair.split_once('=') else { continue };
-        let value = percent_decode_str(raw).decode_utf8_lossy().replace('+', " ");
+        let Some((key, raw)) = pair.split_once('=') else {
+            continue;
+        };
+        let value = percent_decode_str(raw)
+            .decode_utf8_lossy()
+            .replace('+', " ");
         match key {
-            "page" => { page = value.parse().unwrap_or(1); }
-            "per_page" => { per_page = value.parse().unwrap_or(20); }
-            "sort" => { sort = serde_json::from_str(&value).unwrap_or_default(); }
-            "filters" => { filters = serde_json::from_str(&value).unwrap_or_default(); }
-            "search" => { search = Some(value); }
+            "page" => {
+                page = value.parse().unwrap_or(1);
+            }
+            "per_page" => {
+                per_page = value.parse().unwrap_or(20);
+            }
+            "sort" => {
+                sort = serde_json::from_str(&value).unwrap_or_default();
+            }
+            "filters" => {
+                filters = serde_json::from_str(&value).unwrap_or_default();
+            }
+            "search" => {
+                search = Some(value);
+            }
             _ => {}
         }
     }
 
-    DatatableRequest { page, per_page, sort, filters, search }
+    DatatableRequest {
+        page,
+        per_page,
+        sort,
+        filters,
+        search,
+    }
+}
+
+fn minimum_read_permission(id: &str) -> Option<Permission> {
+    match id {
+        "admin.users" => Some(Permission::UsersRead),
+        "admin.countries" => Some(Permission::CountriesRead),
+        "admin.admins" => Some(Permission::AdminsRead),
+        _ => None,
+    }
+}
+
+fn required_permissions(
+    id: &str,
+    include_export: bool,
+) -> Option<std::collections::BTreeSet<PermissionId>> {
+    let read_permission = minimum_read_permission(id)?;
+
+    let mut permissions = std::collections::BTreeSet::from([PermissionId::from(read_permission)]);
+    if include_export {
+        permissions.insert(PermissionId::from(Permission::ExportsRead));
+    }
+
+    Some(permissions)
+}
+
+async fn authorize_datatable(
+    app: &AppContext,
+    actor: &Actor,
+    id: &str,
+    include_export: bool,
+) -> Result<()> {
+    let Some(permissions) = required_permissions(id, include_export) else {
+        return Ok(());
+    };
+
+    app.authorizer()?
+        .authorize_permissions(actor, &permissions)
+        .await
+        .map_err(Error::from)
 }
 
 pub async fn query(
@@ -35,8 +96,10 @@ pub async fn query(
     uri: Uri,
 ) -> Result<impl IntoResponse> {
     let request = parse_request(&uri);
+    authorize_datatable(&app, &actor, &id, false).await?;
     let registry = app.datatables()?;
-    let dt = registry.get(&id)
+    let dt = registry
+        .get(&id)
         .ok_or_else(|| Error::not_found(forge::t!(i18n, "error.not_found")))?;
     Ok(Json(dt.json(&app, Some(&actor), request).await?))
 }
@@ -49,8 +112,10 @@ pub async fn download(
     uri: Uri,
 ) -> Result<Response> {
     let request = parse_request(&uri);
+    authorize_datatable(&app, &actor, &id, true).await?;
     let registry = app.datatables()?;
-    let dt = registry.get(&id)
+    let dt = registry
+        .get(&id)
         .ok_or_else(|| Error::not_found(forge::t!(i18n, "error.not_found")))?;
     dt.download(&app, Some(&actor), request).await
 }

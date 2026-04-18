@@ -12,18 +12,25 @@ export function Radio({
   disabled,
   required,
   className,
+  orientation = "vertical",
+  align = "start",
 }: RadioProps) {
   const hasErrors = !!(errors && errors.length > 0);
+  const groupClassName = [
+    "sf-radio-group",
+    `sf-radio-group--${orientation}`,
+    `sf-radio-group--align-${align}`,
+  ].join(" ");
 
   return (
     <div className={fieldClasses({ hasErrors, disabled, className })}>
       {label && (
-        <label className={`sf-label${required ? " sf-label--required" : ""}`}>
+        <div className={`sf-label${required ? " sf-label--required" : ""}`}>
           {label}
-        </label>
+        </div>
       )}
 
-      <div className="sf-radio-group">
+      <div className={groupClassName}>
         {options.map((opt) => (
           <label key={opt.value} className="sf-radio">
             <input

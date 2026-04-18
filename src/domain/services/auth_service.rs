@@ -1,6 +1,7 @@
 use forge::prelude::*;
 
 use crate::domain::models::{Admin, User};
+use crate::domain::services::admin_service;
 
 /// Token-based login for the user portal.
 pub async fn login_with_token(
@@ -19,12 +20,19 @@ pub async fn login_with_token(
 
     let hash = app.hash()?;
     if !hash.check(password, &user.password_hash)? {
-        return Err(Error::http(401, forge::t!(i18n, "auth.invalid_credentials")));
+        return Err(Error::http(
+            401,
+            forge::t!(i18n, "auth.invalid_credentials"),
+        ));
     }
 
-    let tokens = user.create_token(app).await?;
+    let tokens = user.create_token_named(app, "user").await?;
 
     Ok(tokens)
+}
+
+pub async fn refresh_user_token(app: &AppContext, refresh_token: &str) -> Result<TokenPair> {
+    app.tokens()?.refresh(refresh_token).await
 }
 
 /// Token-based login for the admin portal (by username).
@@ -44,10 +52,23 @@ pub async fn admin_login_with_token(
 
     let hash = app.hash()?;
     if !hash.check(password, &admin.password_hash)? {
-        return Err(Error::http(401, forge::t!(i18n, "auth.invalid_credentials")));
+        return Err(Error::http(
+            401,
+            forge::t!(i18n, "auth.invalid_credentials"),
+        ));
     }
 
-    let tokens = admin.create_token(app).await?;
+    let tokens = admin
+        .create_token_with_abilities(
+            app,
+            "admin",
+            admin_service::effective_permission_keys(&admin),
+        )
+        .await?;
 
     Ok(tokens)
+}
+
+pub async fn refresh_admin_token(app: &AppContext, refresh_token: &str) -> Result<TokenPair> {
+    app.tokens()?.refresh(refresh_token).await
 }

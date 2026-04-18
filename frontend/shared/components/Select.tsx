@@ -1,8 +1,8 @@
-import { useState, useRef, useMemo, useCallback, useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { createPortal } from "react-dom";
-import type { SelectProps, SelectOption } from "@shared/types/form";
 import { useDebounce } from "@shared/hooks/useDebounce";
+import type { SelectOption, SelectProps } from "@shared/types/form";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { FieldMessages, fieldClasses } from "./FieldMessages";
 
 export function Select({
@@ -39,8 +39,10 @@ export function Select({
   }, [value]);
 
   const stableOnSearch = useCallback(
-    (q: string) => { onSearch?.(q); },
-    [onSearch]
+    (q: string) => {
+      onSearch?.(q);
+    },
+    [onSearch],
   );
   const debouncedSearch = useDebounce(stableOnSearch, 300);
 
@@ -69,7 +71,10 @@ export function Select({
         map.set(key, arr);
         groups.push({ label: key, options: arr });
       }
-      map.get(key)!.push(opt);
+      const groupOptions = map.get(key);
+      if (groupOptions) {
+        groupOptions.push(opt);
+      }
     }
 
     return groups;
@@ -117,6 +122,12 @@ export function Select({
     };
   }, [open, positionDropdown]);
 
+  useEffect(() => {
+    if (open && searchable) {
+      searchRef.current?.focus();
+    }
+  }, [open, searchable]);
+
   const handleSelect = (optValue: string) => {
     if (multiple) {
       const current = selectedValues;
@@ -130,13 +141,15 @@ export function Select({
     }
   };
 
-  const handleClear = (e: React.MouseEvent) => {
+  const handleClear = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     onChange?.(multiple ? [] : "");
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") handleClose();
+  const handleTriggerKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === "Escape") {
+      handleClose();
+    }
   };
 
   const displayLabel = useMemo(() => {
@@ -149,67 +162,81 @@ export function Select({
 
   const isEmpty = filteredOptions.length === 0 && !loading;
 
-  const dropdown = open ? createPortal(
-    <>
-      <div className="sf-select-backdrop" onClick={handleClose} />
-      <div className="sf-select-dropdown" ref={dropdownRef} style={dropdownStyle}>
-        {searchable && (
-          <input
-            className="sf-select-search"
-            type="text"
-            value={query}
-            onChange={handleSearchChange}
-            placeholder={t("form.search_placeholder")}
-            ref={searchRef}
-            autoFocus
+  const dropdown = open
+    ? createPortal(
+        <>
+          <button
+            type="button"
+            className="sf-select-backdrop"
+            onClick={handleClose}
+            aria-label={t("Close")}
           />
-        )}
+          <div
+            className="sf-select-dropdown"
+            ref={dropdownRef}
+            style={dropdownStyle}
+            role="listbox"
+            aria-multiselectable={multiple || undefined}
+          >
+            {searchable && (
+              <input
+                className="sf-select-search"
+                type="text"
+                value={query}
+                onChange={handleSearchChange}
+                placeholder={t("form.search_placeholder")}
+                ref={searchRef}
+              />
+            )}
 
-        {loading && <div className="sf-select-loading">{ t("Loading") }</div>}
+            {loading && <div className="sf-select-loading">{t("Loading")}</div>}
 
-        <div className="sf-select-options">
-          {groupedOptions.map((group) => (
-            <div key={group.label ?? "__ungrouped"}>
-              {group.label && (
-                <div className="sf-select-group-label">{group.label}</div>
-              )}
-              {group.options.map((opt) => {
-                const isSelected = selectedValues.includes(opt.value);
-                const optClasses = [
-                  "sf-select-option",
-                  isSelected && "sf-select-option--selected",
-                  opt.disabled && "sf-select-option--disabled",
-                ]
-                  .filter(Boolean)
-                  .join(" ");
+            <div className="sf-select-options">
+              {groupedOptions.map((group) => (
+                <div key={group.label ?? "__ungrouped"}>
+                  {group.label && (
+                    <div className="sf-select-group-label">{group.label}</div>
+                  )}
+                  {group.options.map((opt) => {
+                    const isSelected = selectedValues.includes(opt.value);
+                    const optClasses = [
+                      "sf-select-option",
+                      isSelected && "sf-select-option--selected",
+                      opt.disabled && "sf-select-option--disabled",
+                    ]
+                      .filter(Boolean)
+                      .join(" ");
 
-                return (
-                  <div
-                    key={opt.value}
-                    className={optClasses}
-                    onClick={() => {
-                      if (!opt.disabled) handleSelect(opt.value);
-                    }}
-                  >
-                    {opt.label}
-                    {isSelected && <span>&#10003;</span>}
-                  </div>
-                );
-              })}
+                    return (
+                      <button
+                        type="button"
+                        key={opt.value}
+                        className={optClasses}
+                        disabled={opt.disabled}
+                        onClick={() => {
+                          if (!opt.disabled) handleSelect(opt.value);
+                        }}
+                      >
+                        {opt.label}
+                        {isSelected && <span>&#10003;</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {isEmpty && (
-          <div className="sf-select-empty">{ t("form.no_options") }</div>
-        )}
-      </div>
-    </>,
-    document.body,
-  ) : null;
+            {isEmpty && (
+              <div className="sf-select-empty">{t("form.no_options")}</div>
+            )}
+          </div>
+        </>,
+        document.body,
+      )
+    : null;
 
   return (
-    <div className={fieldClasses({ hasErrors, disabled, className })} onKeyDown={handleKeyDown}>
+    <div className={fieldClasses({ hasErrors, disabled, className })}>
       {label && (
         <label
           className={`sf-label${required ? " sf-label--required" : ""}`}
@@ -219,22 +246,34 @@ export function Select({
         </label>
       )}
 
-      <button
-        type="button"
-        className="sf-select-trigger"
-        onClick={handleToggle}
-        disabled={disabled}
-        id={name}
-        ref={triggerRef}
-      >
-        <span className={displayLabel ? undefined : "sf-select-placeholder"}>
-          {displayLabel || placeholder || t("form.select_placeholder")}
-        </span>
+      <div className="sf-select-trigger-wrapper">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-haspopup="listbox"
+          className="sf-select-trigger"
+          disabled={disabled}
+          onClick={handleToggle}
+          id={name}
+          onKeyDown={handleTriggerKeyDown}
+          ref={triggerRef}
+        >
+          <span className={displayLabel ? undefined : "sf-select-placeholder"}>
+            {displayLabel || placeholder || t("form.select_placeholder")}
+          </span>
+          <span className="sf-select-arrow">&#9662;</span>
+        </button>
         {clearable && displayLabel && (
-          <span className="sf-select-clear" onClick={handleClear}>&#10005;</span>
+          <button
+            type="button"
+            className="sf-select-clear"
+            onClick={handleClear}
+            aria-label={t("Clear")}
+          >
+            &#10005;
+          </button>
         )}
-        <span className="sf-select-arrow">&#9662;</span>
-      </button>
+      </div>
 
       {dropdown}
 

@@ -1,6 +1,12 @@
 import { createStore } from "@shared/store/createStore";
 import type { ComponentType } from "react";
-import type { ModalEntry, ModalOptions, ModalState } from "./types";
+import type {
+  ModalComponentProps,
+  ModalEntry,
+  ModalOptions,
+  ModalProps,
+  ModalState,
+} from "./types";
 
 let counter = 0;
 
@@ -13,16 +19,16 @@ export const modal = {
    *   modal.open(EditProfile, { name: "Wei" }, { title: "My Profile" });
    *   modal.open(ConfirmDialog, { message: "Sure?" });
    */
-  open<P extends Record<string, any>>(
-    component: ComponentType<P & { onClose: () => void }>,
+  open<P extends ModalProps>(
+    component: ComponentType<P & ModalComponentProps>,
     props?: Omit<P, "onClose">,
-    options?: ModalOptions
+    options?: ModalOptions,
   ): string {
     const id = `modal-${++counter}`;
     const entry: ModalEntry = {
       id,
-      component,
-      props,
+      component: component as ComponentType<ModalComponentProps>,
+      props: props as ModalProps | undefined,
       title: options?.title,
       onClose: options?.onClose,
     };
@@ -56,7 +62,9 @@ export const modal = {
   /** Close all modals. */
   closeAll() {
     const { stack } = store.getState();
-    stack.forEach((m) => m.onClose?.());
+    stack.forEach((m) => {
+      m.onClose?.();
+    });
     store.setState({ stack: [] });
   },
 

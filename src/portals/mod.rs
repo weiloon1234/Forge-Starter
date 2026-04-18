@@ -1,5 +1,7 @@
 use forge::prelude::*;
 
+use crate::types::StatusResponse;
+
 pub mod admin;
 pub mod spa;
 pub mod user;
@@ -25,13 +27,13 @@ pub fn register_spa(r: &mut HttpRegistrar) -> Result<()> {
     r.merge(admin_assets);
 
     // User portal: SPA handler as fallback + static assets
-    let user_assets = Router::<AppContext>::new()
-        .nest_service("/assets", ServeDir::new("public/user/assets"));
+    let user_assets =
+        Router::<AppContext>::new().nest_service("/assets", ServeDir::new("public/user/assets"));
     r.merge(user_assets);
 
     Ok(())
 }
 
 async fn health() -> impl IntoResponse {
-    Json(serde_json::json!({ "status": "ok" }))
+    Json(StatusResponse::ok())
 }

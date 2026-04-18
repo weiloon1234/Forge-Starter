@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use forge::prelude::*;
 
 use crate::domain::enums::UserStatus;
@@ -24,21 +23,9 @@ impl User {
     }
 }
 
-#[async_trait]
 impl Authenticatable for User {
     fn guard() -> GuardId {
         Guard::User.into()
-    }
-
-    async fn resolve_from_actor<E: QueryExecutor>(
-        actor: &Actor,
-        executor: &E,
-    ) -> Result<Option<Self>> {
-        let id: ModelId<Self> = actor.id.parse().map_err(|_| Error::message("invalid actor id"))?;
-        User::model_query()
-            .where_(User::ID.eq(id))
-            .first(executor)
-            .await
     }
 }
 

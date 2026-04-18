@@ -4,4 +4,4 @@ import type { FieldError } from "./FieldError";
 /**
  * Forge API error response shape (422 validation, 4xx/5xx errors).
  */
-export type ApiError = { message: string, status: number, error_code?: string, errors?: Array<FieldError>, };
+export type ApiError = { message: string, status: number, error_code?: string, message_key?: string, errors?: Array<FieldError>, };

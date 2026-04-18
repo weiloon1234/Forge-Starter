@@ -1,0 +1,44 @@
+{
+    "admin": {
+        "errors": {
+            "cannot_view_tier": "你不能查看此层级的管理员。",
+            "cannot_edit_self": "你不能在这里编辑自己的账户，请改用个人资料。",
+            "cannot_manage_tier": "你不能管理此层级的管理员。",
+            "cannot_grant_permission": "你不能授予自己没有的权限：{{permission}}",
+            "invalid_admin_type": "你不能分配此管理员类型。"
+        },
+        "users": {
+            "title": "用户",
+            "subtitle": "浏览和搜索用户账户。"
+        },
+        "admins": {
+            "title": "管理员",
+            "subtitle": "管理后台员工访问权限与模块权限。",
+            "new": "新增管理员",
+            "edit": "编辑管理员",
+            "permissions_column": "权限数量",
+            "permissions_count": "{{value}} 项权限",
+            "permissions_open": "查看权限摘要",
+            "view_title": "查看管理员",
+            "back": "返回管理员列表",
+            "create_title": "创建管理员",
+            "edit_title": "编辑管理员",
+            "create_help": "创建新的管理员账户并分配模块访问权限。",
+            "edit_help": "更新账户资料、语言和各模块权限。",
+            "view_help": "你可以查看该管理员，但不能在管理员管理中修改它。",
+            "view_self_help": "请使用个人资料页面更新自己的账户设置。",
+            "created": "管理员已创建",
+            "updated": "管理员已更新",
+            "deleted": "管理员已删除",
+            "new_password": "新密码",
+            "password_placeholder": "留空则保持当前密码",
+            "permissions_title": "权限",
+            "permissions_help": "为每个模块选择允许的最高访问级别。",
+            "permissions_modal_title": "{{name}} 的权限",
+            "permissions_modal_help": "以只读方式查看该管理员当前的模块访问权限。",
+            "implicit_permissions_help": "此管理员类型会自动获得完整访问权限。",
+            "implicit_permissions_note": "逐模块权限仅适用于管理员层级。",
+            "confirm_delete": "删除 {{name}}？此操作无法撤销。"
+        }
+    }
+}

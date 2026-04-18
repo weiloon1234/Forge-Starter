@@ -25,9 +25,9 @@ export function CheckboxGroup({
   return (
     <div className={fieldClasses({ hasErrors, disabled, className })}>
       {label && (
-        <label className={`sf-label${required ? " sf-label--required" : ""}`}>
+        <div className={`sf-label${required ? " sf-label--required" : ""}`}>
           {label}
-        </label>
+        </div>
       )}
 
       {options.map((opt) => (

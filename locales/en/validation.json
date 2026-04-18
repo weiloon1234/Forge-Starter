@@ -45,6 +45,8 @@
         "unique": "The {{attribute}} has already been taken",
         "exists": "The selected {{attribute}} is invalid",
         "app_enum": "The selected {{attribute}} is invalid",
+        "invalid_request_body": "Invalid request payload",
+        "multipart_not_supported": "Multipart not supported",
 
         "image": "The {{attribute}} must be an image",
         "max_file_size": "The {{attribute}} must not exceed {{max}}KB",

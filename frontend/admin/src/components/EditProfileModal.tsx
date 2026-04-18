@@ -1,11 +1,11 @@
-import { useTranslation } from "react-i18next";
+import { Button, Input } from "@shared/components";
 import { useForm } from "@shared/hooks";
-import { Input, Button } from "@shared/components";
 import { ModalBody, ModalFooter } from "@shared/modal";
+import type { UpdateAdminProfileRequest } from "@shared/types/generated";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { api } from "@/api";
 import { auth } from "@/auth";
-import { toast } from "sonner";
-import type { UpdateAdminProfileRequest } from "@shared/types/generated";
 
 interface EditProfileModalProps {
   name: string;
@@ -13,7 +13,11 @@ interface EditProfileModalProps {
   onClose: () => void;
 }
 
-export function EditProfileModal({ name, email, onClose }: EditProfileModalProps) {
+export function EditProfileModal({
+  name,
+  email,
+  onClose,
+}: EditProfileModalProps) {
   const { t } = useTranslation();
 
   const form = useForm<UpdateAdminProfileRequest>({
@@ -41,7 +45,12 @@ export function EditProfileModal({ name, email, onClose }: EditProfileModalProps
         <Button variant="secondary" size="sm" onClick={onClose}>
           {t("Cancel")}
         </Button>
-        <Button variant="primary" size="sm" busy={form.busy} onClick={form.handleSubmit}>
+        <Button
+          variant="primary"
+          size="sm"
+          busy={form.busy}
+          onClick={form.handleSubmit}
+        >
           {t("Save")}
         </Button>
       </ModalFooter>

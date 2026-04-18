@@ -1,7 +1,7 @@
-import type { AxiosError } from "axios";
+import { getToken, setToken } from "@shared/api/createApi";
 import { createStore, useStore } from "@shared/store/createStore";
-import { setToken, getToken } from "@shared/api/createApi";
-import type { AuthConfig, AuthState, AuthActor } from "./types";
+import type { AxiosError } from "axios";
+import type { AuthActor, AuthConfig, AuthState } from "./types";
 
 interface TokenPairResponse {
   access_token: string;
@@ -13,21 +13,14 @@ interface TokenPairResponse {
 /**
  * Create an auth actor for a portal.
  *
- * Token mode (user portal):
+ * Forge Starter baseline (admin + user portals):
  *   const auth = createAuth<UserResponse>({
  *     api,
  *     mode: "token",
  *     paths: { login: "/auth/login", refresh: "/auth/refresh", logout: "/auth/logout", me: "/me" },
  *   });
- *
- * Session mode (admin portal):
- *   const auth = createAuth<AdminUserResponse>({
- *     api,
- *     mode: "session",
- *     paths: { login: "/auth/login", logout: "/auth/logout", me: "/me" },
- *   });
  */
-export function createAuth<TUser>(config: AuthConfig<TUser>): AuthActor<TUser> {
+export function createAuth<TUser>(config: AuthConfig): AuthActor<TUser> {
   const { api, mode, paths } = config;
 
   // ── State ──────────────────────────────────────────
@@ -104,13 +97,15 @@ export function createAuth<TUser>(config: AuthConfig<TUser>): AuthActor<TUser> {
 
     // Token mode: try refresh before giving up
     if (mode === "token" && refreshToken && paths.refresh) {
+      const requestToRetry = originalRequest;
+
       if (isRefreshing) {
         // Queue this request — it will be retried after refresh completes
         return new Promise((resolve, reject) => {
           pendingRequests.push({ resolve, reject });
         }).then(() => {
-          delete originalRequest!.headers?.Authorization;
-          return api(originalRequest!);
+          delete requestToRetry.headers?.Authorization;
+          return api(requestToRetry);
         });
       }
 
@@ -121,15 +116,19 @@ export function createAuth<TUser>(config: AuthConfig<TUser>): AuthActor<TUser> {
         isRefreshing = false;
 
         // Retry all queued requests
-        pendingRequests.forEach(({ resolve }) => resolve(undefined));
+        pendingRequests.forEach(({ resolve }) => {
+          resolve(undefined);
+        });
         pendingRequests = [];
 
         // Retry with fresh token (clear stale header so interceptor re-attaches)
-        delete originalRequest.headers?.Authorization;
-        return api(originalRequest);
+        delete requestToRetry.headers?.Authorization;
+        return api(requestToRetry);
       } catch {
         isRefreshing = false;
-        pendingRequests.forEach(({ reject }) => reject(error));
+        pendingRequests.forEach(({ reject }) => {
+          reject(error);
+        });
         pendingRequests = [];
         clearAuth();
         return Promise.reject(error);

@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import type { LightboxImage } from "@shared/types/form";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface LightboxProps {
   open: boolean;
@@ -17,6 +18,7 @@ export function Lightbox({
   initialIndex = 0,
   alt = "",
 }: LightboxProps) {
+  const { t } = useTranslation();
   const [index, setIndex] = useState(initialIndex);
 
   const normalizedImages = useMemo(
@@ -81,25 +83,28 @@ export function Lightbox({
   const current = normalizedImages[index];
 
   return (
-    <div
-      className="sf-lightbox-overlay"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
+    <div className="sf-lightbox-overlay">
       <button
+        type="button"
+        className="sf-lightbox-backdrop"
+        onClick={onClose}
+        aria-label={t("Close")}
+      />
+      <button
+        type="button"
         className="sf-lightbox-close"
         onClick={onClose}
-        aria-label="Close"
+        aria-label={t("Close")}
       >
         <X size={24} />
       </button>
 
       {hasPrev && (
         <button
+          type="button"
           className="sf-lightbox-prev"
           onClick={prev}
-          aria-label="Previous"
+          aria-label={t("Previous")}
         >
           <ChevronLeft size={32} />
         </button>
@@ -114,16 +119,21 @@ export function Lightbox({
 
       {(current.title || current.subtitle) && (
         <div className="sf-lightbox-caption">
-          {current.title && <div className="sf-lightbox-title">{current.title}</div>}
-          {current.subtitle && <div className="sf-lightbox-subtitle">{current.subtitle}</div>}
+          {current.title && (
+            <div className="sf-lightbox-title">{current.title}</div>
+          )}
+          {current.subtitle && (
+            <div className="sf-lightbox-subtitle">{current.subtitle}</div>
+          )}
         </div>
       )}
 
       {hasNext && (
         <button
+          type="button"
           className="sf-lightbox-next"
           onClick={next}
-          aria-label="Next"
+          aria-label={t("Next")}
         >
           <ChevronRight size={32} />
         </button>

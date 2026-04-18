@@ -7,7 +7,9 @@ interface ModalFooterProps {
 
 export function ModalFooter({ children, className }: ModalFooterProps) {
   return (
-    <div className={className ? `sf-modal-footer ${className}` : "sf-modal-footer"}>
+    <div
+      className={className ? `sf-modal-footer ${className}` : "sf-modal-footer"}
+    >
       {children}
     </div>
   );

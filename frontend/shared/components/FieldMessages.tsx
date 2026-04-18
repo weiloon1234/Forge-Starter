@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Children, type ReactNode } from "react";
 
 interface FieldMessagesProps {
   hints?: (string | ReactNode)[];
@@ -15,15 +15,15 @@ export function FieldMessages({ hints, errors }: FieldMessagesProps) {
     <>
       {hasHints && (
         <div className="sf-hints">
-          {hints.map((hint, i) => (
-            <p key={i} className="sf-hint">{hint}</p>
+          {Children.map(hints, (hint) => (
+            <p className="sf-hint">{hint}</p>
           ))}
         </div>
       )}
       {hasErrors && (
         <div className="sf-errors">
-          {errors.map((err, i) => (
-            <p key={i} className="sf-error">{err}</p>
+          {Children.map(errors, (err) => (
+            <p className="sf-error">{err}</p>
           ))}
         </div>
       )}

@@ -1,12 +1,13 @@
-import { useState, useRef, useEffect, useMemo } from "react";
 import type { FileUploadProps } from "@shared/types/form";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FieldMessages, fieldClasses } from "./FieldMessages";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
   const units = ["B", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  const size = bytes / Math.pow(1024, i);
+  const size = bytes / 1024 ** i;
   return `${size.toFixed(i > 0 ? 1 : 0)} ${units[i]}`;
 }
 
@@ -30,6 +31,7 @@ export function FileUpload({
   maxFiles,
   preview = true,
 }: FileUploadProps) {
+  const { t } = useTranslation();
   const [dragover, setDragover] = useState(false);
   const [localErrors, setLocalErrors] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -52,7 +54,9 @@ export function FileUpload({
 
   useEffect(() => {
     return () => {
-      previewUrls.forEach((url) => { if (url) URL.revokeObjectURL(url); });
+      previewUrls.forEach((url) => {
+        if (url) URL.revokeObjectURL(url);
+      });
     };
   }, [previewUrls]);
 
@@ -64,7 +68,7 @@ export function FileUpload({
       const oversized = valid.filter((f) => f.size > maxSize);
       if (oversized.length > 0) {
         errors.push(
-          `File${oversized.length > 1 ? "s" : ""} exceed max size of ${formatBytes(maxSize)}`
+          `File${oversized.length > 1 ? "s" : ""} exceed max size of ${formatBytes(maxSize)}`,
         );
         valid = valid.filter((f) => f.size <= maxSize);
       }
@@ -138,23 +142,23 @@ export function FileUpload({
   return (
     <div className={classes}>
       {label && (
-        <label className={`sf-label${required ? " sf-label--required" : ""}`}>
+        <div className={`sf-label${required ? " sf-label--required" : ""}`}>
           {label}
-        </label>
+        </div>
       )}
 
-      <div
+      <button
+        type="button"
         className={dropzoneClasses}
         onClick={handleClick}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        disabled={disabled}
       >
         <span className="sf-file-dropzone-icon">{"\uD83D\uDCC1"}</span>
-        <span className="sf-file-dropzone-text">
-          Drop files here or click to browse
-        </span>
-      </div>
+        <span className="sf-file-dropzone-text">{t("form.drop_files")}</span>
+      </button>
 
       <input
         type="file"
@@ -169,31 +173,35 @@ export function FileUpload({
 
       {files.length > 0 && (
         <div className="sf-file-list">
-          {files.map((file, i) => (
-            <div key={i} className="sf-file-item">
-              {preview && previewUrls[i] ? (
-                <img
-                  className="sf-file-preview"
-                  src={previewUrls[i]}
-                  alt={file.name}
-                />
-              ) : (
-                <div className="sf-file-preview">{"\uD83D\uDCC4"}</div>
-              )}
-              <div className="sf-file-info">
-                <p className="sf-file-name">{file.name}</p>
-                <p className="sf-file-size">{formatBytes(file.size)}</p>
+          {files.map((file, i) => {
+            const fileKey = `${file.name}-${file.size}-${file.lastModified}`;
+
+            return (
+              <div key={fileKey} className="sf-file-item">
+                {preview && previewUrls[i] ? (
+                  <img
+                    className="sf-file-preview"
+                    src={previewUrls[i]}
+                    alt={file.name}
+                  />
+                ) : (
+                  <div className="sf-file-preview">{"\uD83D\uDCC4"}</div>
+                )}
+                <div className="sf-file-info">
+                  <p className="sf-file-name">{file.name}</p>
+                  <p className="sf-file-size">{formatBytes(file.size)}</p>
+                </div>
+                <button
+                  type="button"
+                  className="sf-file-remove"
+                  onClick={() => removeFile(i)}
+                  disabled={disabled}
+                >
+                  {"\u2715"}
+                </button>
               </div>
-              <button
-                type="button"
-                className="sf-file-remove"
-                onClick={() => removeFile(i)}
-                disabled={disabled}
-              >
-                {"\u2715"}
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

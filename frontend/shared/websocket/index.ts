@@ -1,2 +1,2 @@
-export { createWebSocket } from "./createWebSocket";
 export type { WebSocketManager } from "./createWebSocket";
+export { createWebSocket } from "./createWebSocket";

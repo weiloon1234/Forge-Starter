@@ -1,5 +1,5 @@
-use forge::prelude::*;
 use crate::domain::models::User;
+use forge::prelude::*;
 
 pub struct UserResource;
 

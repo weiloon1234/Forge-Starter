@@ -1,6 +1,6 @@
 import { createAuth } from "@shared/auth";
-import { api } from "@/api";
 import type { AdminMeResponse } from "@shared/types/generated";
+import { api } from "@/api";
 
 export const auth = createAuth<AdminMeResponse>({
   api,

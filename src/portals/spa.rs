@@ -1,6 +1,6 @@
-use std::sync::OnceLock;
-use forge::prelude::*;
 use axum::response::Html;
+use forge::prelude::*;
+use std::sync::OnceLock;
 
 // Vite dev server ports — must match vite.config.ts server.port
 const VITE_ADMIN_PORT: u16 = 5173;
@@ -90,7 +90,12 @@ fn prod_html(portal: &str, cache: &OnceLock<String>, app: &AppContext) -> String
 pub async fn admin_spa(State(app): State<AppContext>) -> Html<String> {
     if is_dev(&app) {
         let config = config_script(&app);
-        Html(dev_html("Admin Portal", VITE_ADMIN_PORT, "/admin/", &config))
+        Html(dev_html(
+            "Admin Portal",
+            VITE_ADMIN_PORT,
+            "/admin/",
+            &config,
+        ))
     } else {
         Html(prod_html("admin", &ADMIN_HTML, &app))
     }

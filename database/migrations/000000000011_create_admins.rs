@@ -16,7 +16,8 @@ impl MigrationFile for Entry {
                 password_hash TEXT NOT NULL,
                 locale TEXT NOT NULL DEFAULT 'en',
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                deleted_at TIMESTAMPTZ NULL
             )"#,
             &[],
         )

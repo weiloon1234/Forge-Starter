@@ -1,22 +1,25 @@
-use async_trait::async_trait;
+use serde::Serialize;
+
 use forge::prelude::*;
 
 use crate::domain::enums::AdminType;
 use crate::ids::guards::Guard;
 
-#[derive(forge::Model)]
-#[forge(model = "admins")]
+#[derive(Serialize, forge::Model)]
+#[forge(model = "admins", soft_deletes = true)]
 pub struct Admin {
     pub id: ModelId<Self>,
     pub username: String,
     pub email: String,
     pub name: String,
     pub admin_type: AdminType,
+    pub permissions: Vec<String>,
     #[forge(write_mutator = "hash_password")]
     pub password_hash: String,
     pub locale: String,
     pub created_at: DateTime,
     pub updated_at: DateTime,
+    pub deleted_at: Option<DateTime>,
 }
 
 impl Admin {
@@ -31,20 +34,8 @@ impl HasToken for Admin {
     }
 }
 
-#[async_trait]
 impl Authenticatable for Admin {
     fn guard() -> GuardId {
         Guard::Admin.into()
-    }
-
-    async fn resolve_from_actor<E: QueryExecutor>(
-        actor: &Actor,
-        executor: &E,
-    ) -> Result<Option<Self>> {
-        let id: ModelId<Self> = actor.id.parse().map_err(|_| Error::message("invalid actor id"))?;
-        Admin::model_query()
-            .where_(Admin::ID.eq(id))
-            .first(executor)
-            .await
     }
 }

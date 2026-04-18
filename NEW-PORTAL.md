@@ -61,21 +61,35 @@ See `CLAUDE.md` > "Adding a new portal" for the full backend checklist:
 - `src/portals/mod.rs` — call `merchant::register(r)`
 - `src/portals/mod.rs` — add SPA serving for `/merchant` prefix
 
-## 7. Create public output directory
+## 7. Auth baseline
+
+This starter uses token auth for every portal. Keep the new portal aligned:
+
+- `frontend/merchant/src/auth.ts` should use `createAuth({ mode: "token", ... })`
+- refresh endpoints should use the shared `RefreshTokenRequest` shape
+- if the portal needs WebSocket auth, use the shared `/auth/ws-token` + `WsTokenResponse` pattern
+
+## 8. Frontend system rules
+
+- Feature/module code in the new portal should use shared primitives from `@shared/components`
+- If you need portal-specific button styling, use `<Button unstyled ...>` instead of raw `<button>`
+- Shared infrastructure components may still use low-level DOM internally
+
+## 9. Create public output directory
 
 ```bash
 mkdir -p public/merchant
 touch public/merchant/.gitkeep
 ```
 
-## 8. Update .gitignore
+## 10. Update .gitignore
 
 ```
 public/merchant/*
 !public/merchant/.gitkeep
 ```
 
-## 9. Update Dockerfile
+## 11. Update Dockerfile
 
 Add to the frontend stage:
 
@@ -84,4 +98,12 @@ COPY Forge-Starter/frontend/merchant/package.json /app/frontend/merchant/package
 RUN cd /app/frontend/merchant && npm install
 COPY Forge-Starter/frontend/merchant/ /app/frontend/merchant/
 RUN cd /app/frontend/merchant && npm run build
+```
+
+## 12. Verify before handing off
+
+```bash
+make types
+make check
+make lint
 ```

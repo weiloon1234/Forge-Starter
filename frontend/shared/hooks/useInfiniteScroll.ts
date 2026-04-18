@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from "react";
 import type { AxiosInstance } from "axios";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface UseInfiniteScrollConfig {
   api: AxiosInstance;
@@ -24,7 +24,7 @@ interface UseInfiniteScrollReturn<T> {
 }
 
 export function useInfiniteScroll<T>(
-  config: UseInfiniteScrollConfig
+  config: UseInfiniteScrollConfig,
 ): UseInfiniteScrollReturn<T> {
   const { api, url, perPage = 20, params = {}, enabled = true } = config;
 
@@ -87,7 +87,7 @@ export function useInfiniteScroll<T>(
         }
       }
     },
-    [api, url, perPage, params, enabled]
+    [api, url, perPage, params, enabled],
   );
 
   // Initial load
@@ -134,12 +134,12 @@ export function useInfiniteScroll<T>(
             loadMore();
           }
         },
-        { rootMargin: "200px" }
+        { rootMargin: "200px" },
       );
 
       observerRef.current.observe(node);
     },
-    [hasMore, loadingMore, loading, loadMore]
+    [hasMore, loadingMore, loading, loadMore],
   );
 
   // Cleanup observer + backoff timer

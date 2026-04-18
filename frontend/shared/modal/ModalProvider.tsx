@@ -1,8 +1,9 @@
+import { useStore } from "@shared/store/createStore";
+import { X } from "lucide-react";
+import type { ComponentType } from "react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useStore } from "@shared/store/createStore";
-import { modalStore, modal } from "./store";
-import { X } from "lucide-react";
+import { modal, modalStore } from "./store";
 
 const Z_BASE = 1000;
 
@@ -40,22 +41,24 @@ export function ModalProvider() {
     <>
       {stack.map((entry, index) => {
         const zIndex = Z_BASE + index * 10;
-        const Component = entry.component;
+        const Component = entry.component as ComponentType<
+          Record<string, unknown> & {
+            onClose: () => void;
+          }
+        >;
         const isTop = index === stack.length - 1;
 
         const handleClose = () => modal.close(entry.id);
 
         return (
-          <div
-            key={entry.id}
-            className="sf-modal-overlay"
-            style={{ zIndex }}
-            onClick={(e) => {
-              if (e.target === e.currentTarget && isTop) {
-                handleClose();
-              }
-            }}
-          >
+          <div key={entry.id} className="sf-modal-overlay" style={{ zIndex }}>
+            <button
+              type="button"
+              className="sf-modal-backdrop"
+              onClick={handleClose}
+              aria-label={t("Close")}
+              disabled={!isTop}
+            />
             <div className="sf-modal-container">
               {entry.title && (
                 <div className="sf-modal-header">

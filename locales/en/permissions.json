@@ -1,0 +1,23 @@
+{
+    "permissions": {
+        "none": "None",
+        "read": "View",
+        "manage": "Manage",
+        "exports": {
+            "label": "Exports",
+            "read": "Export"
+        },
+        "admins": {
+            "label": "Admins"
+        },
+        "users": {
+            "label": "Users"
+        },
+        "countries": {
+            "label": "Countries"
+        },
+        "logs": {
+            "label": "Logs"
+        }
+    }
+}

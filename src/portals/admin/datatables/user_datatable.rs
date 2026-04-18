@@ -1,6 +1,7 @@
+use crate::domain::enums::UserStatus;
+use crate::domain::models::User;
 use async_trait::async_trait;
 use forge::prelude::*;
-use crate::domain::models::User;
 
 pub struct UserDatatable;
 
@@ -16,10 +17,26 @@ impl ModelDatatable for UserDatatable {
     fn columns() -> Vec<DatatableColumn<User>> {
         vec![
             DatatableColumn::field(User::ID).label("ID").sortable(),
-            DatatableColumn::field(User::EMAIL).label("Email").sortable().filterable().exportable(),
-            DatatableColumn::field(User::NAME).label("Name").sortable().filterable().exportable(),
-            DatatableColumn::field(User::STATUS).label("Status").sortable().filterable().exportable(),
-            DatatableColumn::field(User::CREATED_AT).label("Created").sortable().filterable().exportable(),
+            DatatableColumn::field(User::EMAIL)
+                .label("Email")
+                .sortable()
+                .filterable()
+                .exportable(),
+            DatatableColumn::field(User::NAME)
+                .label("Name")
+                .sortable()
+                .filterable()
+                .exportable(),
+            DatatableColumn::field(User::STATUS)
+                .label("Status")
+                .sortable()
+                .filterable()
+                .exportable(),
+            DatatableColumn::field(User::CREATED_AT)
+                .label("Created")
+                .sortable()
+                .filterable()
+                .exportable(),
         ]
     }
 
@@ -34,11 +51,17 @@ impl ModelDatatable for UserDatatable {
                 DatatableFilterField::text("name", "Name").placeholder("Search name..."),
             ),
             DatatableFilterRow::single(
-                DatatableFilterField::select("status", "Status").options(vec![
-                    DatatableFilterOption::new("Active", "Active"),
-                    DatatableFilterOption::new("Inactive", "Inactive"),
-                    DatatableFilterOption::new("Suspended", "Suspended"),
-                ]),
+                DatatableFilterField::select("status", "Status").options(
+                    UserStatus::options()
+                        .into_iter()
+                        .filter_map(|option| match option.value {
+                            EnumKey::String(value) => {
+                                Some(DatatableFilterOption::new(value, option.label_key))
+                            }
+                            EnumKey::Int(_) => None,
+                        })
+                        .collect::<Vec<_>>(),
+                ),
             ),
         ])
     }

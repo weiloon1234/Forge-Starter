@@ -1,14 +1,29 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useTranslation } from "react-i18next";
-import type { AxiosInstance } from "axios";
-import { ChevronUp, ChevronDown, Download, RefreshCw, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from "lucide-react";
-import { useDataTable, serializeSorts } from "@shared/hooks/useDataTable";
+import { serializeSorts, useDataTable } from "@shared/hooks/useDataTable";
+import type {
+  DataTableFilter,
+  DataTableFilterField,
+  DataTableFilterInputValue,
+  DataTableFilterRow,
+  DataTableProps,
+} from "@shared/types/form";
 import { getCookie, setCookie } from "@shared/utils/cookie";
+import type { AxiosInstance } from "axios";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronUp,
+  Download,
+  RefreshCw,
+} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "./Button";
+import { Checkbox } from "./Checkbox";
 import { Input } from "./Input";
 import { Select } from "./Select";
-import { Checkbox } from "./Checkbox";
-import type { DataTableProps, DataTableColumn, DataTableFilter } from "@shared/types/form";
 
 interface Props<T> extends DataTableProps<T> {
   api: AxiosInstance;
@@ -30,9 +45,18 @@ export function DataTable<T>({
 }: Props<T>) {
   const { t } = useTranslation();
   const {
-    rows, meta, loading, error,
-    page, perPage, sorts, filters,
-    setPage, setPerPage, toggleSort, setFilters,
+    rows,
+    meta,
+    loading,
+    error,
+    page,
+    perPage,
+    sorts,
+    filters,
+    setPage,
+    setPerPage,
+    toggleSort,
+    setFilters,
     refresh,
   } = useDataTable<T>({ api, url, defaultPerPage });
 
@@ -44,7 +68,9 @@ export function DataTable<T>({
 
   const interval = refreshInterval || 60;
   const cookieKey = `dt_autorefresh_${url}`;
-  const [autoRefresh, setAutoRefresh] = useState(() => getCookie(cookieKey) === "1");
+  const [autoRefresh, setAutoRefresh] = useState(
+    () => getCookie(cookieKey) === "1",
+  );
   const [countdown, setCountdown] = useState(interval);
 
   useEffect(() => {
@@ -70,22 +96,29 @@ export function DataTable<T>({
 
   // ── Filter state (local inputs before applying) ─────────
 
-  const [filterValues, setFilterValues] = useState<Record<string, any>>({});
+  const [filterValues, setFilterValues] = useState<
+    Record<string, DataTableFilterInputValue>
+  >({});
   const filterValuesRef = useRef(filterValues);
-  useEffect(() => { filterValuesRef.current = filterValues; }, [filterValues]);
+  useEffect(() => {
+    filterValuesRef.current = filterValues;
+  }, [filterValues]);
 
   // ── Download ────────────────────────────────────────────
 
   const handleDownload = useCallback(async () => {
     if (!downloadUrl) return;
-    const params: Record<string, any> = {};
+    const params: Record<string, string> = {};
     if (sorts.length > 0) {
       params.sort = JSON.stringify(serializeSorts(sorts));
     }
     if (filters.length > 0) {
       params.filters = JSON.stringify(filters);
     }
-    const { data } = await api.get(downloadUrl, { params, responseType: "blob" });
+    const { data } = await api.get(downloadUrl, {
+      params,
+      responseType: "blob",
+    });
     const blobUrl = URL.createObjectURL(data);
     const a = document.createElement("a");
     a.href = blobUrl;
@@ -111,14 +144,14 @@ export function DataTable<T>({
   // ── Sort helpers ────────────────────────────────────────
 
   const getSortDirection = (field: string): "asc" | "desc" | null => {
-    const s = sorts.find(s => s.field === field);
+    const s = sorts.find((s) => s.field === field);
     return s ? s.direction : null;
   };
 
   // ── Footer detection ────────────────────────────────────
 
-  const hasFooter = columns.some(col =>
-    col.footer || (footerSums && footerSums.includes(String(col.key)))
+  const hasFooter = columns.some(
+    (col) => col.footer || footerSums?.includes(String(col.key)),
   );
 
   // ── Render filters ─────────────────────────────────────
@@ -128,10 +161,14 @@ export function DataTable<T>({
     for (const [f, v] of Object.entries(filterValuesRef.current)) {
       if (v === "" || v === null || v === undefined) continue;
       if (Array.isArray(v) && v.length === 0) continue;
-      const op = typeof v === "boolean" ? "eq" : f.includes("|") ? "like_any" : "like";
-      const taggedValue = typeof v === "boolean" ? { bool: v }
-        : Array.isArray(v) ? { values: v }
-        : { text: String(v) };
+      const op =
+        typeof v === "boolean" ? "eq" : f.includes("|") ? "like_any" : "like";
+      const taggedValue =
+        typeof v === "boolean"
+          ? { bool: v }
+          : Array.isArray(v)
+            ? { values: v }
+            : { text: String(v) };
       active.push({ field: f, op, value: taggedValue });
     }
     setFilters(active);
@@ -144,37 +181,42 @@ export function DataTable<T>({
     setPage(1);
   }, [setFilters, setPage]);
 
-  const renderFilterField = (f: any) => {
+  const renderFilterField = (f: DataTableFilterField) => {
     const value = filterValues[f.name] ?? "";
 
     if (f.kind === "select") {
-      const items = Array.isArray(f.options) ? f.options : f.options?.items ?? [];
-      const options = items.map((opt: any) => ({
+      const options = f.options.items.map((opt) => ({
         value: opt.value,
         label: t(opt.label),
       }));
+      const selectValue =
+        typeof value === "string" || Array.isArray(value) ? value : undefined;
       return (
         <Select
           key={f.name}
           name={f.name}
           label={t(f.label)}
-          value={value}
+          value={selectValue}
           options={options}
           placeholder={t("All")}
           clearable
-          onChange={(v) => setFilterValues(prev => ({ ...prev, [f.name]: v }))}
+          onChange={(v) =>
+            setFilterValues((prev) => ({ ...prev, [f.name]: v }))
+          }
         />
       );
     }
 
-    if (f.kind === "checkbox" || f.kind === "boolean") {
+    if (f.kind === "checkbox") {
       return (
         <Checkbox
           key={f.name}
           name={f.name}
           label={t(f.label)}
-          checked={!!value}
-          onChange={(v) => setFilterValues(prev => ({ ...prev, [f.name]: v }))}
+          checked={value === true}
+          onChange={(v) =>
+            setFilterValues((prev) => ({ ...prev, [f.name]: v }))
+          }
         />
       );
     }
@@ -184,11 +226,49 @@ export function DataTable<T>({
         key={f.name}
         name={f.name}
         label={t(f.label)}
-        value={value}
+        value={typeof value === "string" ? value : ""}
         placeholder={f.placeholder ? t(f.placeholder) : ""}
-        onChange={(v) => setFilterValues(prev => ({ ...prev, [f.name]: v }))}
+        onChange={(v) => setFilterValues((prev) => ({ ...prev, [f.name]: v }))}
       />
     );
+  };
+
+  const getFilterRowKey = (row: DataTableFilterRow): string => {
+    const fields = row.fields;
+    return fields
+      .map((field) => field.name || field.label || "field")
+      .join("|");
+  };
+
+  const getRowKey = (row: T): string => {
+    if (typeof row === "object" && row !== null) {
+      const objectRow = row as Record<string, unknown>;
+      const candidate = objectRow.id ?? objectRow.key ?? objectRow.uuid;
+      if (candidate != null) {
+        return String(candidate);
+      }
+      return JSON.stringify(objectRow);
+    }
+
+    return String(row);
+  };
+
+  const renderDefaultCell = (row: T, key: string): string => {
+    const value = (row as Record<string, unknown>)[key];
+
+    if (value == null) {
+      return "";
+    }
+
+    if (
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "boolean"
+    ) {
+      return String(value);
+    }
+
+    return JSON.stringify(value);
   };
 
   // ── Render ──────────────────────────────────────────────
@@ -210,10 +290,16 @@ export function DataTable<T>({
                 checked={autoRefresh}
                 onChange={(e) => setAutoRefresh(e.target.checked)}
               />
-              {autoRefresh ? ` ${t("refresh_in", { seconds: countdown })}` : ` ${t("auto_refresh_every", { seconds: interval })}`}
+              {autoRefresh
+                ? ` ${t("refresh_in", { seconds: countdown })}`
+                : ` ${t("auto_refresh_every", { seconds: interval })}`}
             </label>
             {downloadUrl && (
-              <button className="sf-datatable-download" onClick={handleDownload} type="button">
+              <button
+                className="sf-datatable-download"
+                onClick={handleDownload}
+                type="button"
+              >
                 <Download size={16} />
               </button>
             )}
@@ -222,8 +308,10 @@ export function DataTable<T>({
               value={perPage}
               onChange={(e) => setPerPage(Number(e.target.value))}
             >
-              {[10, 20, 50, 100, 300, 500, 1000].map(n => (
-                <option key={n} value={n}>{n} / {t("page")}</option>
+              {[10, 20, 50, 100, 300, 500, 1000].map((n) => (
+                <option key={n} value={n}>
+                  {n} / {t("page")}
+                </option>
               ))}
             </select>
           </div>
@@ -233,9 +321,9 @@ export function DataTable<T>({
       {/* Filters */}
       {meta && meta.filters.length > 0 && (
         <div className="sf-datatable-filters">
-          {meta.filters.map((row: any, ri: number) => (
-            <div key={ri} className="sf-datatable-filter-row">
-              {(row.fields ?? [row]).map(renderFilterField)}
+          {meta.filters.map((row) => (
+            <div key={getFilterRowKey(row)} className="sf-datatable-filter-row">
+              {row.fields.map(renderFilterField)}
             </div>
           ))}
           <div className="sf-datatable-filter-actions">
@@ -259,7 +347,9 @@ export function DataTable<T>({
         <table className="sf-datatable-table">
           <thead className="sf-datatable-thead">
             <tr>
-              {showIndex && <th className="sf-datatable-th sf-datatable-th--index">#</th>}
+              {showIndex && (
+                <th className="sf-datatable-th sf-datatable-th--index">#</th>
+              )}
               {columns.map((col) => {
                 const key = String(col.key);
                 const dir = getSortDirection(key);
@@ -270,13 +360,19 @@ export function DataTable<T>({
                   dir === "asc" && "sf-datatable-th--asc",
                   dir === "desc" && "sf-datatable-th--desc",
                   col.headerClassName,
-                ].filter(Boolean).join(" ");
+                ]
+                  .filter(Boolean)
+                  .join(" ");
 
                 return (
                   <th
                     key={key}
                     className={thClasses}
-                    onClick={col.sortable ? (e) => toggleSort(key, e.shiftKey) : undefined}
+                    onClick={
+                      col.sortable
+                        ? (e) => toggleSort(key, e.shiftKey)
+                        : undefined
+                    }
                     style={col.sortable ? { cursor: "pointer" } : undefined}
                   >
                     <span className="sf-datatable-th-content">
@@ -292,13 +388,16 @@ export function DataTable<T>({
           <tbody className="sf-datatable-tbody">
             {rows.length === 0 && !loading ? (
               <tr>
-                <td className="sf-datatable-empty" colSpan={columns.length + (showIndex ? 1 : 0)}>
+                <td
+                  className="sf-datatable-empty"
+                  colSpan={columns.length + (showIndex ? 1 : 0)}
+                >
                   {t("No data")}
                 </td>
               </tr>
             ) : (
               rows.map((row, i) => (
-                <tr className="sf-datatable-tr" key={i}>
+                <tr className="sf-datatable-tr" key={getRowKey(row)}>
                   {showIndex && (
                     <td className="sf-datatable-td sf-datatable-td--index">
                       {(page - 1) * perPage + i + 1}
@@ -307,10 +406,13 @@ export function DataTable<T>({
                   {columns.map((col) => {
                     const key = String(col.key);
                     return (
-                      <td key={key} className={`sf-datatable-td ${col.cellClassName ?? ""}`}>
+                      <td
+                        key={key}
+                        className={`sf-datatable-td ${col.cellClassName ?? ""}`}
+                      >
                         {col.render
                           ? col.render(row)
-                          : (row as any)[key] ?? ""}
+                          : renderDefaultCell(row, key)}
                       </td>
                     );
                   })}
@@ -328,8 +430,8 @@ export function DataTable<T>({
                   }
                   if (footerSums?.includes(key)) {
                     const sum = rows.reduce((acc, row) => {
-                      const val = Number((row as any)[key]);
-                      return acc + (isNaN(val) ? 0 : val);
+                      const val = Number((row as Record<string, unknown>)[key]);
+                      return acc + (Number.isNaN(val) ? 0 : val);
                     }, 0);
                     return <td key={key}>{sum}</td>;
                   }

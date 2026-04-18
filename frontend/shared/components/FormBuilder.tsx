@@ -1,7 +1,8 @@
 import type { FormBuilderProps } from "@shared/types/form";
+import { Button } from "./Button";
 import { FormField } from "./FormField";
 
-export function FormBuilder<T extends Record<string, any>>({
+export function FormBuilder<T extends Record<string, unknown>>({
   form,
   fields,
   submitLabel = "Submit",
@@ -16,9 +17,9 @@ export function FormBuilder<T extends Record<string, any>>({
           binding={form.field(config.name as keyof T)}
         />
       ))}
-      <button type="submit" className="sf-button" disabled={form.busy}>
-        {form.busy ? "..." : submitLabel}
-      </button>
+      <Button type="submit" busy={form.busy}>
+        {submitLabel}
+      </Button>
     </form>
   );
 }

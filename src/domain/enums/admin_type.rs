@@ -1,4 +1,4 @@
-#[derive(Clone, Debug, PartialEq, forge::AppEnum, ts_rs::TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, forge::AppEnum, ts_rs::TS)]
 #[ts(export)]
 pub enum AdminType {
     SuperAdmin,
@@ -6,12 +6,18 @@ pub enum AdminType {
     Admin,
 }
 
+impl AdminType {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::SuperAdmin => "super_admin",
+            Self::Developer => "developer",
+            Self::Admin => "admin",
+        }
+    }
+}
+
 impl std::fmt::Display for AdminType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            AdminType::SuperAdmin => write!(f, "super_admin"),
-            AdminType::Developer => write!(f, "developer"),
-            AdminType::Admin => write!(f, "admin"),
-        }
+        write!(f, "{}", self.as_str())
     }
 }

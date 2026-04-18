@@ -1,6 +1,6 @@
-import axios, { type AxiosInstance, type AxiosError } from "axios";
-import { toast } from "sonner";
 import { localeStore } from "@shared/i18n/localeStore";
+import axios, { type AxiosError, type AxiosInstance } from "axios";
+import { toast } from "sonner";
 
 // ── Types ──────────────────────────────────────────────
 
@@ -14,6 +14,7 @@ interface ApiErrorResponse {
   message: string;
   status: number;
   error_code?: string;
+  message_key?: string;
   errors?: Array<{ field: string; code: string; message: string }>;
 }
 
@@ -30,7 +31,7 @@ export class ApiFormError extends Error {
 }
 
 function transformFieldErrors(
-  errors: Array<{ field: string; message: string }>
+  errors: Array<{ field: string; message: string }>,
 ): Record<string, string[]> {
   const result: Record<string, string[]> = {};
   for (const err of errors) {
@@ -66,7 +67,10 @@ export function getToken(): string | null {
 
 // ── Factory ────────────────────────────────────────────
 
-export function createApi({ baseURL, silentPaths = [] }: ApiConfig): AxiosInstance {
+export function createApi({
+  baseURL,
+  silentPaths = [],
+}: ApiConfig): AxiosInstance {
   const instance = axios.create({
     baseURL,
     headers: { Accept: "application/json" },
@@ -110,7 +114,7 @@ export function createApi({ baseURL, silentPaths = [] }: ApiConfig): AxiosInstan
       }
 
       return Promise.reject(error);
-    }
+    },
   );
 
   return instance;

@@ -1,0 +1,44 @@
+{
+    "admin": {
+        "errors": {
+            "cannot_view_tier": "You cannot view an admin of this tier.",
+            "cannot_edit_self": "You cannot edit your own account here. Use Profile instead.",
+            "cannot_manage_tier": "You cannot manage an admin of this tier.",
+            "cannot_grant_permission": "You cannot grant a permission you do not hold: {{permission}}",
+            "invalid_admin_type": "You cannot assign this admin type."
+        },
+        "users": {
+            "title": "Users",
+            "subtitle": "Browse and search user accounts."
+        },
+        "admins": {
+            "title": "Admins",
+            "subtitle": "Manage staff access and portal permissions.",
+            "new": "New Admin",
+            "edit": "Edit admin",
+            "permissions_column": "Permissions",
+            "permissions_count": "{{value}} permissions",
+            "permissions_open": "View permission summary",
+            "view_title": "View Admin",
+            "back": "Back to Admins",
+            "create_title": "Create Admin",
+            "edit_title": "Edit Admin",
+            "create_help": "Create a new admin account and assign its module access.",
+            "edit_help": "Update account details, locale, and per-module permissions.",
+            "view_help": "This admin is visible to you, but it cannot be changed from admin management.",
+            "view_self_help": "Use Profile to update your own account settings.",
+            "created": "Admin created",
+            "updated": "Admin updated",
+            "deleted": "Admin deleted",
+            "new_password": "New password",
+            "password_placeholder": "Leave blank to keep the current password",
+            "permissions_title": "Permissions",
+            "permissions_help": "Choose the highest access level allowed for each module.",
+            "permissions_modal_title": "Permissions for {{name}}",
+            "permissions_modal_help": "Review this admin's current module access in read-only mode.",
+            "implicit_permissions_help": "This admin type receives full access automatically.",
+            "implicit_permissions_note": "Per-module permissions only apply to the Admin tier.",
+            "confirm_delete": "Delete {{name}}? This action cannot be undone."
+        }
+    }
+}

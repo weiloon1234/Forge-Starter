@@ -1,7 +1,11 @@
-import { useTranslation } from "react-i18next";
-import { useRouteError, isRouteErrorResponse, useNavigate } from "react-router-dom";
-import { ArrowLeft, TriangleAlert } from "lucide-react";
 import { Button } from "@shared/components";
+import { ArrowLeft, TriangleAlert } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import {
+  isRouteErrorResponse,
+  useNavigate,
+  useRouteError,
+} from "react-router-dom";
 
 export function ErrorPage() {
   const { t } = useTranslation();

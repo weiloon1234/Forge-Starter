@@ -1,4 +1,5 @@
 import type { InputProps } from "@shared/types/form";
+import { useEffect, useRef } from "react";
 import { FieldMessages, fieldClasses } from "./FieldMessages";
 
 // ── Money: digits + max one decimal point ───────────────
@@ -19,10 +20,10 @@ function sanitizeMoney(raw: string): string {
 // ── ATM: keying 1234 displays as 12.34 ─────────────────
 function formatAtm(digits: string): string {
   if (digits.length === 0) return "";
-  if (digits.length === 1) return "0.0" + digits;
-  if (digits.length === 2) return "0." + digits;
+  if (digits.length === 1) return `0.0${digits}`;
+  if (digits.length === 2) return `0.${digits}`;
   const integer = digits.slice(0, -2).replace(/^0+/, "") || "0";
-  return integer + "." + digits.slice(-2);
+  return `${integer}.${digits.slice(-2)}`;
 }
 
 function rawAtmDigits(formatted: string): string {
@@ -58,9 +59,20 @@ export function Input({
   const isMoney = type === "money";
   const isAtm = type === "atm";
   const isTextarea = type === "textarea";
+  const localInputRef = useRef<HTMLInputElement | null>(null);
+  const localTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    if (!autoFocus) return;
+    if (isTextarea) {
+      localTextareaRef.current?.focus();
+      return;
+    }
+    localInputRef.current?.focus();
+  }, [autoFocus, isTextarea]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     let val = e.target.value;
 
@@ -82,7 +94,12 @@ export function Input({
           return;
         }
         // Block non-digit keys (allow ctrl/meta combos for copy/paste)
-        if (e.key.length === 1 && (e.key < "0" || e.key > "9") && !e.ctrlKey && !e.metaKey) {
+        if (
+          e.key.length === 1 &&
+          (e.key < "0" || e.key > "9") &&
+          !e.ctrlKey &&
+          !e.metaKey
+        ) {
           e.preventDefault();
         }
       }
@@ -122,10 +139,14 @@ export function Input({
           placeholder={placeholder}
           disabled={disabled}
           readOnly={readOnly}
-          autoFocus={autoFocus}
           maxLength={maxLength}
           rows={rows ?? 4}
-          ref={inputRef as React.RefObject<HTMLTextAreaElement | null>}
+          ref={(node) => {
+            localTextareaRef.current = node;
+            if (inputRef) {
+              inputRef.current = node;
+            }
+          }}
         />
       ) : (
         <div className="sf-input-wrapper">
@@ -147,9 +168,13 @@ export function Input({
             placeholder={placeholder ?? (isAtm ? "0.00" : undefined)}
             disabled={disabled}
             readOnly={readOnly}
-            autoFocus={autoFocus}
             maxLength={maxLength}
-            ref={inputRef as React.RefObject<HTMLInputElement | null>}
+            ref={(node) => {
+              localInputRef.current = node;
+              if (inputRef) {
+                inputRef.current = node;
+              }
+            }}
           />
           {suffix && <span className="sf-input-suffix">{suffix}</span>}
         </div>

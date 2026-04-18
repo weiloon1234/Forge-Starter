@@ -1,0 +1,23 @@
+{
+    "permissions": {
+        "none": "无",
+        "read": "查看",
+        "manage": "管理",
+        "exports": {
+            "label": "导出",
+            "read": "导出"
+        },
+        "admins": {
+            "label": "管理员"
+        },
+        "users": {
+            "label": "用户"
+        },
+        "countries": {
+            "label": "国家"
+        },
+        "logs": {
+            "label": "日志"
+        }
+    }
+}

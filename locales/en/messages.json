@@ -4,6 +4,7 @@
 
     "auth": {
         "invalid_credentials": "Invalid email or password",
+        "invalid_refresh_token": "Invalid or expired refresh token",
         "logged_in": "Logged in",
         "logged_out": "Logged out",
         "session_expired": "Session expired",
@@ -18,12 +19,22 @@
 
     "login_brand_desc": "Secure administration panel. Sign in with your credentials to manage the system.",
     "login_subtitle": "Enter your credentials to continue",
+    "Locale EN": "English",
+    "Locale ZH": "中文",
 
     "enabled": "Enabled",
     "disabled": "Disabled",
     "Conversion rate": "Conversion rate",
     "Country updated": "Country updated",
     "countries_subtitle": "Manage country status and conversion rates",
+    "Default": "Default",
+    "Default only": "Default only",
+    "Set as default": "Set as default",
+    "Setting this country as default will clear the previous default.": "Setting this country as default will clear the previous default.",
+
+    "log_deleted_message": "Log file {{filename}} deleted.",
+    "logs_subtitle": "View and manage application log files.",
+    "confirm_delete_log": "Delete {{filename}}? This cannot be undone.",
 
     "refresh_in": "Refresh in {{seconds}}s",
     "auto_refresh_every": "Auto refresh every {{seconds}}s",
@@ -39,7 +50,6 @@
         "not_found": "Resource not found",
         "user_not_found": "User not found",
         "something_went_wrong": "Something went wrong",
-        "multipart_not_supported": "Multipart not supported",
         "validation_failed": "Validation failed"
     },
 

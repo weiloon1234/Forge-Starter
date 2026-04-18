@@ -1,10 +1,10 @@
-import { useTranslation } from "react-i18next";
+import { Button, Input } from "@shared/components";
 import { useForm } from "@shared/hooks";
-import { Input, Button } from "@shared/components";
-import { useLocale, localeStore, LOCALE_LABELS } from "@shared/i18n";
-import { Shield } from "lucide-react";
-import { auth } from "@/auth";
+import { getLocaleLabel, localeStore, useLocale } from "@shared/i18n";
 import type { AdminLoginRequest } from "@shared/types/generated";
+import { Shield } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { auth } from "@/auth";
 
 export function LoginPage() {
   const { t } = useTranslation();
@@ -39,14 +39,15 @@ export function LoginPage() {
           </div>
           <div className="sf-login-locale">
             {available.map((code) => (
-              <button
+              <Button
                 key={code}
                 type="button"
+                unstyled
                 className={`sf-account-locale-btn ${locale === code ? "sf-account-locale-btn--active" : ""}`}
                 onClick={() => localeStore.setLocale(code)}
               >
-                {LOCALE_LABELS[code] ?? code.toUpperCase()}
-              </button>
+                {getLocaleLabel(code, t)}
+              </Button>
             ))}
           </div>
         </div>
@@ -69,12 +70,7 @@ export function LoginPage() {
               label={t("Password")}
               placeholder={t("Password")}
             />
-            <Button
-              type="submit"
-              variant="primary"
-              fullWidth
-              busy={form.busy}
-            >
+            <Button type="submit" variant="primary" fullWidth busy={form.busy}>
               {t("Log in")}
             </Button>
           </form>

@@ -1,6 +1,13 @@
+## Commands
+
+- `make check`
+- `make lint`
+- `make types`
+- `make lint:fix`
+
 ## Rules
 
-1. **NEVER use native HTML form elements** — no `<input>`, `<select>`, `<textarea>`, `<checkbox>`, `<radio>`. Always use shared components.
+1. **Feature/module code MUST use shared primitives** — pages, layouts, modals, and feature components should use `@shared/components`, `@shared/hooks`, and `@shared/modal`. Raw native controls are only acceptable inside `frontend/shared` infrastructure components. If a portal-specific button style already exists, use `<Button unstyled ...>` instead of raw `<button>`.
 2. **NEVER inline styles** — use Tailwind utilities or `sf-*` classes from the portal CSS.
 3. **NEVER build custom form state** — use `useForm` hook. It handles values, errors, submit, reset, dirty, busy.
 4. **NEVER handle API errors manually** — axios interceptors auto-show toast notifications. `useForm` auto-sets field errors from 422 responses.
@@ -51,7 +58,7 @@
 | Create custom store | `createStore()` / `useStore()` | `@shared/store` |
 | Debounce (for search) | `useDebounce(fn, ms)` | `@shared/hooks` |
 | Translate text | `t("key")` / `t("greeting", { name })` | `react-i18next` |
-| Get/set locale (cookie) | `localeStore.setLocale("ms")` | `@shared/i18n` |
+| Get/set locale (cookie) | `localeStore.setLocale("zh")` | `@shared/i18n` |
 | React hook for locale | `useLocale()` | `@shared/i18n` |
 | Init i18n (once in main.tsx) | `initI18n(resources)` | `@shared/i18n` |
 | Auth actor (per-portal) | `auth.login/logout/useAuth` | `@/auth` |
@@ -104,7 +111,7 @@ locales/
 ├── en/
 │   ├── messages.json      ← shared with backend
 │   └── validation.json    ← shared with backend
-└── ms/
+└── zh/
     ├── messages.json
     └── validation.json
 ```
@@ -127,7 +134,7 @@ function LoginPage() {
 **Switch locale:**
 ```tsx
 import { localeStore } from "@shared/i18n";
-localeStore.setLocale("ms");  // saves to cookie + updates all components
+localeStore.setLocale("zh");  // saves to cookie + updates all components
 ```
 
 **Locale store** — cookie-based for now. Later: save to DB per authenticated user.
@@ -171,7 +178,7 @@ frontend/
 ├── admin/
 │   └── src/
 │       ├── api.ts           ← createApi({ baseURL: "/admin" })
-│       ├── auth.ts          ← createAuth session mode
+│       ├── auth.ts          ← createAuth token mode
 │       ├── styles/app.css   ← indigo theme + sonner theme
 │       ├── styles/forms.css ← imports shared base + admin overrides
 │       └── App.tsx           ← <ModalProvider /> + <Toaster />

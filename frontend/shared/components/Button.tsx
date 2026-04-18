@@ -18,26 +18,33 @@ export function Button({
   className,
   form,
   tabIndex,
+  title,
+  ariaLabel,
+  unstyled = false,
 }: ButtonProps) {
   const isDisabled = disabled || busy;
 
   const classes = [
-    "sf-button",
-    `sf-button--${variant}`,
-    `sf-button--${size}`,
-    isDisabled && "sf-button--disabled",
-    busy && "sf-button--busy",
-    fullWidth && "sf-button--full-width",
-    iconOnly && "sf-button--icon-only",
+    !unstyled && "sf-button",
+    !unstyled && `sf-button--${variant}`,
+    !unstyled && `sf-button--${size}`,
+    !unstyled && isDisabled && "sf-button--disabled",
+    !unstyled && busy && "sf-button--busy",
+    !unstyled && fullWidth && "sf-button--full-width",
+    !unstyled && iconOnly && "sf-button--icon-only",
     className,
   ]
     .filter(Boolean)
     .join(" ");
 
-  const content = (
+  const content = unstyled ? (
+    children
+  ) : (
     <>
       {busy && <span className="sf-button-spinner" aria-hidden="true" />}
-      <span className={`sf-button-content${busy ? " sf-button-content--hidden" : ""}`}>
+      <span
+        className={`sf-button-content${busy ? " sf-button-content--hidden" : ""}`}
+      >
         {prefix && <span className="sf-button-prefix">{prefix}</span>}
         {children}
         {suffix && <span className="sf-button-suffix">{suffix}</span>}
@@ -55,6 +62,8 @@ export function Button({
         className={classes}
         tabIndex={tabIndex}
         onClick={onClick}
+        title={title}
+        aria-label={ariaLabel}
       >
         {content}
       </a>
@@ -69,6 +78,8 @@ export function Button({
       onClick={onClick}
       form={form}
       tabIndex={tabIndex}
+      title={title}
+      aria-label={ariaLabel}
     >
       {content}
     </button>

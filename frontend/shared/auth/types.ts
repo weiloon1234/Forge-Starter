@@ -7,10 +7,10 @@ export interface AuthPaths {
   me: string;
 }
 
-export interface AuthConfig<TUser> {
+export interface AuthConfig {
   /** Portal's axios instance (created by createApi). */
   api: AxiosInstance;
-  /** "token" for Bearer token auth, "session" for cookie-based. */
+  /** Starter portals use "token"; "session" remains available for other Forge apps. */
   mode: "token" | "session";
   /** API paths relative to the portal's baseURL. */
   paths: AuthPaths;

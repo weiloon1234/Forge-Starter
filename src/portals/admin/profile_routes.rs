@@ -1,17 +1,23 @@
-use forge::prelude::*;
 use crate::domain::models::Admin;
-use crate::portals::admin::requests::{ChangeAdminPasswordRequest, UpdateAdminLocaleRequest, UpdateAdminProfileRequest};
+use crate::portals::admin::requests::{
+    ChangeAdminPasswordRequest, UpdateAdminLocaleRequest, UpdateAdminProfileRequest,
+};
 use crate::portals::admin::responses::AdminMeResponse;
+use crate::validation::JsonValidated;
+use forge::prelude::*;
 
 pub async fn update_profile(
     State(app): State<AppContext>,
     i18n: I18n,
     AuthenticatedModel(admin): Auth<Admin>,
-    Validated(req): Validated<UpdateAdminProfileRequest>,
+    JsonValidated(req): JsonValidated<UpdateAdminProfileRequest>,
 ) -> Result<impl IntoResponse> {
     let hash = app.hash()?;
     if !hash.check(&req.current_password, &admin.password_hash)? {
-        return Err(Error::http(422, forge::t!(i18n, "auth.invalid_credentials")));
+        return Err(Error::http(
+            422,
+            forge::t!(i18n, "auth.invalid_credentials"),
+        ));
     }
 
     let updated = admin
@@ -21,13 +27,14 @@ pub async fn update_profile(
         .save(&app)
         .await?;
 
-    Ok(Json(AdminMeResponse::from(&updated)))
+    Ok(Json(AdminMeResponse::from_admin(&updated)))
 }
 
 pub async fn update_locale(
     State(app): State<AppContext>,
+    i18n: I18n,
     AuthenticatedModel(admin): Auth<Admin>,
-    Validated(req): Validated<UpdateAdminLocaleRequest>,
+    JsonValidated(req): JsonValidated<UpdateAdminLocaleRequest>,
 ) -> Result<impl IntoResponse> {
     admin
         .update()
@@ -35,18 +42,24 @@ pub async fn update_locale(
         .save(&app)
         .await?;
 
-    Ok(Json(serde_json::json!({ "message": "ok" })))
+    Ok(Json(MessageResponse::new(forge::t!(
+        i18n,
+        "Language updated"
+    ))))
 }
 
 pub async fn change_password(
     State(app): State<AppContext>,
     i18n: I18n,
     AuthenticatedModel(admin): Auth<Admin>,
-    Validated(req): Validated<ChangeAdminPasswordRequest>,
+    JsonValidated(req): JsonValidated<ChangeAdminPasswordRequest>,
 ) -> Result<impl IntoResponse> {
     let hash = app.hash()?;
     if !hash.check(&req.current_password, &admin.password_hash)? {
-        return Err(Error::http(422, forge::t!(i18n, "auth.invalid_credentials")));
+        return Err(Error::http(
+            422,
+            forge::t!(i18n, "auth.invalid_credentials"),
+        ));
     }
 
     admin
@@ -55,5 +68,8 @@ pub async fn change_password(
         .save(&app)
         .await?;
 
-    Ok(Json(serde_json::json!({ "message": "ok" })))
+    Ok(Json(MessageResponse::new(forge::t!(
+        i18n,
+        "Password changed"
+    ))))
 }

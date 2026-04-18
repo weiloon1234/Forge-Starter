@@ -7,8 +7,9 @@ pub struct Entry;
 impl MigrationFile for Entry {
     async fn up(ctx: &MigrationContext<'_>) -> Result<()> {
         ctx.raw_execute(
-            "CREATE TABLE IF NOT EXISTS attachments (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            r#"
+            CREATE TABLE attachments (
+                id UUID PRIMARY KEY DEFAULT uuidv7(),
                 attachable_type TEXT NOT NULL,
                 attachable_id UUID NOT NULL,
                 collection TEXT NOT NULL DEFAULT 'default',
@@ -22,13 +23,14 @@ impl MigrationFile for Entry {
                 custom_properties JSONB NOT NULL DEFAULT '{}',
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMPTZ
-            )",
+            )
+            "#,
             &[],
         )
         .await?;
 
         ctx.raw_execute(
-            "CREATE INDEX IF NOT EXISTS idx_attachments_poly ON attachments (attachable_type, attachable_id, collection)",
+            "CREATE INDEX idx_attachments_poly ON attachments (attachable_type, attachable_id, collection)",
             &[],
         )
         .await?;

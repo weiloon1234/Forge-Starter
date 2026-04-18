@@ -11,7 +11,7 @@ path = "src/main.rs"
 [dependencies]
 async-trait = "0.1"
 axum = "0.8"
-forge = { path = "../Forge" }
+forge = { git = "https://github.com/weiloon1234/Forge.git", branch = "main" }
 percent-encoding = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -20,4 +20,4 @@ tower-http = { version = "0.6", features = ["fs"] }
 ts-rs = { version = "10", features = ["serde-compat"] }
 
 [build-dependencies]
-forge-build = { path = "../Forge/forge-build" }
+forge-build = { git = "https://github.com/weiloon1234/Forge.git", branch = "main" }

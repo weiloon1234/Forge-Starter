@@ -1,7 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import type { AxiosInstance } from "axios";
-import type { DataTableSort, DataTableFilter, DataTableMeta } from "@shared/types/form";
+import type {
+  DataTableFilter,
+  DataTableMeta,
+  DataTableSort,
+} from "@shared/types/form";
 import { getCookie, setCookie } from "@shared/utils/cookie";
+import type { AxiosInstance } from "axios";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface UseDataTableConfig {
   api: AxiosInstance;
@@ -27,13 +31,15 @@ interface UseDataTableReturn<T> {
 
 const COOKIE_PREFIX = "dt_autorefresh_";
 
-export { getCookie, setCookie, COOKIE_PREFIX };
+export { COOKIE_PREFIX, getCookie, setCookie };
 
-export function serializeSorts(sorts: DataTableSort[]): any[] {
-  return sorts.map(s => ({ field: s.field, direction: s.direction }));
+export function serializeSorts(sorts: DataTableSort[]): DataTableSort[] {
+  return sorts.map((s) => ({ field: s.field, direction: s.direction }));
 }
 
-export function useDataTable<T>(config: UseDataTableConfig): UseDataTableReturn<T> {
+export function useDataTable<T>(
+  config: UseDataTableConfig,
+): UseDataTableReturn<T> {
   const { api, url, defaultPerPage = 20 } = config;
 
   const [rows, setRows] = useState<T[]>([]);
@@ -53,7 +59,10 @@ export function useDataTable<T>(config: UseDataTableConfig): UseDataTableReturn<
     setError(null);
 
     try {
-      const params: Record<string, any> = { page, per_page: perPage };
+      const params: Record<string, number | string> = {
+        page,
+        per_page: perPage,
+      };
 
       if (sorts.length > 0) {
         params.sort = JSON.stringify(serializeSorts(sorts));
@@ -69,23 +78,32 @@ export function useDataTable<T>(config: UseDataTableConfig): UseDataTableReturn<
       setRows(data.rows ?? []);
       setMeta({
         columns: data.columns ?? [],
-        pagination: data.pagination ?? { page: 1, per_page: perPage, total: 0, total_pages: 0 },
+        pagination: data.pagination ?? {
+          page: 1,
+          per_page: perPage,
+          total: 0,
+          total_pages: 0,
+        },
         filters: data.filters ?? [],
         applied_filters: data.applied_filters ?? [],
         sorts: data.sorts ?? [],
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (id !== fetchRef.current) return;
-      setError(err?.message ?? "Failed to load data");
+      setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
       if (id === fetchRef.current) setLoading(false);
     }
   }, [api, url, page, perPage, sorts, filters]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
 
   const fetchLatestRef = useRef(fetch);
-  useEffect(() => { fetchLatestRef.current = fetch; }, [fetch]);
+  useEffect(() => {
+    fetchLatestRef.current = fetch;
+  }, [fetch]);
   const refresh = useCallback(() => fetchLatestRef.current(), []);
 
   const toggleSort = useCallback((field: string, multi = false) => {
@@ -94,14 +112,18 @@ export function useDataTable<T>(config: UseDataTableConfig): UseDataTableReturn<
       if (existing) {
         if (existing.direction === "asc") {
           return multi
-            ? prev.map((s) => (s.field === field ? { ...s, direction: "desc" as const } : s))
+            ? prev.map((s) =>
+                s.field === field ? { ...s, direction: "desc" as const } : s,
+              )
             : [{ field, direction: "desc" as const }];
         }
         // desc → remove
         return multi ? prev.filter((s) => s.field !== field) : [];
       }
       // add new asc
-      return multi ? [...prev, { field, direction: "asc" as const }] : [{ field, direction: "asc" as const }];
+      return multi
+        ? [...prev, { field, direction: "asc" as const }]
+        : [{ field, direction: "asc" as const }];
     });
     setPage(1);
   }, []);
@@ -112,9 +134,18 @@ export function useDataTable<T>(config: UseDataTableConfig): UseDataTableReturn<
   }, []);
 
   return {
-    rows, meta, loading, error,
-    page, perPage, sorts, filters,
-    setPage, setPerPage: handleSetPerPage, toggleSort, setFilters,
+    rows,
+    meta,
+    loading,
+    error,
+    page,
+    perPage,
+    sorts,
+    filters,
+    setPage,
+    setPerPage: handleSetPerPage,
+    toggleSort,
+    setFilters,
     refresh,
   };
 }

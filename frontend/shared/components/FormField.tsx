@@ -1,20 +1,20 @@
-import type { FieldConfig, FieldBinding } from "@shared/types/form";
-import { Input } from "./Input";
-import { Select } from "./Select";
+import type { FieldBinding, FieldConfig, InputType } from "@shared/types/form";
 import { Checkbox } from "./Checkbox";
 import { CheckboxGroup } from "./CheckboxGroup";
-import { Radio } from "./Radio";
-import { FileUpload } from "./FileUpload";
 import { DatePicker } from "./DatePicker";
-import { TimePicker } from "./TimePicker";
 import { DateTimePicker } from "./DateTimePicker";
+import { FileUpload } from "./FileUpload";
+import { Input } from "./Input";
+import { Radio } from "./Radio";
+import { Select } from "./Select";
+import { TimePicker } from "./TimePicker";
 
-interface FormFieldProps {
+interface FormFieldProps<TValue> {
   config: FieldConfig;
-  binding: FieldBinding;
+  binding: FieldBinding<TValue>;
 }
 
-export function FormField({ config, binding }: FormFieldProps) {
+export function FormField<TValue>({ config, binding }: FormFieldProps<TValue>) {
   const { type, name, ...rest } = config;
   const commonProps = { ...rest, name, errors: binding.errors };
 
@@ -23,8 +23,8 @@ export function FormField({ config, binding }: FormFieldProps) {
       return (
         <Select
           {...commonProps}
-          value={binding.value}
-          onChange={binding.onChange}
+          value={binding.value as string | string[] | undefined}
+          onChange={binding.onChange as (value: string | string[]) => void}
           options={config.options}
           multiple={config.multiple}
           searchable={config.searchable}
@@ -37,15 +37,17 @@ export function FormField({ config, binding }: FormFieldProps) {
         <Checkbox
           {...commonProps}
           checked={!!binding.value}
-          onChange={binding.onChange}
+          onChange={binding.onChange as (checked: boolean) => void}
         />
       );
     case "checkbox-group":
       return (
         <CheckboxGroup
           {...commonProps}
-          value={binding.value ?? []}
-          onChange={binding.onChange}
+          value={
+            Array.isArray(binding.value) ? (binding.value as string[]) : []
+          }
+          onChange={binding.onChange as (value: string[]) => void}
           options={config.options ?? []}
         />
       );
@@ -53,8 +55,8 @@ export function FormField({ config, binding }: FormFieldProps) {
       return (
         <Radio
           {...commonProps}
-          value={binding.value}
-          onChange={binding.onChange}
+          value={binding.value as string | undefined}
+          onChange={binding.onChange as (value: string) => void}
           options={config.options ?? []}
         />
       );
@@ -62,8 +64,8 @@ export function FormField({ config, binding }: FormFieldProps) {
       return (
         <DatePicker
           {...commonProps}
-          value={binding.value}
-          onChange={binding.onChange}
+          value={binding.value as Date | null | undefined}
+          onChange={binding.onChange as (date: Date | null) => void}
           minDate={config.minDate}
           maxDate={config.maxDate}
           format={config.format}
@@ -73,8 +75,8 @@ export function FormField({ config, binding }: FormFieldProps) {
       return (
         <TimePicker
           {...commonProps}
-          value={binding.value}
-          onChange={binding.onChange}
+          value={binding.value as string | undefined}
+          onChange={binding.onChange as (value: string) => void}
           minuteStep={config.minuteStep}
         />
       );
@@ -82,8 +84,8 @@ export function FormField({ config, binding }: FormFieldProps) {
       return (
         <DateTimePicker
           {...commonProps}
-          value={binding.value}
-          onChange={binding.onChange}
+          value={binding.value as Date | null | undefined}
+          onChange={binding.onChange as (date: Date | null) => void}
           minDate={config.minDate}
           maxDate={config.maxDate}
           minuteStep={config.minuteStep}
@@ -93,8 +95,8 @@ export function FormField({ config, binding }: FormFieldProps) {
       return (
         <FileUpload
           {...commonProps}
-          value={binding.value}
-          onChange={binding.onChange}
+          value={binding.value as File | File[] | null | undefined}
+          onChange={binding.onChange as (files: File | File[] | null) => void}
           multiple={config.multiple}
           accept={config.accept}
           maxSize={config.maxSize}
@@ -106,9 +108,9 @@ export function FormField({ config, binding }: FormFieldProps) {
       return (
         <Input
           {...commonProps}
-          type={type as any}
-          value={binding.value}
-          onChange={binding.onChange}
+          type={type as InputType}
+          value={binding.value as string | undefined}
+          onChange={binding.onChange as (value: string) => void}
           onBlur={binding.onBlur}
           placeholder={config.placeholder}
           prefix={config.prefix}

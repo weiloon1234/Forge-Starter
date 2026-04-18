@@ -4,7 +4,7 @@
 # Run: make <target>
 # =============================================================================
 
-.PHONY: help setup dev dev\:api dev\:admin dev\:user build check api-docs types migrate seed routes deploy clean
+.PHONY: help setup dev dev\:api dev\:admin dev\:user build check lint lint\:rust lint\:frontend lint\:fix api-docs types migrate seed routes deploy clean
 
 # Default: show help
 help:
@@ -18,6 +18,10 @@ help:
 	@echo ""
 	@echo "  make build        Build release binary + frontends"
 	@echo "  make check        Type-check without building"
+	@echo "  make lint         Run Rust + frontend lint checks"
+	@echo "  make lint:rust    Run rustfmt check + clippy"
+	@echo "  make lint:frontend Run Biome on React/TypeScript code"
+	@echo "  make lint:fix     Auto-fix Rust formatting + frontend formatting/imports"
 	@echo "  make api-docs     Generate API docs at docs/api/"
 	@echo "  make types        Generate TypeScript types from Rust DTOs"
 	@echo "  make migrate      Run database migrations"
@@ -65,6 +69,25 @@ build: types
 # Type-check only (fast)
 check:
 	cargo check
+
+# Full lint suite
+lint:
+	$(MAKE) lint:rust
+	$(MAKE) lint:frontend
+
+# Rust linting
+lint\:rust:
+	cargo fmt -- --check
+	cargo clippy --all-targets --all-features -- -D warnings
+
+# Frontend linting / formatting
+lint\:frontend:
+	npm run lint:frontend
+
+# Auto-fix formatting and import organization
+lint\:fix:
+	cargo fmt
+	npm run lint:frontend:fix
 
 # Generate API docs
 # Output: docs/api/index.md + docs/api/modules/*.md

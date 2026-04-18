@@ -1,12 +1,19 @@
+import type { Permission } from "@shared/types/generated";
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, Users, MoreHorizontal, Settings } from "lucide-react";
+import {
+  FileText,
+  LayoutDashboard,
+  MoreHorizontal,
+  Shield,
+  Users,
+} from "lucide-react";
 
 export type MenuItem = {
   key: string;
   label: string;
   icon?: LucideIcon;
   path?: string;
-  permission?: string;
+  permission?: Permission;
   notification?: string;
   children?: MenuItem[];
 };
@@ -27,13 +34,14 @@ export const sideMenu: MenuItem[] = [
         key: "users.list",
         label: "All Users",
         path: "/users",
-        permission: "users.view",
+        permission: "users.read",
       },
       {
         key: "users.admins",
         label: "Admins",
-        path: "/users/admins",
-        permission: "admins.view",
+        path: "/admins",
+        icon: Shield,
+        permission: "admins.read",
       },
     ],
   },
@@ -46,14 +54,15 @@ export const sideMenu: MenuItem[] = [
         key: "other.countries",
         label: "Countries",
         path: "/countries",
+        permission: "countries.read",
+      },
+      {
+        key: "other.logs",
+        label: "Logs",
+        path: "/logs",
+        icon: FileText,
+        permission: "logs.read",
       },
     ],
-  },
-  {
-    key: "settings",
-    label: "Settings",
-    icon: Settings,
-    path: "/settings",
-    permission: "settings.view",
   },
 ];

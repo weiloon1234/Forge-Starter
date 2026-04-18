@@ -45,6 +45,8 @@
         "unique": "{{attribute}} 已被使用",
         "exists": "所选 {{attribute}} 无效",
         "app_enum": "所选 {{attribute}} 无效",
+        "invalid_request_body": "请求内容无效",
+        "multipart_not_supported": "不支持多部分请求",
 
         "image": "{{attribute}} 必须是图片",
         "max_file_size": "{{attribute}} 不能超过 {{max}}KB",

@@ -7,22 +7,25 @@ pub struct Entry;
 impl MigrationFile for Entry {
     async fn up(ctx: &MigrationContext<'_>) -> Result<()> {
         ctx.raw_execute(
-            "CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            r#"
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
                 email TEXT NOT NULL,
                 guard TEXT NOT NULL,
                 token_hash TEXT NOT NULL,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-            )",
+            )
+            "#,
             &[],
         )
         .await?;
-
         ctx.raw_execute(
-            "CREATE UNIQUE INDEX IF NOT EXISTS idx_password_reset_email_guard ON password_reset_tokens (email, guard)",
+            r#"
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_password_reset_email_guard
+                ON password_reset_tokens (email, guard)
+            "#,
             &[],
         )
         .await?;
-
         Ok(())
     }
 

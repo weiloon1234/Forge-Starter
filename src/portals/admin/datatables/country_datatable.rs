@@ -1,7 +1,7 @@
-use async_trait::async_trait;
-use forge::prelude::*;
-use forge::countries::CountryStatus;
 use crate::domain::models::Country;
+use async_trait::async_trait;
+use forge::countries::CountryStatus;
+use forge::prelude::*;
 
 pub struct CountryDatatable;
 
@@ -16,14 +16,46 @@ impl ModelDatatable for CountryDatatable {
 
     fn columns() -> Vec<DatatableColumn<Country>> {
         vec![
-            DatatableColumn::field(Country::FLAG_EMOJI).label("").sortable(),
-            DatatableColumn::field(Country::NAME).label("Country").sortable().filterable().exportable(),
-            DatatableColumn::field(Country::ISO2).label("ISO2").sortable().filterable().exportable(),
-            DatatableColumn::field(Country::REGION).label("Region").sortable().exportable(),
-            DatatableColumn::field(Country::CALLING_CODE).label("Calling Code").sortable().exportable(),
-            DatatableColumn::field(Country::PRIMARY_CURRENCY_CODE).label("Currency").sortable().filterable().exportable(),
-            DatatableColumn::field(Country::CONVERSION_RATE).label("Conversion rate").sortable().exportable(),
-            DatatableColumn::field(Country::STATUS).label("Status").sortable().filterable().exportable(),
+            DatatableColumn::field(Country::FLAG_EMOJI)
+                .label("")
+                .sortable(),
+            DatatableColumn::field(Country::NAME)
+                .label("Country")
+                .sortable()
+                .filterable()
+                .exportable(),
+            DatatableColumn::field(Country::ISO2)
+                .label("ISO2")
+                .sortable()
+                .filterable()
+                .exportable(),
+            DatatableColumn::field(Country::REGION)
+                .label("Region")
+                .sortable()
+                .exportable(),
+            DatatableColumn::field(Country::CALLING_CODE)
+                .label("Calling Code")
+                .sortable()
+                .exportable(),
+            DatatableColumn::field(Country::PRIMARY_CURRENCY_CODE)
+                .label("Currency")
+                .sortable()
+                .filterable()
+                .exportable(),
+            DatatableColumn::field(Country::CONVERSION_RATE)
+                .label("Conversion rate")
+                .sortable()
+                .exportable(),
+            DatatableColumn::field(Country::IS_DEFAULT)
+                .label("Default")
+                .sortable()
+                .filterable()
+                .exportable(),
+            DatatableColumn::field(Country::STATUS)
+                .label("Status")
+                .sortable()
+                .filterable()
+                .exportable(),
         ]
     }
 
@@ -34,9 +66,14 @@ impl ModelDatatable for CountryDatatable {
     async fn available_filters(_ctx: &DatatableContext) -> Result<Vec<DatatableFilterRow>> {
         Ok(vec![
             DatatableFilterRow::pair(
-                DatatableFilterField::text("name|iso2|primary_currency_code", "Search").placeholder("Name, ISO2, or currency..."),
+                DatatableFilterField::text("name|iso2|primary_currency_code", "Search")
+                    .placeholder("Name, ISO2, or currency..."),
                 DatatableFilterField::enum_select::<CountryStatus>("status", "Status"),
             ),
+            DatatableFilterRow::single(DatatableFilterField::checkbox(
+                "is_default",
+                "Default only",
+            )),
         ])
     }
 }

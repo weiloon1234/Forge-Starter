@@ -1,11 +1,12 @@
-import { useTranslation } from "react-i18next";
-import { Globe, User, Lock, LogOut } from "lucide-react";
-import { useLocale, localeStore, LOCALE_LABELS } from "@shared/i18n";
+import { Button } from "@shared/components";
+import { getLocaleLabel, localeStore, useLocale } from "@shared/i18n";
 import { modal } from "@shared/modal";
-import { auth } from "@/auth";
+import { Globe, Lock, LogOut, User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "@/api";
-import { EditProfileModal } from "@/components/EditProfileModal";
+import { auth } from "@/auth";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
+import { EditProfileModal } from "@/components/EditProfileModal";
 
 interface AccountDropdownProps {
   onClose: () => void;
@@ -18,15 +19,21 @@ export function AccountDropdown({ onClose }: AccountDropdownProps) {
 
   const openProfile = () => {
     onClose();
-    modal.open(EditProfileModal, {
-      name: user?.name ?? "",
-      email: user?.email ?? "",
-    }, { title: t("My Profile") });
+    modal.open(
+      EditProfileModal,
+      {
+        name: user?.name ?? "",
+        email: user?.email ?? "",
+      },
+      { title: t("My Profile") },
+    );
   };
 
   const openSecurity = () => {
     onClose();
-    modal.open(ChangePasswordModal, undefined, { title: t("Account Security") });
+    modal.open(ChangePasswordModal, undefined, {
+      title: t("Account Security"),
+    });
   };
 
   return (
@@ -37,9 +44,10 @@ export function AccountDropdown({ onClose }: AccountDropdownProps) {
           <span className="sf-account-locale-label">{t("Language")}</span>
           <div className="sf-account-locale-switcher">
             {available.map((code) => (
-              <button
+              <Button
                 key={code}
                 type="button"
+                unstyled
                 className={`sf-account-locale-btn ${locale === code ? "sf-account-locale-btn--active" : ""}`}
                 onClick={() => {
                   if (code === locale) return;
@@ -47,33 +55,44 @@ export function AccountDropdown({ onClose }: AccountDropdownProps) {
                   api.put("/profile/locale", { locale: code }).catch(() => {});
                 }}
               >
-                {LOCALE_LABELS[code] ?? code.toUpperCase()}
-              </button>
+                {getLocaleLabel(code, t)}
+              </Button>
             ))}
           </div>
         </div>
       </div>
 
       <div className="sf-account-section">
-        <button type="button" className="sf-account-item" onClick={openProfile}>
+        <Button
+          type="button"
+          unstyled
+          className="sf-account-item"
+          onClick={openProfile}
+        >
           <User size={16} className="sf-account-item-icon" />
           <span>{t("My Profile")}</span>
-        </button>
-        <button type="button" className="sf-account-item" onClick={openSecurity}>
+        </Button>
+        <Button
+          type="button"
+          unstyled
+          className="sf-account-item"
+          onClick={openSecurity}
+        >
           <Lock size={16} className="sf-account-item-icon" />
           <span>{t("Account Security")}</span>
-        </button>
+        </Button>
       </div>
 
       <div className="sf-account-section sf-account-section--last">
-        <button
+        <Button
           type="button"
+          unstyled
           className="sf-account-item sf-account-item--danger"
           onClick={() => auth.logout()}
         >
           <LogOut size={16} className="sf-account-item-icon" />
           <span>{t("Log out")}</span>
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -1,0 +1,11 @@
+{
+  "name": "forge-starter-tooling",
+  "private": true,
+  "scripts": {
+    "lint:frontend": "biome check frontend",
+    "lint:frontend:fix": "biome check --write frontend"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.12"
+  }
+}

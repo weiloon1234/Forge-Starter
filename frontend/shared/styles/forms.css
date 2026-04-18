@@ -155,8 +155,11 @@
   }
 
   /* Select trigger */
+  .sf-select-trigger-wrapper {
+    @apply relative;
+  }
   .sf-select-trigger {
-    @apply flex items-center gap-2 w-full px-3 py-2.5 text-sm rounded-lg border cursor-pointer;
+    @apply flex items-center gap-2 w-full px-3 py-2.5 pr-10 text-sm rounded-lg border cursor-pointer;
     border-color: var(--color-border);
     background: var(--color-bg-input);
     color: var(--color-text);
@@ -177,7 +180,7 @@
     color: var(--color-text-hint);
   }
   .sf-select-clear {
-    @apply ml-1 shrink-0 text-xs cursor-pointer rounded-full w-4 h-4 flex items-center justify-center;
+    @apply absolute right-7 top-1/2 -translate-y-1/2 shrink-0 text-xs cursor-pointer rounded-full w-4 h-4 flex items-center justify-center border-0 bg-transparent p-0;
     color: var(--color-text-hint);
     transition: color 150ms ease, background 150ms ease;
   }
@@ -208,7 +211,7 @@
     @apply max-h-60 overflow-y-auto;
   }
   .sf-select-option {
-    @apply px-3 py-2 text-sm cursor-pointer flex items-center justify-between;
+    @apply w-full px-3 py-2 text-sm cursor-pointer flex items-center justify-between border-0 bg-transparent text-left;
     color: var(--color-text);
   }
   .sf-select-option:hover {
@@ -234,7 +237,7 @@
     color: var(--color-text-muted);
   }
   .sf-select-backdrop {
-    @apply fixed inset-0;
+    @apply fixed inset-0 border-0 bg-transparent p-0;
     z-index: 9998;
   }
 
@@ -281,7 +284,28 @@
     color: var(--color-text);
   }
   .sf-radio-group {
-    @apply flex flex-col gap-2;
+    @apply flex gap-2;
+  }
+  .sf-radio-group--vertical {
+    @apply flex-col;
+  }
+  .sf-radio-group--horizontal {
+    @apply flex-row flex-wrap items-center gap-x-5 gap-y-2;
+  }
+  .sf-radio-group--align-start {
+    justify-content: flex-start;
+  }
+  .sf-radio-group--align-center {
+    justify-content: center;
+  }
+  .sf-radio-group--align-end {
+    justify-content: flex-end;
+  }
+  .sf-radio-group--horizontal .sf-radio {
+    @apply items-center;
+  }
+  .sf-radio-group--horizontal .sf-radio-input {
+    @apply mt-0;
   }
 
   /* File upload */
@@ -510,7 +534,16 @@
 
   .sf-modal-overlay {
     @apply fixed inset-0 flex items-end sm:items-center justify-center sm:p-4;
+  }
+
+  .sf-modal-backdrop {
+    @apply absolute inset-0 border-0 bg-transparent p-0;
     background: rgba(0, 0, 0, 0.5);
+  }
+
+  .sf-modal-overlay > *:not(.sf-modal-backdrop) {
+    position: relative;
+    z-index: 1;
   }
 
   .sf-modal-container {
@@ -557,7 +590,16 @@
   .sf-lightbox-overlay {
     @apply fixed inset-0 flex items-center justify-center;
     z-index: 2000;
+  }
+
+  .sf-lightbox-backdrop {
+    @apply absolute inset-0 border-0 bg-transparent p-0;
     background: rgba(0, 0, 0, 0.9);
+  }
+
+  .sf-lightbox-overlay > *:not(.sf-lightbox-backdrop) {
+    position: relative;
+    z-index: 1;
   }
 
   .sf-lightbox-image {

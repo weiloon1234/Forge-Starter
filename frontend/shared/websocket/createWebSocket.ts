@@ -3,12 +3,22 @@ import { createStore, useStore } from "@shared/store/createStore";
 // ── Types ──────────────────────────────────────────────
 
 type ConnectionStatus = "disconnected" | "connecting" | "connected";
+type WebSocketPayload = unknown;
+type WebSocketEventHandler = (payload: WebSocketPayload) => void;
+
+export interface WebSocketChannelEvent {
+  event: string;
+  payload: WebSocketPayload;
+}
+
+type WebSocketWildcardHandler = (message: WebSocketChannelEvent) => void;
+type WebSocketListener = WebSocketEventHandler | WebSocketWildcardHandler;
 
 interface ServerMessage {
   channel: string;
   event: string;
   room?: string | null;
-  payload: any;
+  payload: WebSocketPayload;
 }
 
 interface WebSocketConfig {
@@ -29,17 +39,34 @@ export interface WebSocketManager {
   disconnect: () => void;
   subscribe: (channel: string, room?: string) => void;
   unsubscribe: (channel: string, room?: string) => void;
-  send: (channel: string, event: string, payload?: any) => void;
-  on: (channel: string, event: string, handler: (payload: any) => void) => () => void;
+  send: (channel: string, event: string, payload?: WebSocketPayload) => void;
+  on(
+    channel: string,
+    event: "*",
+    handler: WebSocketWildcardHandler,
+  ): () => void;
+  on(
+    channel: string,
+    event: string,
+    handler: WebSocketEventHandler,
+  ): () => void;
   useStatus: () => ConnectionStatus;
 }
 
 // ── Factory ────────────────────────────────────────────
 
 export function createWebSocket(config: WebSocketConfig): WebSocketManager {
-  const { url, getToken, autoReconnect = true, maxReconnectDelay = 30000, maxReconnectAttempts = 5 } = config;
+  const {
+    url,
+    getToken,
+    autoReconnect = true,
+    maxReconnectDelay = 30000,
+    maxReconnectAttempts = 5,
+  } = config;
 
-  const statusStore = createStore<{ status: ConnectionStatus }>({ status: "disconnected" });
+  const statusStore = createStore<{ status: ConnectionStatus }>({
+    status: "disconnected",
+  });
 
   let ws: WebSocket | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
@@ -48,7 +75,7 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
   let connecting = false;
 
   // Event listener registry: Map<"channel:event", Set<handler>>
-  const listeners = new Map<string, Set<(payload: any) => void>>();
+  const listeners = new Map<string, Set<WebSocketListener>>();
 
   // Pending subscriptions (queued while connecting)
   const pendingSubscriptions = new Set<string>();
@@ -62,7 +89,7 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
     statusStore.setState({ status });
   }
 
-  function sendRaw(data: any) {
+  function sendRaw(data: unknown) {
     if (ws?.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(data));
     }
@@ -97,7 +124,7 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
     const handlers = listeners.get(key);
     if (handlers) {
       for (const handler of handlers) {
-        handler(msg.payload);
+        (handler as WebSocketEventHandler)(msg.payload);
       }
     }
 
@@ -106,7 +133,10 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
     const wildcardHandlers = listeners.get(wildcardKey);
     if (wildcardHandlers) {
       for (const handler of wildcardHandlers) {
-        handler({ event: msg.event, payload: msg.payload });
+        (handler as WebSocketWildcardHandler)({
+          event: msg.event,
+          payload: msg.payload,
+        });
       }
     }
   }
@@ -115,7 +145,7 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
     if (!autoReconnect || intentionalClose) return;
     if (reconnectAttempts >= maxReconnectAttempts) return;
 
-    const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), maxReconnectDelay);
+    const delay = Math.min(1000 * 2 ** reconnectAttempts, maxReconnectDelay);
     reconnectAttempts++;
 
     reconnectTimer = setTimeout(() => {
@@ -124,7 +154,11 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
   }
 
   async function connect() {
-    if (connecting || ws?.readyState === WebSocket.OPEN || ws?.readyState === WebSocket.CONNECTING) {
+    if (
+      connecting ||
+      ws?.readyState === WebSocket.OPEN ||
+      ws?.readyState === WebSocket.CONNECTING
+    ) {
       return;
     }
 
@@ -204,16 +238,22 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
     }
   }
 
-  function send(channel: string, event: string, payload?: any) {
+  function send(channel: string, event: string, payload?: WebSocketPayload) {
     sendRaw({ action: "Message", channel, event, payload });
   }
 
-  function on(channel: string, event: string, handler: (payload: any) => void): () => void {
+  function on(
+    channel: string,
+    event: string,
+    handler: WebSocketEventHandler | WebSocketWildcardHandler,
+  ): () => void {
     const key = listenerKey(channel, event);
-    if (!listeners.has(key)) {
-      listeners.set(key, new Set());
+    let handlers = listeners.get(key);
+    if (!handlers) {
+      handlers = new Set();
+      listeners.set(key, handlers);
     }
-    listeners.get(key)!.add(handler);
+    handlers.add(handler);
 
     return () => {
       const handlers = listeners.get(key);
@@ -236,7 +276,7 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
     subscribe,
     unsubscribe,
     send,
-    on,
+    on: on as WebSocketManager["on"],
     useStatus,
   };
 }

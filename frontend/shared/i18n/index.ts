@@ -1,3 +1,3 @@
-export { initI18n, buildResources } from "./setup";
+export { getLocaleLabel } from "./localeLabels";
 export { localeStore, useLocale } from "./localeStore";
-export { LOCALE_LABELS } from "./localeLabels";
+export { buildResources, initI18n } from "./setup";

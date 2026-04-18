@@ -2,16 +2,32 @@
 
 A Forge framework starter — multi-portal Rust backend + React frontends. Single binary, 4 runtime processes (HTTP, Worker, Scheduler, WebSocket). Forge handles infrastructure; app code stays in `src/domain/` and `src/portals/`.
 
+## Starter Baseline
+
+Read `STARTER-BASELINE.md` first before extending the starter.
+
+- Admin and user portals are both token-auth in this starter.
+- Required verification commands: `make check`, `make lint`, `make types`.
+- Simple JSON DTOs should prefer `#[derive(Validate)]` + `forge::ApiSchema`; runtime-driven or conditional rules can stay manual.
+- JSON-only handlers should use `JsonValidated<T>`.
+- Feature/module frontend code must use shared primitives. If a portal-specific button style already exists, use `Button unstyled` rather than raw `<button>`.
+
 ## Commands
 
 ```bash
 make setup        # First-time: generate keys, publish migrations, run migrations
-make dev          # cargo run (HTTP server on :3000)
+make dev          # Start backend + websocket + scheduler + both frontends
+make dev:api      # Backend API only (:3000)
+make dev:admin    # Admin frontend only (:5173)
+make dev:user     # User frontend only (:5174)
 make check        # cargo check (fast type-check)
-make build        # cargo build --release
+make lint         # Rust + frontend lint checks
+make lint:fix     # rustfmt + Biome auto-fix
+make build        # Build release binary + both frontends
 make api-docs     # Generate docs/api/ (LLM-friendly API reference)
 make types        # Generate TypeScript types from Rust DTOs
 make migrate      # cargo run -- db:migrate
+make seed         # cargo run -- db:seed
 make routes       # cargo run -- routes:list
 make deploy       # bash scripts/build.sh (Docker build + R2 upload)
 ```
@@ -181,7 +197,7 @@ Translation files in `locales/` are shared between Rust backend and React fronte
 1. **Do NOT translate English when key = value.** `"Hello": "Hello"` is pointless — skip it. The key itself is returned as fallback.
 2. **DO translate English when key ≠ display text.** `"Credit 1": "Cash Point"` — the key is a code, the value is what the user sees. Write this in `en.json`.
 3. **DO write English when parameterized.** `"greeting": "Hello, {{name}}!"` — always write parameterized translations in English because the key alone is not readable.
-4. **Every other locale MUST have every key.** If `ms.json` is missing a key that `en.json` or code uses, that is a bug. All non-English locale files must be complete — equal row count, every key present.
+4. **Every other locale MUST have every key.** If `zh.json` is missing a key that `en.json` or code uses, that is a bug. All non-English locale files must be complete — equal row count, every key present.
 5. **Every user-facing text MUST be translated.** If the user will see it on screen, use `t("key")`. No raw strings in UI — labels, placeholders, buttons, errors, toasts, messages.
 6. **NEVER concatenate translated text.** Do NOT write `` `Special ${t("offer")}` `` — instead write `t("special_offer")` with the full sentence as one key. Concatenation breaks word order in other languages.
 7. **Always parameterize.** Write `t("welcome_user", { name })` not `` `${t("welcome")} ${name}` ``. Parameters go inside `{{}}` in the JSON.
@@ -198,14 +214,14 @@ Translation files in `locales/` are shared between Rust backend and React fronte
 }
 // "Save", "Cancel", "Delete" — skip in English (key = value fallback)
 
-// locales/ms/messages.json — MUST have every key
+// locales/zh/messages.json — MUST have every key
 {
-    "greeting": "Helo, {{name}}!",
-    "item_count": "Anda mempunyai {{count}} item",
-    "credit_label": "Mata Tunai",
-    "Save": "Simpan",
-    "Cancel": "Batal",
-    "Delete": "Padam"
+    "greeting": "你好，{{name}}！",
+    "item_count": "你有 {{count}} 个项目",
+    "credit_label": "现金点数",
+    "Save": "保存",
+    "Cancel": "取消",
+    "Delete": "删除"
 }
 ```
 
@@ -219,3 +235,8 @@ Translation files in `locales/` are shared between Rust backend and React fronte
 - Do not write raw user-facing strings — always use `t("key")` for any text the user sees
 - Do not concatenate translations — use parameterized keys instead
 - Do not return raw string error messages from backend — use `t!(i18n, "key")` for any API response text the user will see
+
+## Important discipline of codebase
+
+- DRY (Don't Repeat Yourself) is very important
+- SSOT (Single Source Of Truth) is very important

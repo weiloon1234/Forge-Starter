@@ -1,15 +1,45 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import type {
+  FieldBinding,
+  UseFormConfig,
+  UseFormReturn,
+} from "@shared/types/form";
 import axios from "axios";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { UseFormConfig, UseFormReturn, FieldBinding } from "@shared/types/form";
 
-export function useForm<T extends Record<string, any>>(
-  config: UseFormConfig<T>
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function extractErrorMap(error: unknown): Record<string, string[]> | null {
+  if (!isRecord(error) || !isRecord(error.errors)) {
+    return null;
+  }
+
+  const entries = Object.entries(error.errors).filter(
+    ([, messages]) =>
+      Array.isArray(messages) &&
+      messages.every((message) => typeof message === "string"),
+  );
+
+  return entries.length > 0
+    ? (Object.fromEntries(entries) as Record<string, string[]>)
+    : null;
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Something went wrong";
+}
+
+export function useForm<T extends Record<string, unknown>>(
+  config: UseFormConfig<T>,
 ): UseFormReturn<T> {
   const { initialValues, onSubmit, validate } = config;
 
   const [values, setValuesState] = useState<T>({ ...initialValues });
-  const [errors, setErrorsState] = useState<Partial<Record<keyof T, string[]>>>({});
+  const [errors, setErrorsState] = useState<Partial<Record<keyof T, string[]>>>(
+    {},
+  );
   const [touched, setTouched] = useState<Partial<Record<keyof T, boolean>>>({});
   const [busy, setBusy] = useState(false);
   const [formErrors, setFormErrors] = useState<string[]>([]);
@@ -19,14 +49,16 @@ export function useForm<T extends Record<string, any>>(
   const onSubmitRef = useRef(onSubmit);
   const validateRef = useRef(validate);
 
-  useEffect(() => { onSubmitRef.current = onSubmit; }, [onSubmit]);
-  useEffect(() => { validateRef.current = validate; }, [validate]);
+  useEffect(() => {
+    onSubmitRef.current = onSubmit;
+  }, [onSubmit]);
+  useEffect(() => {
+    validateRef.current = validate;
+  }, [validate]);
 
-  const dirty = useMemo(() => {
-    return Object.keys(initialRef.current).some(
-      (key) => values[key as keyof T] !== initialRef.current[key as keyof T]
-    );
-  }, [values]);
+  const dirty = Object.keys(initialRef.current).some(
+    (key) => values[key as keyof T] !== initialRef.current[key as keyof T],
+  );
 
   const setValues = useCallback((partial: Partial<T>) => {
     setValuesState((prev) => ({ ...prev, ...partial }));
@@ -63,7 +95,7 @@ export function useForm<T extends Record<string, any>>(
       if (validateRef.current) {
         const validationErrors = validateRef.current(values);
         const hasErrors = Object.values(validationErrors).some(
-          (errs) => errs && (errs as string[]).length > 0
+          (errs) => errs && (errs as string[]).length > 0,
         );
         if (hasErrors) {
           setErrorsState(validationErrors);
@@ -76,36 +108,38 @@ export function useForm<T extends Record<string, any>>(
 
       try {
         await onSubmitRef.current(values);
-      } catch (err: any) {
-        if (err?.errors && typeof err.errors === "object") {
+      } catch (err: unknown) {
+        const extractedErrors = extractErrorMap(err);
+
+        if (extractedErrors) {
           const fieldErrs: Partial<Record<keyof T, string[]>> = {};
           const orphan: string[] = [];
 
-          for (const [field, messages] of Object.entries(err.errors)) {
+          for (const [field, messages] of Object.entries(extractedErrors)) {
             if (knownFields.current.has(field)) {
-              fieldErrs[field as keyof T] = messages as string[];
+              fieldErrs[field as keyof T] = messages;
             } else {
-              orphan.push(...(messages as string[]));
+              orphan.push(...messages);
             }
           }
 
           setErrorsState(fieldErrs);
           setFormErrors(orphan);
         } else if (!axios.isAxiosError(err)) {
-          toast.error(err?.message || "Something went wrong");
+          toast.error(errorMessage(err));
         }
       } finally {
         setBusy(false);
       }
     },
-    [busy, values, clearErrors]
+    [busy, values, clearErrors],
   );
 
   const field = useCallback(
-    (name: keyof T): FieldBinding => ({
+    <K extends keyof T>(name: K): FieldBinding<T[K]> => ({
       name: name as string,
-      value: values[name] ?? "",
-      onChange: (value: any) => {
+      value: values[name],
+      onChange: (value: T[K]) => {
         setValuesState((prev) => ({ ...prev, [name]: value }));
         setErrorsState((prev) => {
           if (!prev[name]) return prev;
@@ -117,9 +151,9 @@ export function useForm<T extends Record<string, any>>(
       onBlur: () => {
         setTouched((prev) => ({ ...prev, [name]: true }));
       },
-      errors: (errors[name] as string[]) ?? [],
+      errors: errors[name] ?? [],
     }),
-    [values, errors]
+    [values, errors],
   );
 
   return {

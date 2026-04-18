@@ -1,6 +1,8 @@
-import { DatePicker } from "./DatePicker";
-import { TimePicker } from "./TimePicker";
 import type { DateTimePickerProps } from "@shared/types/form";
+import { useTranslation } from "react-i18next";
+import { DatePicker } from "./DatePicker";
+import { FieldMessages } from "./FieldMessages";
+import { TimePicker } from "./TimePicker";
 
 function getTimeString(date: Date | null | undefined): string {
   if (!date) return "";
@@ -32,6 +34,7 @@ export function DateTimePicker({
   maxDate,
   minuteStep = 5,
 }: DateTimePickerProps) {
+  const { t } = useTranslation();
   const hasErrors = errors && errors.length > 0;
 
   const fieldClasses = [
@@ -39,7 +42,9 @@ export function DateTimePicker({
     hasErrors && "sf-field--error",
     disabled && "sf-field--disabled",
     className,
-  ].filter(Boolean).join(" ");
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   const handleDateChange = (date: Date | null) => {
     const time = getTimeString(value);
@@ -54,9 +59,9 @@ export function DateTimePicker({
   return (
     <div className={fieldClasses}>
       {label && (
-        <label className={`sf-label${required ? " sf-label--required" : ""}`}>
+        <div className={`sf-label${required ? " sf-label--required" : ""}`}>
           {label}
-        </label>
+        </div>
       )}
 
       <div className="sf-datetime">
@@ -64,7 +69,7 @@ export function DateTimePicker({
           name={`${name}_date`}
           value={value}
           onChange={handleDateChange}
-          placeholder={placeholder ?? "Date"}
+          placeholder={placeholder ?? t("form.date")}
           disabled={disabled}
           minDate={minDate}
           maxDate={maxDate}
@@ -73,22 +78,13 @@ export function DateTimePicker({
           name={`${name}_time`}
           value={getTimeString(value)}
           onChange={handleTimeChange}
-          placeholder="Time"
+          placeholder={t("form.time")}
           disabled={disabled}
           minuteStep={minuteStep}
         />
       </div>
 
-      {hints && hints.length > 0 && (
-        <div className="sf-hints">
-          {hints.map((hint, i) => <p key={i} className="sf-hint">{hint}</p>)}
-        </div>
-      )}
-      {hasErrors && (
-        <div className="sf-errors">
-          {errors.map((err, i) => <p key={i} className="sf-error">{err}</p>)}
-        </div>
-      )}
+      <FieldMessages hints={hints} errors={errors} />
     </div>
   );
 }

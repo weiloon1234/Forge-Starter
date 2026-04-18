@@ -7,8 +7,9 @@ pub struct Entry;
 impl MigrationFile for Entry {
     async fn up(ctx: &MigrationContext<'_>) -> Result<()> {
         ctx.raw_execute(
-            "CREATE TABLE IF NOT EXISTS model_translations (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            r#"
+            CREATE TABLE model_translations (
+                id UUID PRIMARY KEY DEFAULT uuidv7(),
                 translatable_type TEXT NOT NULL,
                 translatable_id UUID NOT NULL,
                 locale TEXT NOT NULL,
@@ -16,19 +17,20 @@ impl MigrationFile for Entry {
                 value TEXT NOT NULL,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMPTZ
-            )",
+            )
+            "#,
             &[],
         )
         .await?;
 
         ctx.raw_execute(
-            "CREATE UNIQUE INDEX IF NOT EXISTS idx_translations_unique ON model_translations (translatable_type, translatable_id, locale, field)",
+            "CREATE UNIQUE INDEX idx_translations_unique ON model_translations (translatable_type, translatable_id, locale, field)",
             &[],
         )
         .await?;
 
         ctx.raw_execute(
-            "CREATE INDEX IF NOT EXISTS idx_translations_lookup ON model_translations (translatable_type, translatable_id, locale)",
+            "CREATE INDEX idx_translations_lookup ON model_translations (translatable_type, translatable_id, locale)",
             &[],
         )
         .await?;

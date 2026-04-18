@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from "react";
-import { DayPicker } from "react-day-picker";
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import type { DatePickerProps } from "@shared/types/form";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { DayPicker } from "react-day-picker";
 import { FieldMessages, fieldClasses } from "./FieldMessages";
 
 function formatDate(date: Date | null | undefined): string {
@@ -31,7 +31,10 @@ export function DatePicker({
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -54,7 +57,10 @@ export function DatePicker({
   return (
     <div className={classes} ref={containerRef}>
       {label && (
-        <label className={`sf-label${required ? " sf-label--required" : ""}`} htmlFor={name}>
+        <label
+          className={`sf-label${required ? " sf-label--required" : ""}`}
+          htmlFor={name}
+        >
           {label}
         </label>
       )}
@@ -107,7 +113,11 @@ export function DatePicker({
             }}
             components={{
               Chevron: ({ orientation }) =>
-                orientation === "left" ? <ChevronLeft size={16} /> : <ChevronRight size={16} />,
+                orientation === "left" ? (
+                  <ChevronLeft size={16} />
+                ) : (
+                  <ChevronRight size={16} />
+                ),
             }}
           />
         </div>

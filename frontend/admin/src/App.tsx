@@ -1,13 +1,13 @@
+import { localeStore } from "@shared/i18n";
+import { ModalProvider } from "@shared/modal";
 import { useEffect } from "react";
 import { RouterProvider } from "react-router-dom";
 import { Toaster } from "sonner";
-import { ModalProvider } from "@shared/modal";
-import { localeStore } from "@shared/i18n";
-import { auth } from "@/auth";
 import { api } from "@/api";
-import { ws } from "@/websocket";
+import { auth } from "@/auth";
 import { LoginPage } from "@/pages/LoginPage";
 import { router } from "@/router";
+import { ws } from "@/websocket";
 
 export default function App() {
   const { authenticated, busy } = auth.useAuth();

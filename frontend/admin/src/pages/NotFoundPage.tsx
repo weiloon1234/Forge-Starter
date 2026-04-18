@@ -1,7 +1,7 @@
+import { Button } from "@shared/components";
+import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@shared/components";
 
 export function NotFoundPage() {
   const { t } = useTranslation();

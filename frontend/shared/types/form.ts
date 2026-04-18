@@ -1,4 +1,13 @@
 import type { ReactNode, RefObject } from "react";
+import type {
+  DatatableJsonResponse,
+  DatatableFilterField as GeneratedDatatableFilterField,
+  DatatableFilterInput as GeneratedDatatableFilterInput,
+  DatatableFilterOp as GeneratedDatatableFilterOp,
+  DatatableFilterRow as GeneratedDatatableFilterRow,
+  DatatableFilterValue as GeneratedDatatableFilterValue,
+  DatatableSortInput as GeneratedDatatableSortInput,
+} from "./generated";
 
 // ── Select ──────────────────────────────────────────────
 
@@ -24,9 +33,16 @@ export interface FieldBase {
 // ── Input ───────────────────────────────────────────────
 
 export type InputType =
-  | "text" | "email" | "password" | "number"
-  | "tel" | "url" | "search" | "textarea"
-  | "money" | "atm";
+  | "text"
+  | "email"
+  | "password"
+  | "number"
+  | "tel"
+  | "url"
+  | "search"
+  | "textarea"
+  | "money"
+  | "atm";
 
 export interface InputProps extends FieldBase {
   type?: InputType;
@@ -77,10 +93,15 @@ export interface CheckboxGroupProps extends FieldBase {
 
 // ── Radio ───────────────────────────────────────────────
 
+export type RadioOrientation = "vertical" | "horizontal";
+export type RadioAlign = "start" | "center" | "end";
+
 export interface RadioProps extends FieldBase {
   value?: string;
   onChange?: (value: string) => void;
   options: SelectOption[];
+  orientation?: RadioOrientation;
+  align?: RadioAlign;
 }
 
 // ── File Upload ─────────────────────────────────────────
@@ -97,7 +118,14 @@ export interface FileUploadProps extends FieldBase {
 
 // ── Button ──────────────────────────────────────────────
 
-export type ButtonVariant = "primary" | "secondary" | "danger" | "warning" | "ghost" | "plain" | "link";
+export type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "danger"
+  | "warning"
+  | "ghost"
+  | "plain"
+  | "link";
 export type ButtonSize = "sm" | "md" | "lg";
 
 export interface ButtonProps {
@@ -118,6 +146,9 @@ export interface ButtonProps {
   className?: string;
   form?: string;
   tabIndex?: number;
+  title?: string;
+  ariaLabel?: string;
+  unstyled?: boolean;
 }
 
 // ── Date/Time Picker ────────────────────────────────────
@@ -132,10 +163,10 @@ export interface DatePickerProps extends FieldBase {
 }
 
 export interface TimePickerProps extends FieldBase {
-  value?: string;          // "HH:mm" format
+  value?: string; // "HH:mm" format
   onChange?: (time: string) => void;
   placeholder?: string;
-  minuteStep?: number;     // 1, 5, 10, 15, 30
+  minuteStep?: number; // 1, 5, 10, 15, 30
 }
 
 export interface DateTimePickerProps extends FieldBase {
@@ -150,12 +181,24 @@ export interface DateTimePickerProps extends FieldBase {
 // ── Form Builder / Field Config ─────────────────────────
 
 export type FieldType =
-  | "text" | "email" | "password" | "number"
-  | "tel" | "url" | "search" | "textarea"
-  | "money" | "atm"
-  | "select" | "checkbox" | "checkbox-group"
-  | "radio" | "file"
-  | "date" | "time" | "datetime";
+  | "text"
+  | "email"
+  | "password"
+  | "number"
+  | "tel"
+  | "url"
+  | "search"
+  | "textarea"
+  | "money"
+  | "atm"
+  | "select"
+  | "checkbox"
+  | "checkbox-group"
+  | "radio"
+  | "file"
+  | "date"
+  | "time"
+  | "datetime";
 
 export interface FieldConfig {
   name: string;
@@ -223,42 +266,40 @@ export interface DataTableProps<T> {
   refreshRef?: React.MutableRefObject<(() => void) | null>;
 }
 
-export interface DataTableSort {
-  field: string;
-  direction: "asc" | "desc";
-}
+export type DataTableSortDirection = GeneratedDatatableSortInput["direction"];
+export type DataTableSort = GeneratedDatatableSortInput;
+export type DataTableFilterField = GeneratedDatatableFilterField;
+export type DataTableFilterRow = GeneratedDatatableFilterRow;
 
-export interface DataTableFilter {
-  field: string;
-  op: string;
-  value: any;
-}
+export type DataTableFilterInputValue =
+  | string
+  | boolean
+  | string[]
+  | null
+  | undefined;
 
-export interface DataTableMeta {
-  columns: Array<{ name: string; label: string; sortable: boolean; filterable: boolean }>;
-  pagination: { page: number; per_page: number; total: number; total_pages: number };
-  filters: any[];
-  applied_filters: any[];
-  sorts: Array<{ field: string; direction: string }>;
-}
+export type DataTableFilterValue = GeneratedDatatableFilterValue;
+export type DataTableFilterOp = GeneratedDatatableFilterOp;
+export type DataTableFilter = GeneratedDatatableFilterInput;
+export type DataTableMeta = Omit<DatatableJsonResponse, "rows">;
 
 // ── useForm ─────────────────────────────────────────────
 
-export interface UseFormConfig<T extends Record<string, any>> {
+export interface UseFormConfig<T extends Record<string, unknown>> {
   initialValues: T;
   onSubmit: (values: T) => void | Promise<void>;
   validate?: (values: T) => Partial<Record<keyof T, string[]>>;
 }
 
-export interface FieldBinding {
+export interface FieldBinding<TValue = unknown> {
   name: string;
-  value: any;
-  onChange: (value: any) => void;
+  value: TValue;
+  onChange: (value: TValue) => void;
   onBlur: () => void;
   errors: string[];
 }
 
-export interface UseFormReturn<T extends Record<string, any>> {
+export interface UseFormReturn<T extends Record<string, unknown>> {
   values: T;
   errors: Partial<Record<keyof T, string[]>>;
   touched: Partial<Record<keyof T, boolean>>;
@@ -266,7 +307,7 @@ export interface UseFormReturn<T extends Record<string, any>> {
   dirty: boolean;
   /** Errors for fields not present in this form (orphan server errors). Show at top of form. */
   formErrors: string[];
-  field: (name: keyof T) => FieldBinding;
+  field: <K extends keyof T>(name: K) => FieldBinding<T[K]>;
   handleSubmit: (e?: React.FormEvent) => Promise<void>;
   reset: () => void;
   setValues: (values: Partial<T>) => void;
@@ -277,10 +318,9 @@ export interface UseFormReturn<T extends Record<string, any>> {
 
 // ── FormBuilder ─────────────────────────────────────────
 
-export interface FormBuilderProps<T extends Record<string, any>> {
+export interface FormBuilderProps<T extends Record<string, unknown>> {
   form: UseFormReturn<T>;
   fields: FieldConfig[];
   submitLabel?: string;
   className?: string;
 }
-

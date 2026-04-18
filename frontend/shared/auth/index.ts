@@ -1,2 +1,2 @@
 export { createAuth } from "./createAuth";
-export type { AuthConfig, AuthState, AuthActor, AuthPaths } from "./types";
+export type { AuthActor, AuthConfig, AuthPaths, AuthState } from "./types";
