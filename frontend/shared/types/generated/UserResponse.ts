@@ -3,4 +3,4 @@
 /**
  * Public user profile (user-facing, minimal fields).
  */
-export type UserResponse = { id: string, email: string, name: string, created_at: string, };
+export type UserResponse = { id: string, username: string | null, name: string | null, email: string | null, country_iso2: string | null, contact_country_iso2: string | null, contact_number: string | null, created_at: string, };

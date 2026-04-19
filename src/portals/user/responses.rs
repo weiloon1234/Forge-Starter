@@ -6,7 +6,11 @@ use ts_rs::TS;
 #[ts(export)]
 pub struct UserResponse {
     pub id: String,
-    pub email: String,
-    pub name: String,
+    pub username: Option<String>,
+    pub name: Option<String>,
+    pub email: Option<String>,
+    pub country_iso2: Option<String>,
+    pub contact_country_iso2: Option<String>,
+    pub contact_number: Option<String>,
     pub created_at: String,
 }

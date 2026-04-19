@@ -1,6 +1,8 @@
-import type { Permission } from "@shared/types/generated";
+import type { AdminType, Permission } from "@shared/types/generated";
 import type { LucideIcon } from "lucide-react";
 import {
+  Activity,
+  Cable,
   FileText,
   LayoutDashboard,
   MoreHorizontal,
@@ -14,6 +16,7 @@ export type MenuItem = {
   icon?: LucideIcon;
   path?: string;
   permission?: Permission;
+  adminTypes?: AdminType[];
   notification?: string;
   children?: MenuItem[];
 };
@@ -62,6 +65,22 @@ export const sideMenu: MenuItem[] = [
         path: "/logs",
         icon: FileText,
         permission: "logs.read",
+      },
+      {
+        key: "other.jobs",
+        label: "Jobs",
+        path: "/other/jobs",
+        icon: Activity,
+        permission: "observability.view",
+        adminTypes: ["developer"],
+      },
+      {
+        key: "other.websocket",
+        label: "WebSocket",
+        path: "/other/websocket",
+        icon: Cable,
+        permission: "observability.view",
+        adminTypes: ["developer"],
       },
     ],
   },

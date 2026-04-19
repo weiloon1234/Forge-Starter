@@ -8,7 +8,7 @@ pub async fn login(
     i18n: I18n,
     JsonValidated(req): JsonValidated<LoginRequest>,
 ) -> Result<impl IntoResponse> {
-    let tokens = auth_service::login_with_token(&app, &i18n, &req.email, &req.password).await?;
+    let tokens = auth_service::login_with_token(&app, &i18n, &req.login, &req.password).await?;
     Ok(Json(tokens))
 }
 

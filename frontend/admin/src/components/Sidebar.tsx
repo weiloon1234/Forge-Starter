@@ -114,6 +114,13 @@ function filterMenu(
         return null;
       }
 
+      if (
+        item.adminTypes &&
+        (!adminType || !item.adminTypes.includes(adminType))
+      ) {
+        return null;
+      }
+
       if (hasChildren(item)) {
         const children = filterMenu(item.children, abilities, adminType);
         if (children.length === 0) {

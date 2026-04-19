@@ -1,6 +1,6 @@
 import { DataTable } from "@shared/components";
 import type { DataTableColumn } from "@shared/types/form";
-import type { Permission, UserStatus } from "@shared/types/generated";
+import type { Permission } from "@shared/types/generated";
 import { useTranslation } from "react-i18next";
 import { api } from "@/api";
 import { auth } from "@/auth";
@@ -11,11 +11,17 @@ const EXPORTS_READ: Permission = "exports.read";
 
 interface UserRow {
   id: string;
-  email: string;
-  name: string;
-  status: UserStatus;
+  username: string | null;
+  email: string | null;
+  name: string | null;
+  country_iso2: string | null;
+  contact_country_iso2: string | null;
+  contact_number: string | null;
   created_at: string;
-  updated_at: string;
+}
+
+function displayValue(value: string | null) {
+  return value ?? "-";
 }
 
 export function UsersPage() {
@@ -28,17 +34,41 @@ export function UsersPage() {
   );
 
   const columns: DataTableColumn<UserRow>[] = [
-    { key: "email", label: t("Email"), sortable: true },
-    { key: "name", label: t("Name"), sortable: true },
     {
-      key: "status",
-      label: t("Status"),
+      key: "username",
+      label: t("Username"),
       sortable: true,
-      render: (row) => (
-        <span className={`sf-status-badge sf-status-badge--${row.status}`}>
-          {t(row.status)}
-        </span>
-      ),
+      render: (row) => displayValue(row.username),
+    },
+    {
+      key: "email",
+      label: t("Email"),
+      sortable: true,
+      render: (row) => displayValue(row.email),
+    },
+    {
+      key: "name",
+      label: t("Name"),
+      sortable: true,
+      render: (row) => displayValue(row.name),
+    },
+    {
+      key: "country_iso2",
+      label: t("Country"),
+      sortable: true,
+      render: (row) => displayValue(row.country_iso2),
+    },
+    {
+      key: "contact_country_iso2",
+      label: t("Contact country"),
+      sortable: true,
+      render: (row) => displayValue(row.contact_country_iso2),
+    },
+    {
+      key: "contact_number",
+      label: t("Contact number"),
+      sortable: true,
+      render: (row) => displayValue(row.contact_number),
     },
     { key: "created_at", label: t("Created"), sortable: true },
   ];

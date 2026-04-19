@@ -16,6 +16,9 @@ Use `make lint:fix` locally when you want Rust formatting plus Biome fixes.
 - Frontend auth should go through `createAuth({ mode: "token", ... })`.
 - Refresh uses Forge's shared `RefreshTokenRequest` DTO.
 - WebSocket token exchange uses Forge's shared `WsTokenResponse` DTO.
+- Forge observability stays enabled at `/_forge/*`, but the starter locks it to authenticated developer admins only by default.
+- WebSocket observability payloads stay redacted by default via `observability.websocket.include_payloads = false`.
+- If a project wants broader observability access, relax the authorizer intentionally in `src/bootstrap/http.rs`.
 
 ## Rust Baseline
 
@@ -35,6 +38,14 @@ Use `make lint:fix` locally when you want Rust formatting plus Biome fixes.
 - If a feature needs existing portal-specific button styling, use `<Button unstyled ...>` instead of raw `<button>`.
 - Form state should mirror generated backend DTOs closely, including enums and numeric fields.
 - Datatable metadata and filter/sort shapes should come from generated Forge types, not handwritten `any`-based mirrors.
+
+## I18n Baseline
+
+- `locales/<locale>/*.json` in the project root is the shared translation source for Rust and React. Do not create separate frontend-only locale files.
+- The backend loads from `config/i18n.toml` with `resource_path = "locales"`, and both portals load that same tree in `main.tsx`.
+- English is both the fallback and the key. If the key and display text are the same, skip the English entry entirely.
+- Add English entries only when the display text differs from the key or when the string is parameterized, such as `"greeting": "Hello, {{name}}!"`.
+- Non-English locale files must stay complete for every key that code uses.
 
 ## Tooling And Auto Feedback
 

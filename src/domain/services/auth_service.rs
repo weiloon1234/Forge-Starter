@@ -7,14 +7,11 @@ use crate::domain::services::admin_service;
 pub async fn login_with_token(
     app: &AppContext,
     i18n: &I18n,
-    email: &str,
+    login: &str,
     password: &str,
 ) -> Result<TokenPair> {
     let db = app.database()?;
-
-    let user = User::model_query()
-        .where_(User::EMAIL.eq(email))
-        .first(&*db)
+    let user = User::find_active_by_login(db.as_ref(), login)
         .await?
         .ok_or_else(|| Error::http(401, forge::t!(i18n, "auth.invalid_credentials")))?;
 

@@ -116,6 +116,12 @@ locales/
     └── validation.json
 ```
 
+The root `locales/` tree is the SSOT for both React portals and the Rust backend. Do not create a separate frontend-only locale folder.
+
+English is the fallback and the key:
+- If key = display text, skip the English entry.
+- Add English entries only when the display text differs from the key or the string is parameterized.
+
 **Syntax** (identical in Rust `t!()` macro and React `t()` function):
 ```json
 { "greeting": "Hello, {{name}}!" }

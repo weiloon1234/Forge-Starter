@@ -120,6 +120,10 @@ pub fn can_delete_target(actor: &Admin, target: &Admin) -> bool {
     can_manage_target(actor, target)
 }
 
+pub fn can_access_observability(admin: &Admin) -> bool {
+    matches!(admin.admin_type, AdminType::Developer)
+}
+
 pub fn permission_catalogue(actor: &Admin) -> Vec<(Permission, bool)> {
     let grantable = grantable_permissions(actor);
 
@@ -458,7 +462,18 @@ mod tests {
         let developer = admin_fixture(ModelId::generate(), AdminType::Developer);
         let super_admin = admin_fixture(ModelId::generate(), AdminType::SuperAdmin);
 
-        assert_eq!(permission_module_count(&developer), 5);
-        assert_eq!(permission_module_count(&super_admin), 5);
+        assert_eq!(permission_module_count(&developer), 6);
+        assert_eq!(permission_module_count(&super_admin), 6);
+    }
+
+    #[test]
+    fn observability_access_is_developer_only() {
+        let developer = admin_fixture(ModelId::generate(), AdminType::Developer);
+        let super_admin = admin_fixture(ModelId::generate(), AdminType::SuperAdmin);
+        let admin = admin_fixture(ModelId::generate(), AdminType::Admin);
+
+        assert!(can_access_observability(&developer));
+        assert!(!can_access_observability(&super_admin));
+        assert!(!can_access_observability(&admin));
     }
 }

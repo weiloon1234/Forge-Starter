@@ -1,0 +1,8 @@
+[observability]
+base_path = "/_forge"
+tracing_enabled = false
+otlp_endpoint = "http://localhost:4317"
+service_name = "forge-starter"
+
+[observability.websocket]
+include_payloads = false

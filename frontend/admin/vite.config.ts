@@ -21,5 +21,15 @@ export default defineConfig({
     port: 5173,
     cors: true,
     origin: "http://localhost:5173",
+    proxy: {
+      "/api": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
+      "/_forge": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
+    },
   },
 });

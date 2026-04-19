@@ -5,6 +5,8 @@ use forge::prelude::*;
 pub enum Permission {
     #[forge(key = "exports.read")]
     ExportsRead,
+    #[forge(key = "observability.view")]
+    ObservabilityView,
     #[forge(key = "admins.read")]
     AdminsRead,
     #[forge(key = "admins.manage")]
@@ -24,9 +26,10 @@ pub enum Permission {
 }
 
 impl Permission {
-    pub const fn all() -> [Self; 9] {
+    pub const fn all() -> [Self; 10] {
         [
             Self::ExportsRead,
+            Self::ObservabilityView,
             Self::AdminsRead,
             Self::AdminsManage,
             Self::UsersRead,
@@ -41,6 +44,7 @@ impl Permission {
     pub const fn as_key(self) -> &'static str {
         match self {
             Self::ExportsRead => "exports.read",
+            Self::ObservabilityView => "observability.view",
             Self::AdminsRead => "admins.read",
             Self::AdminsManage => "admins.manage",
             Self::UsersRead => "users.read",
@@ -55,6 +59,7 @@ impl Permission {
     pub const fn module(self) -> &'static str {
         match self {
             Self::ExportsRead => "exports",
+            Self::ObservabilityView => "observability",
             Self::AdminsRead | Self::AdminsManage => "admins",
             Self::UsersRead | Self::UsersManage => "users",
             Self::CountriesRead | Self::CountriesManage => "countries",
@@ -65,6 +70,7 @@ impl Permission {
     pub const fn action(self) -> &'static str {
         match self {
             Self::ExportsRead
+            | Self::ObservabilityView
             | Self::AdminsRead
             | Self::UsersRead
             | Self::CountriesRead
@@ -99,5 +105,23 @@ impl From<Permission> for PermissionId {
 impl AsRef<str> for Permission {
     fn as_ref(&self) -> &str {
         self.as_key()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Permission;
+
+    #[test]
+    fn parse_recognizes_observability_view() {
+        assert_eq!(
+            Permission::parse("observability.view"),
+            Some(Permission::ObservabilityView)
+        );
+    }
+
+    #[test]
+    fn all_includes_observability_view() {
+        assert!(Permission::all().contains(&Permission::ObservabilityView));
     }
 }

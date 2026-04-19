@@ -1,3 +1,7 @@
+use crate::domain::models::Admin;
+use crate::domain::services::admin_service;
+use crate::ids::guards::Guard;
+use crate::ids::permissions::Permission;
 use crate::portals;
 use forge::http::middleware::{Compression, Csrf};
 use forge::prelude::*;
@@ -16,5 +20,21 @@ pub fn builder() -> AppBuilder {
                 SecurityHeaders::new().build(),
             ],
         )
-        .enable_observability()
+        .enable_observability_with(
+            ObservabilityOptions::new()
+                .guard(Guard::Admin)
+                .permission(Permission::ObservabilityView)
+                .authorize(|ctx| async move {
+                    let admin = ctx
+                        .resolve_actor::<Admin>()
+                        .await?
+                        .ok_or_else(|| Error::not_found("Not found"))?;
+
+                    if !admin_service::can_access_observability(&admin) {
+                        return Err(Error::not_found("Not found"));
+                    }
+
+                    Ok(())
+                }),
+        )
 }

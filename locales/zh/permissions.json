@@ -7,6 +7,10 @@
             "label": "导出",
             "read": "导出"
         },
+        "observability": {
+            "label": "可观测性",
+            "read": "查看"
+        },
         "admins": {
             "label": "管理员"
         },

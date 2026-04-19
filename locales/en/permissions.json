@@ -7,6 +7,10 @@
             "label": "Exports",
             "read": "Export"
         },
+        "observability": {
+            "label": "Observability",
+            "read": "View"
+        },
         "admins": {
             "label": "Admins"
         },

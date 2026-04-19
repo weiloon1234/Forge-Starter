@@ -44,6 +44,7 @@
 
         "unique": "{{attribute}} 已被使用",
         "exists": "所选 {{attribute}} 无效",
+        "active_country": "所选 {{attribute}} 无效",
         "app_enum": "所选 {{attribute}} 无效",
         "invalid_request_body": "请求内容无效",
         "multipart_not_supported": "不支持多部分请求",
@@ -61,12 +62,16 @@
         "password_min": "密码至少需要 8 个字符",
 
         "attributes": {
+            "login": "登录账号",
             "username": "用户名",
             "email": "邮箱",
             "name": "姓名",
             "password": "密码",
             "current_password": "当前密码",
             "password_confirmation": "密码确认",
+            "country_iso2": "国家",
+            "contact_country_iso2": "联系国家",
+            "contact_number": "联系电话",
             "locale": "语言",
             "status": "状态",
             "admin_type": "管理员类型",

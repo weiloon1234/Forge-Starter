@@ -12,6 +12,12 @@ interface AdminTargetLike {
 
 export type AdminFormMode = "edit" | "view";
 
+export function canAccessObservability(
+  actor: AdminActorLike | null | undefined,
+): boolean {
+  return actor?.admin_type === "developer";
+}
+
 export function canViewAdminTarget(
   actor: AdminActorLike | null | undefined,
   target: AdminTargetLike,

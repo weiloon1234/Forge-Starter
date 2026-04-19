@@ -2,20 +2,29 @@ use serde::Serialize;
 use ts_rs::TS;
 
 use crate::domain::enums::AdminType;
-use crate::domain::enums::UserStatus;
 use crate::domain::models::Admin;
 use crate::domain::services::admin_service;
 use crate::domain::services::log_service::{LogEntry, LogFileInfo};
 use crate::ids::permissions::Permission;
 
-/// Admin view of a user (includes internal fields like status).
+/// Admin view of a user (includes internal profile and reserved credit fields).
 #[derive(Serialize, TS, forge::ApiSchema)]
 #[ts(export)]
 pub struct AdminUserResponse {
     pub id: String,
-    pub email: String,
-    pub name: String,
-    pub status: UserStatus,
+    pub introducer_user_id: Option<String>,
+    pub username: Option<String>,
+    pub email: Option<String>,
+    pub name: Option<String>,
+    pub country_iso2: Option<String>,
+    pub contact_country_iso2: Option<String>,
+    pub contact_number: Option<String>,
+    pub credit_1: String,
+    pub credit_2: String,
+    pub credit_3: String,
+    pub credit_4: String,
+    pub credit_5: String,
+    pub credit_6: String,
     pub created_at: String,
     pub updated_at: String,
 }

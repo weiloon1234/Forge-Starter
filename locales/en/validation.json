@@ -44,6 +44,7 @@
 
         "unique": "The {{attribute}} has already been taken",
         "exists": "The selected {{attribute}} is invalid",
+        "active_country": "The selected {{attribute}} is invalid",
         "app_enum": "The selected {{attribute}} is invalid",
         "invalid_request_body": "Invalid request payload",
         "multipart_not_supported": "Multipart not supported",
@@ -61,12 +62,16 @@
         "password_min": "Password must be at least 8 characters",
 
         "attributes": {
+            "login": "Login",
             "username": "Username",
             "email": "Email",
             "name": "Name",
             "password": "Password",
             "current_password": "Current password",
             "password_confirmation": "Password confirmation",
+            "country_iso2": "Country",
+            "contact_country_iso2": "Contact country",
+            "contact_number": "Contact number",
             "locale": "Locale",
             "status": "Status",
             "admin_type": "Admin type",

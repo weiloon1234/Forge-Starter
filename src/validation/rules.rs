@@ -1,5 +1,9 @@
 use async_trait::async_trait;
+use forge::countries::CountryStatus;
 use forge::validation::{RuleContext, ValidationError, ValidationRule};
+use forge::Model;
+
+use crate::domain::models::Country;
 
 pub struct MobileRule;
 
@@ -59,5 +63,37 @@ impl ValidationRule for PasswordRule {
             ));
         }
         Ok(())
+    }
+}
+
+pub struct ActiveCountryRule;
+
+#[async_trait]
+impl ValidationRule for ActiveCountryRule {
+    async fn validate(
+        &self,
+        context: &RuleContext,
+        value: &str,
+    ) -> std::result::Result<(), ValidationError> {
+        let iso2 = value.trim().to_ascii_uppercase();
+        if iso2.is_empty() {
+            return Ok(());
+        }
+
+        let db = context
+            .app()
+            .database()
+            .map_err(|_| ValidationError::new("active_country", "Invalid country"))?;
+
+        let country = Country::model_query()
+            .where_(Country::ISO2.eq(iso2.as_str()))
+            .first(db.as_ref())
+            .await
+            .map_err(|_| ValidationError::new("active_country", "Invalid country"))?;
+
+        match country {
+            Some(country) if country.status == CountryStatus::Enabled => Ok(()),
+            _ => Err(ValidationError::new("active_country", "Invalid country")),
+        }
     }
 }

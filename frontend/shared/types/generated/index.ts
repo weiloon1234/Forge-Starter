@@ -43,5 +43,4 @@ export type { UpdateAdminRequest } from "./UpdateAdminRequest";
 export type { UpdateCountryRequest } from "./UpdateCountryRequest";
 export type { UpdateProfileRequest } from "./UpdateProfileRequest";
 export type { UserResponse } from "./UserResponse";
-export { type UserStatus, UserStatusValues } from "./UserStatus";
 export type { WsTokenResponse } from "./WsTokenResponse";

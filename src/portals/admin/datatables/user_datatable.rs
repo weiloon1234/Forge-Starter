@@ -1,4 +1,3 @@
-use crate::domain::enums::UserStatus;
 use crate::domain::models::User;
 use async_trait::async_trait;
 use forge::prelude::*;
@@ -17,6 +16,11 @@ impl ModelDatatable for UserDatatable {
     fn columns() -> Vec<DatatableColumn<User>> {
         vec![
             DatatableColumn::field(User::ID).label("ID").sortable(),
+            DatatableColumn::field(User::USERNAME)
+                .label("Username")
+                .sortable()
+                .filterable()
+                .exportable(),
             DatatableColumn::field(User::EMAIL)
                 .label("Email")
                 .sortable()
@@ -27,8 +31,18 @@ impl ModelDatatable for UserDatatable {
                 .sortable()
                 .filterable()
                 .exportable(),
-            DatatableColumn::field(User::STATUS)
-                .label("Status")
+            DatatableColumn::field(User::COUNTRY_ISO2)
+                .label("Country")
+                .sortable()
+                .filterable()
+                .exportable(),
+            DatatableColumn::field(User::CONTACT_COUNTRY_ISO2)
+                .label("Contact Country")
+                .sortable()
+                .filterable()
+                .exportable(),
+            DatatableColumn::field(User::CONTACT_NUMBER)
+                .label("Contact Number")
                 .sortable()
                 .filterable()
                 .exportable(),
@@ -47,21 +61,16 @@ impl ModelDatatable for UserDatatable {
     async fn available_filters(_ctx: &DatatableContext) -> Result<Vec<DatatableFilterRow>> {
         Ok(vec![
             DatatableFilterRow::pair(
-                DatatableFilterField::text("email", "Email").placeholder("Search email..."),
-                DatatableFilterField::text("name", "Name").placeholder("Search name..."),
+                DatatableFilterField::text("username|email|name", "Search")
+                    .placeholder("Search username, email, or name..."),
+                DatatableFilterField::text("contact_number", "Contact number")
+                    .placeholder("Search contact number..."),
             ),
-            DatatableFilterRow::single(
-                DatatableFilterField::select("status", "Status").options(
-                    UserStatus::options()
-                        .into_iter()
-                        .filter_map(|option| match option.value {
-                            EnumKey::String(value) => {
-                                Some(DatatableFilterOption::new(value, option.label_key))
-                            }
-                            EnumKey::Int(_) => None,
-                        })
-                        .collect::<Vec<_>>(),
-                ),
+            DatatableFilterRow::pair(
+                DatatableFilterField::text("country_iso2", "Country")
+                    .placeholder("Search country ISO2..."),
+                DatatableFilterField::text("contact_country_iso2", "Contact country")
+                    .placeholder("Search contact country ISO2..."),
             ),
         ])
     }

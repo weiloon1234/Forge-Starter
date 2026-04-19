@@ -1,13 +1,16 @@
 import { createBrowserRouter } from "react-router-dom";
+import { DeveloperOnlyRoute } from "@/components/DeveloperOnlyRoute";
 import { AdminLayout } from "@/layouts/AdminLayout";
 import { AdminFormPage } from "@/pages/AdminFormPage";
 import { AdminsPage } from "@/pages/AdminsPage";
 import { CountryPage } from "@/pages/CountryPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { ErrorPage } from "@/pages/ErrorPage";
+import { JobsDashboardPage } from "@/pages/JobsDashboardPage";
 import { LogsPage } from "@/pages/LogsPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { UsersPage } from "@/pages/UsersPage";
+import { WebSocketDashboardPage } from "@/pages/WebSocketDashboardPage";
 
 export const router = createBrowserRouter(
   [
@@ -22,6 +25,22 @@ export const router = createBrowserRouter(
         { path: "admins/:id", element: <AdminFormPage /> },
         { path: "countries", element: <CountryPage /> },
         { path: "logs", element: <LogsPage /> },
+        {
+          path: "other/jobs",
+          element: (
+            <DeveloperOnlyRoute>
+              <JobsDashboardPage />
+            </DeveloperOnlyRoute>
+          ),
+        },
+        {
+          path: "other/websocket",
+          element: (
+            <DeveloperOnlyRoute>
+              <WebSocketDashboardPage />
+            </DeveloperOnlyRoute>
+          ),
+        },
         { path: "*", element: <NotFoundPage /> },
       ],
     },

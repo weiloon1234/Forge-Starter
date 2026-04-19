@@ -11,6 +11,9 @@ Read `STARTER-BASELINE.md` first before extending the starter.
 - Simple JSON DTOs should prefer `#[derive(Validate)]` + `forge::ApiSchema`; runtime-driven or conditional rules can stay manual.
 - JSON-only handlers should use `JsonValidated<T>`.
 - Feature/module frontend code must use shared primitives. If a portal-specific button style already exists, use `Button unstyled` rather than raw `<button>`.
+- Observability is enabled by default, but `/_forge/*` is intentionally locked to authenticated developer admins only in `src/bootstrap/http.rs`.
+- WebSocket observability payloads stay redacted by default via `config/observability.toml`.
+- If a project wants broader observability access, it must intentionally relax the bootstrap authorizer.
 
 ## Commands
 
