@@ -58,6 +58,21 @@
         "mobile": "无效的手机号码",
         "username_min": "用户名至少需要 5 个字符",
         "username_alpha_numeric": "用户名只能包含字母和数字",
-        "password_min": "密码至少需要 8 个字符"
+        "password_min": "密码至少需要 8 个字符",
+
+        "attributes": {
+            "username": "用户名",
+            "email": "邮箱",
+            "name": "姓名",
+            "password": "密码",
+            "current_password": "当前密码",
+            "password_confirmation": "密码确认",
+            "locale": "语言",
+            "status": "状态",
+            "admin_type": "管理员类型",
+            "permissions": "权限",
+            "conversion_rate": "汇率",
+            "is_default": "默认"
+        }
     }
 }
