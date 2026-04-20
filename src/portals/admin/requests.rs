@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use crate::domain::enums::{AdminType, CreditAdjustmentOperation, CreditType};
 use crate::ids;
 use crate::ids::permissions::Permission;
+use crate::types::app_enum::enum_key_string;
 use async_trait::async_trait;
 use forge::countries::CountryStatus;
 use forge::prelude::*;
@@ -117,6 +118,7 @@ impl RequestValidator for UpdateAdminLocaleRequest {
 #[derive(Debug, Deserialize, ts_rs::TS, forge::ApiSchema)]
 #[ts(export)]
 pub struct UpdateCountryRequest {
+    #[ts(type = "import(\"./CountryStatus\").CountryStatus")]
     pub status: CountryStatus,
     pub conversion_rate: Option<f64>,
     pub is_default: bool,
@@ -125,8 +127,9 @@ pub struct UpdateCountryRequest {
 #[async_trait]
 impl RequestValidator for UpdateCountryRequest {
     async fn validate(&self, validator: &mut Validator) -> Result<()> {
+        let status = enum_key_string(self.status.clone());
         validator
-            .field("status", self.status.as_str())
+            .field("status", &status)
             .bail()
             .required()
             .app_enum::<CountryStatus>()
@@ -155,7 +158,9 @@ impl RequestValidator for UpdateSettingValueRequest {
 #[ts(export)]
 pub struct CreateAdminCreditAdjustmentRequest {
     pub user_id: String,
+    #[ts(type = "import(\"./CreditType\").CreditType")]
     pub credit_type: CreditType,
+    #[ts(type = "import(\"./CreditAdjustmentOperation\").CreditAdjustmentOperation")]
     pub operation: CreditAdjustmentOperation,
     pub amount: String,
     #[ts(type = "Record<string, string>")]
@@ -170,6 +175,8 @@ pub struct CreateAdminCreditAdjustmentRequest {
 #[async_trait]
 impl RequestValidator for CreateAdminCreditAdjustmentRequest {
     async fn validate(&self, validator: &mut Validator) -> Result<()> {
+        let credit_type = enum_key_string(self.credit_type);
+        let operation = enum_key_string(self.operation);
         validator.custom_attribute("user_id", "admin.credits.fields.user");
         validator.custom_attribute("credit_type", "admin.credits.fields.credit_type");
         validator.custom_attribute("operation", "admin.credits.fields.operation");
@@ -185,7 +192,7 @@ impl RequestValidator for CreateAdminCreditAdjustmentRequest {
             .await?;
 
         validator
-            .field("credit_type", self.credit_type.as_key())
+            .field("credit_type", &credit_type)
             .bail()
             .required()
             .app_enum::<CreditType>()
@@ -193,7 +200,7 @@ impl RequestValidator for CreateAdminCreditAdjustmentRequest {
             .await?;
 
         validator
-            .field("operation", self.operation.as_key())
+            .field("operation", &operation)
             .bail()
             .required()
             .app_enum::<CreditAdjustmentOperation>()
@@ -339,7 +346,9 @@ pub struct CreateAdminRequest {
     pub email: String,
     pub name: String,
     pub password: String,
+    #[ts(type = "import(\"./AdminType\").AdminType")]
     pub admin_type: AdminType,
+    #[ts(type = "Array<import(\"./Permission\").Permission>")]
     pub permissions: Vec<Permission>,
     pub locale: String,
 }
@@ -347,6 +356,7 @@ pub struct CreateAdminRequest {
 #[async_trait]
 impl RequestValidator for CreateAdminRequest {
     async fn validate(&self, validator: &mut Validator) -> Result<()> {
+        let admin_type = enum_key_string(self.admin_type);
         let locales = validator
             .app()
             .i18n()
@@ -395,7 +405,7 @@ impl RequestValidator for CreateAdminRequest {
             .await?;
 
         validator
-            .field("admin_type", self.admin_type.as_str())
+            .field("admin_type", &admin_type)
             .bail()
             .required()
             .app_enum::<AdminType>()
@@ -426,7 +436,9 @@ pub struct UpdateAdminRequest {
     pub name: Option<String>,
     pub email: Option<String>,
     pub password: Option<String>,
+    #[ts(type = "Array<import(\"./Permission\").Permission> | null")]
     pub permissions: Option<Vec<Permission>>,
+    #[ts(type = "import(\"./AdminType\").AdminType | null")]
     pub admin_type: Option<AdminType>,
     pub locale: Option<String>,
 }
@@ -475,8 +487,9 @@ impl RequestValidator for UpdateAdminRequest {
         }
 
         if let Some(admin_type) = self.admin_type {
+            let admin_type = enum_key_string(admin_type);
             validator
-                .field("admin_type", admin_type.as_str())
+                .field("admin_type", &admin_type)
                 .bail()
                 .app_enum::<AdminType>()
                 .apply()

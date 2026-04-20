@@ -23,7 +23,9 @@ pub struct AdminCreditAdjustmentResponse {
     pub credit_transaction_id: String,
     pub user_id: String,
     pub user_label: String,
+    #[ts(type = "import(\"./CreditType\").CreditType")]
     pub credit_type: CreditType,
+    #[ts(type = "import(\"./CreditTransactionType\").CreditTransactionType")]
     pub transaction_type: CreditTransactionType,
     pub amount: String,
     pub balance_before: String,

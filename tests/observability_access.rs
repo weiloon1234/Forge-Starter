@@ -7,6 +7,7 @@ use forge_starter::domain::enums::AdminType;
 use forge_starter::domain::models::Admin;
 use forge_starter::domain::services::admin_service;
 use forge_starter::ids::permissions::Permission;
+use forge_starter::types::app_enum::enum_key_string;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
@@ -123,7 +124,7 @@ async fn observability_is_developer_only_even_with_permission() -> Result<()> {
     let developer_token = issue_admin_token(&app, "developer").await?;
     let super_admin_token = issue_admin_token(&app, "superadmin").await?;
     let admin_token =
-        create_admin_with_permissions(&app, vec![Permission::ObservabilityView.as_key().into()])
+        create_admin_with_permissions(&app, vec![enum_key_string(Permission::ObservabilityView)])
             .await?;
 
     assert_eq!(

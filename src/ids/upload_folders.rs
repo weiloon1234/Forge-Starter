@@ -1,7 +1,6 @@
 use crate::ids::permissions::Permission;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, forge::AppEnum, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, forge::AppEnum)]
 pub enum EditorUploadFolder {
     #[forge(key = "settings.content")]
     SettingsContent,

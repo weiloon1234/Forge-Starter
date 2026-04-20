@@ -7,11 +7,12 @@ use crate::domain::models::Admin;
 use crate::ids::guards::Guard;
 use crate::ids::permissions::Permission;
 use crate::portals::admin::requests::{CreateAdminRequest, UpdateAdminRequest};
+use crate::types::app_enum::{enum_key_string, enum_variants};
 
 fn parse_permissions(values: &[String]) -> Vec<Permission> {
     values
         .iter()
-        .filter_map(|value| Permission::parse(value))
+        .filter_map(|value| Permission::parse_key(value))
         .collect()
 }
 
@@ -30,7 +31,7 @@ fn expand_permissions(values: impl IntoIterator<Item = Permission>) -> Vec<Permi
 
 pub fn effective_permissions(admin: &Admin) -> Vec<Permission> {
     match admin.admin_type {
-        AdminType::Developer | AdminType::SuperAdmin => Permission::all().into_iter().collect(),
+        AdminType::Developer | AdminType::SuperAdmin => enum_variants::<Permission>(),
         AdminType::Admin => expand_permissions(parse_permissions(&admin.permissions)),
     }
 }
@@ -38,7 +39,7 @@ pub fn effective_permissions(admin: &Admin) -> Vec<Permission> {
 pub fn effective_permission_keys(admin: &Admin) -> Vec<String> {
     effective_permissions(admin)
         .into_iter()
-        .map(|permission| permission.as_key().to_string())
+        .map(enum_key_string)
         .collect()
 }
 
@@ -127,7 +128,7 @@ pub fn can_access_observability(admin: &Admin) -> bool {
 pub fn permission_catalogue(actor: &Admin) -> Vec<(Permission, bool)> {
     let grantable = grantable_permissions(actor);
 
-    Permission::all()
+    enum_variants::<Permission>()
         .into_iter()
         .map(|permission| (permission, grantable.contains(&permission)))
         .collect()
@@ -289,12 +290,13 @@ fn ensure_can_grant(
 
     for permission in requested_permissions {
         if !grantable.contains(permission) {
+            let permission_key = enum_key_string(*permission);
             return Err(Error::http(
                 403,
                 forge::t!(
                     i18n,
                     "admin.errors.cannot_grant_permission",
-                    permission = permission.as_key()
+                    permission = permission_key.as_str()
                 ),
             ));
         }
@@ -304,10 +306,7 @@ fn ensure_can_grant(
 }
 
 fn permission_keys(permissions: &[Permission]) -> Vec<String> {
-    permissions
-        .iter()
-        .map(|permission| permission.as_key().to_string())
-        .collect()
+    permissions.iter().copied().map(enum_key_string).collect()
 }
 
 pub fn scope_visible_admins(query: ModelQuery<Admin>, actor: &Admin) -> ModelQuery<Admin> {
@@ -449,9 +448,9 @@ mod tests {
     fn permission_module_count_counts_each_module_once() {
         let mut admin = admin_fixture(ModelId::generate(), AdminType::Admin);
         admin.permissions = vec![
-            Permission::AdminsManage.as_key().into(),
-            Permission::UsersRead.as_key().into(),
-            Permission::CountriesManage.as_key().into(),
+            enum_key_string(Permission::AdminsManage),
+            enum_key_string(Permission::UsersRead),
+            enum_key_string(Permission::CountriesManage),
         ];
 
         assert_eq!(permission_module_count(&admin), 3);

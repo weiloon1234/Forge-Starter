@@ -37,7 +37,9 @@ pub struct AdminMeResponse {
     pub username: String,
     pub email: String,
     pub name: String,
+    #[ts(type = "import(\"./AdminType\").AdminType")]
     pub admin_type: AdminType,
+    #[ts(type = "Array<import(\"./Permission\").Permission>")]
     pub abilities: Vec<Permission>,
     pub locale: String,
 }
@@ -63,7 +65,9 @@ pub struct AdminResponse {
     pub username: String,
     pub email: String,
     pub name: String,
+    #[ts(type = "import(\"./AdminType\").AdminType")]
     pub admin_type: AdminType,
+    #[ts(type = "Array<import(\"./Permission\").Permission>")]
     pub permissions: Vec<Permission>,
     pub locale: String,
     pub created_at: String,
@@ -89,6 +93,7 @@ impl From<&Admin> for AdminResponse {
 #[derive(Serialize, TS, forge::ApiSchema)]
 #[ts(export)]
 pub struct AdminPermissionResponse {
+    #[ts(type = "import(\"./Permission\").Permission")]
     pub permission: Permission,
     pub grantable: bool,
 }

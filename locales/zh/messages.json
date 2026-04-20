@@ -38,31 +38,6 @@
         "refresh_token_required": "需要刷新令牌"
     },
 
-    "admin_type": {
-        "super_admin": "超级管理员",
-        "developer": "开发者",
-        "admin": "管理员"
-    },
-
-    "setting_type": {
-        "text": "文本",
-        "textarea": "多行文本",
-        "number": "数字",
-        "boolean": "布尔值",
-        "select": "单选",
-        "multiselect": "多选",
-        "email": "邮箱",
-        "url": "网址",
-        "color": "颜色",
-        "date": "日期",
-        "datetime": "日期时间",
-        "file": "文件",
-        "image": "图片",
-        "json": "JSON",
-        "password": "密码",
-        "code": "代码"
-    },
-
     "connected": "已连接",
     "connecting": "连接中",
     "disconnected": "已断开",
@@ -86,8 +61,8 @@
     "Currency": "货币",
     "Rate": "汇率",
     "Status": "状态",
-    "enabled": "启用",
-    "disabled": "禁用",
+    "Enabled": "启用",
+    "Disabled": "禁用",
     "Status updated": "状态已更新",
     "Conversion rate": "汇率",
     "Country updated": "国家已更新",

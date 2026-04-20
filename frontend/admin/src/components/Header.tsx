@@ -1,4 +1,6 @@
 import { Button } from "@shared/components";
+import { AdminTypeOptions } from "@shared/types/generated";
+import { enumLabel } from "@shared/utils";
 import { ChevronDown, Menu } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -68,7 +70,9 @@ export function Header({ onToggleSidebar }: HeaderProps) {
           <div className="sf-account-info">
             <span className="sf-account-name">{user?.name}</span>
             <span className="sf-account-role">
-              {t(`admin_type.${user?.admin_type ?? ""}`)}
+              {user?.admin_type
+                ? enumLabel(AdminTypeOptions, user.admin_type, t)
+                : ""}
             </span>
           </div>
           <ChevronDown

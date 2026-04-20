@@ -10,7 +10,8 @@ import type {
   Permission,
   UpdateAdminRequest,
 } from "@shared/types/generated";
-import { AdminTypeValues } from "@shared/types/generated";
+import { AdminTypeOptions, AdminTypeValues } from "@shared/types/generated";
+import { enumOptions } from "@shared/utils";
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -231,13 +232,16 @@ export function AdminFormModal({
   const adminTypeField = form.field("admin_type");
   const permissionsField = form.field("permissions");
 
-  const adminTypeOptions = buildAdminTypeOptions(
+  const allowedAdminTypes = buildAdminTypeOptions(
     user?.admin_type,
     loadedAdmin?.admin_type ?? form.values.admin_type,
-  ).map((type) => ({
-    value: type,
-    label: t(`admin_type.${type}`),
-  }));
+  );
+  const adminTypeOptions = enumOptions(
+    AdminTypeOptions.filter((option) =>
+      allowedAdminTypes.includes(option.value),
+    ),
+    t,
+  );
 
   const isViewMode = mode === "view";
   const isSelf = !!loadedAdmin && user?.id === loadedAdmin.id;

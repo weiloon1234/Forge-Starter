@@ -5,7 +5,7 @@ import type {
   CountryStatus,
   UpdateCountryRequest,
 } from "@shared/types/generated";
-import { CountryStatusValues } from "@shared/types/generated";
+import { CountryStatusOptions } from "@shared/types/generated";
 import { enumOptions } from "@shared/utils/enumOptions";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -52,7 +52,7 @@ export function EditCountryModal({
           name={statusField.name}
           value={statusField.value}
           label={t("Status")}
-          options={enumOptions(CountryStatusValues, t)}
+          options={enumOptions(CountryStatusOptions, t)}
           onChange={(value) => {
             if (typeof value === "string") {
               statusField.onChange(value as CountryStatus);

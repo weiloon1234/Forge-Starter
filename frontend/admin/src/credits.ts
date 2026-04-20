@@ -6,18 +6,15 @@ import type {
   CreditTransactionType,
   CreditType,
 } from "@shared/types/generated";
+import {
+  CreditAdjustmentOperationOptions,
+  CreditAdjustmentOperationValues,
+  CreditTypeOptions,
+  CreditTypeValues,
+} from "@shared/types/generated";
+import { enumOptions } from "@shared/utils";
 import type { TFunction } from "i18next";
 
-const CREDIT_TYPES: CreditType[] = [
-  "credit_1",
-  "credit_2",
-  "credit_3",
-  "credit_4",
-  "credit_5",
-  "credit_6",
-];
-
-const CREDIT_OPERATIONS: CreditAdjustmentOperation[] = ["add", "deduct"];
 const SCALE = 100_000_000n;
 
 export interface CreditAdjustmentFormValues extends Record<string, unknown> {
@@ -57,35 +54,11 @@ export function emptyCreditAdjustmentFormValues(
 }
 
 export function creditTypeOptions(t: TFunction): SelectOption[] {
-  return CREDIT_TYPES.map((creditType) => ({
-    value: creditType,
-    label: creditTypeLabel(creditType, t),
-  }));
+  return enumOptions(CreditTypeOptions, t);
 }
 
 export function creditOperationOptions(t: TFunction): SelectOption[] {
-  return CREDIT_OPERATIONS.map((operation) => ({
-    value: operation,
-    label: operationLabel(operation, t),
-  }));
-}
-
-export function creditTypeLabel(creditType: CreditType, t: TFunction): string {
-  return t(`admin.credits.credit_types.${creditType}`);
-}
-
-export function creditTransactionTypeLabel(
-  transactionType: CreditTransactionType,
-  t: TFunction,
-): string {
-  return t(`admin.credits.transaction_types.${transactionType}`);
-}
-
-export function operationLabel(
-  operation: CreditAdjustmentOperation,
-  t: TFunction,
-): string {
-  return t(`admin.credits.operations.${operation}`);
+  return enumOptions(CreditAdjustmentOperationOptions, t);
 }
 
 export function explanationKeyForOperation(
@@ -202,7 +175,7 @@ export function creditTypeValue(
   values: CreditAdjustmentFormValues,
 ): CreditType {
   const value = values.credit_type;
-  return CREDIT_TYPES.includes(value as CreditType)
+  return CreditTypeValues.includes(value as CreditType)
     ? (value as CreditType)
     : "credit_1";
 }
@@ -211,7 +184,9 @@ export function operationValue(
   values: CreditAdjustmentFormValues,
 ): CreditAdjustmentOperation {
   const value = values.operation;
-  return CREDIT_OPERATIONS.includes(value as CreditAdjustmentOperation)
+  return CreditAdjustmentOperationValues.includes(
+    value as CreditAdjustmentOperation,
+  )
     ? (value as CreditAdjustmentOperation)
     : "add";
 }

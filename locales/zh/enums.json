@@ -1,0 +1,49 @@
+{
+    "enum": {
+        "admin_type": {
+            "super_admin": "超级管理员",
+            "developer": "开发者",
+            "admin": "管理员"
+        },
+        "setting_type": {
+            "text": "文本",
+            "textarea": "多行文本",
+            "number": "数字",
+            "boolean": "布尔值",
+            "select": "单选",
+            "multiselect": "多选",
+            "email": "邮箱",
+            "url": "网址",
+            "color": "颜色",
+            "date": "日期",
+            "datetime": "日期时间",
+            "file": "文件",
+            "image": "图片",
+            "json": "JSON",
+            "password": "密码",
+            "code": "代码"
+        },
+        "country_status": {
+            "enabled": "启用",
+            "disabled": "禁用"
+        },
+        "credit_type": {
+            "credit_1": "信用 1",
+            "credit_2": "信用 2",
+            "credit_3": "信用 3",
+            "credit_4": "信用 4",
+            "credit_5": "信用 5",
+            "credit_6": "信用 6"
+        },
+        "credit_transaction_type": {
+            "admin_add": "管理员加值",
+            "admin_deduct": "管理员扣值",
+            "transfer_received": "收到转账",
+            "transfer_sent": "发出转账"
+        },
+        "credit_adjustment_operation": {
+            "add": "增加",
+            "deduct": "扣减"
+        }
+    }
+}

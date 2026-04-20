@@ -5,10 +5,14 @@ import type {
   CreditType,
   Permission,
 } from "@shared/types/generated";
+import {
+  CreditTransactionTypeOptions,
+  CreditTypeOptions,
+} from "@shared/types/generated";
+import { enumLabel } from "@shared/utils";
 import { useTranslation } from "react-i18next";
 import { api } from "@/api";
 import { auth } from "@/auth";
-import { creditTransactionTypeLabel, creditTypeLabel } from "@/credits";
 import { hasAllPermissions, usePermission } from "@/hooks/usePermission";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
@@ -56,7 +60,7 @@ export function CreditTransactionsPage() {
       key: "credit_type",
       label: t("admin.credit_transactions.columns.credit_type"),
       sortable: true,
-      render: (row) => creditTypeLabel(row.credit_type, t),
+      render: (row) => enumLabel(CreditTypeOptions, row.credit_type, t),
     },
     {
       key: "amount",
@@ -73,7 +77,8 @@ export function CreditTransactionsPage() {
       key: "transaction_type",
       label: t("admin.credit_transactions.columns.transaction_type"),
       sortable: true,
-      render: (row) => creditTransactionTypeLabel(row.transaction_type, t),
+      render: (row) =>
+        enumLabel(CreditTransactionTypeOptions, row.transaction_type, t),
     },
     {
       key: "balance_after",

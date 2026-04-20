@@ -84,9 +84,10 @@ impl Datatable for AdminDatatable {
                 )
                 .placeholder("Name or email..."),
             ),
-            DatatableFilterRow::single(DatatableFilterField::enum_select::<
-                crate::domain::enums::AdminType,
-            >("admin_type", "Admin Type")),
+            DatatableFilterRow::single(
+                DatatableFilterField::select("admin_type", "Admin Type")
+                    .options(crate::domain::enums::AdminType::options()),
+            ),
         ])
     }
 }

@@ -1,7 +1,6 @@
 use forge::prelude::*;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, forge::AppEnum, ts_rs::TS)]
-#[ts(export)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, forge::AppEnum)]
 pub enum Permission {
     #[forge(key = "exports.read")]
     ExportsRead,
@@ -40,29 +39,7 @@ pub enum Permission {
 }
 
 impl Permission {
-    pub const fn all() -> [Self; 17] {
-        [
-            Self::ExportsRead,
-            Self::ObservabilityView,
-            Self::AdminsRead,
-            Self::AdminsManage,
-            Self::UsersRead,
-            Self::UsersManage,
-            Self::CountriesRead,
-            Self::CountriesManage,
-            Self::SettingsRead,
-            Self::SettingsManage,
-            Self::PagesRead,
-            Self::PagesManage,
-            Self::CreditsRead,
-            Self::CreditsManage,
-            Self::CreditTransactionsRead,
-            Self::LogsRead,
-            Self::LogsManage,
-        ]
-    }
-
-    pub const fn as_key(self) -> &'static str {
+    const fn key_str(self) -> &'static str {
         match self {
             Self::ExportsRead => "exports.read",
             Self::ObservabilityView => "observability.view",
@@ -133,38 +110,36 @@ impl Permission {
             _ => None,
         }
     }
-
-    pub fn parse(value: &str) -> Option<Self> {
-        Self::parse_key(value)
-    }
 }
 
 impl From<Permission> for PermissionId {
     fn from(value: Permission) -> Self {
-        PermissionId::new(value.as_key())
+        PermissionId::new(value.key_str())
     }
 }
 
 impl AsRef<str> for Permission {
     fn as_ref(&self) -> &str {
-        self.as_key()
+        self.key_str()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::Permission;
+    use forge::ForgeAppEnum;
 
     #[test]
     fn parse_recognizes_observability_view() {
         assert_eq!(
-            Permission::parse("observability.view"),
+            Permission::parse_key("observability.view"),
             Some(Permission::ObservabilityView)
         );
     }
 
     #[test]
-    fn all_includes_observability_view() {
-        assert!(Permission::all().contains(&Permission::ObservabilityView));
+    fn variants_include_observability_view() {
+        assert!(crate::types::app_enum::enum_variants::<Permission>()
+            .contains(&Permission::ObservabilityView));
     }
 }

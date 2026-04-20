@@ -757,8 +757,8 @@ export function WebSocketDashboardPage() {
                     key: "presence",
                     label: t("observability.common.presence"),
                     value: selectedChannel.presence
-                      ? t("enabled")
-                      : t("disabled"),
+                      ? t("Enabled")
+                      : t("Disabled"),
                   },
                   {
                     key: "replay_count",
@@ -769,15 +769,15 @@ export function WebSocketDashboardPage() {
                     key: "allow_client_events",
                     label: t("observability.common.allow_client_events"),
                     value: selectedChannel.allow_client_events
-                      ? t("enabled")
-                      : t("disabled"),
+                      ? t("Enabled")
+                      : t("Disabled"),
                   },
                   {
                     key: "requires_auth",
                     label: t("observability.common.requires_auth"),
                     value: selectedChannel.requires_auth
-                      ? t("enabled")
-                      : t("disabled"),
+                      ? t("Enabled")
+                      : t("Disabled"),
                   },
                   {
                     key: "guard",

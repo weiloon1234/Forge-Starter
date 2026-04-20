@@ -90,6 +90,7 @@ mod tests {
     use crate::domain::services::admin_service;
     use crate::ids::permissions::Permission;
     use crate::ids::upload_folders::EditorUploadFolder;
+    use crate::types::app_enum::enum_key_string;
     use forge::prelude::*;
 
     fn admin_fixture(admin_type: AdminType, permissions: Vec<Permission>) -> Admin {
@@ -102,10 +103,7 @@ mod tests {
             name: format!("Admin {id}"),
             admin_type,
             password_hash: "hashed".to_string(),
-            permissions: permissions
-                .into_iter()
-                .map(|permission| permission.as_key().to_string())
-                .collect(),
+            permissions: permissions.into_iter().map(enum_key_string).collect(),
             locale: "en".to_string(),
             created_at: DateTime::now(),
             updated_at: DateTime::now(),

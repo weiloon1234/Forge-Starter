@@ -2,6 +2,8 @@ import { Button, DataTable } from "@shared/components";
 import { modal } from "@shared/modal";
 import type { DataTableColumn } from "@shared/types/form";
 import type { CountryStatus, Permission } from "@shared/types/generated";
+import { CountryStatusOptions } from "@shared/types/generated";
+import { enumLabel } from "@shared/utils";
 import { Eye } from "lucide-react";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -110,7 +112,7 @@ export function CountryPage() {
       sortable: true,
       render: (row) => (
         <span className={`sf-status-badge sf-status-badge--${row.status}`}>
-          {t(row.status)}
+          {enumLabel(CountryStatusOptions, row.status, t)}
         </span>
       ),
     },

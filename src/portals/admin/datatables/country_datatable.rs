@@ -78,7 +78,7 @@ impl Datatable for CountryDatatable {
                     ],
                 )
                 .placeholder("Name, ISO2, or currency..."),
-                DatatableFilterField::enum_select::<CountryStatus>("status", "Status"),
+                DatatableFilterField::select("status", "Status").options(CountryStatus::options()),
             ),
             DatatableFilterRow::single(DatatableFilterField::checkbox(
                 "is_default",

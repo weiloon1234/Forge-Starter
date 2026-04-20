@@ -9,3 +9,4 @@ export {
   localDateToDateString,
   parseDateTimeValue,
 } from "./date";
+export { enumLabel, enumOptions } from "./enumOptions";

@@ -4,10 +4,12 @@ import type {
   AdminSettingResponse,
   SettingType,
 } from "@shared/types/generated";
+import { SettingTypeOptions } from "@shared/types/generated";
 import {
   dateStringToLocalDate,
   dateTimeStringToDate,
   dateToIsoString,
+  enumLabel,
   localDateToDateString,
 } from "@shared/utils";
 import type { TFunction } from "i18next";
@@ -65,7 +67,7 @@ export function settingParameters(
 }
 
 export function settingTypeLabel(type: SettingType, t: TFunction): string {
-  return t(`setting_type.${type}`);
+  return enumLabel(SettingTypeOptions, type, t);
 }
 
 export function settingOptions(
@@ -179,7 +181,7 @@ export function summarizeSettingValue(
 
   switch (type) {
     case "boolean":
-      return value === true ? t("enabled") : t("disabled");
+      return value === true ? t("Enabled") : t("Disabled");
     case "multiselect":
       return Array.isArray(value)
         ? truncate(

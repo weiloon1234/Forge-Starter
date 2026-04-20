@@ -195,24 +195,6 @@
                 "related_key": "关联键",
                 "remark": "备注"
             },
-            "credit_types": {
-                "credit_1": "信用 1",
-                "credit_2": "信用 2",
-                "credit_3": "信用 3",
-                "credit_4": "信用 4",
-                "credit_5": "信用 5",
-                "credit_6": "信用 6"
-            },
-            "transaction_types": {
-                "admin_add": "管理员加值",
-                "admin_deduct": "管理员扣值",
-                "transfer_received": "收到转账",
-                "transfer_sent": "发出转账"
-            },
-            "operations": {
-                "add": "增加",
-                "deduct": "扣减"
-            },
             "errors": {
                 "invalid_amount": "请输入有效且大于 0 的信用金额。",
                 "invalid_user": "请选择有效的用户。",

@@ -1,3 +1,5 @@
+pub mod app_enum;
+
 use serde::Serialize;
 
 /// Simple health/status response shape.

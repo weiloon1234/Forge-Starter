@@ -11,38 +11,11 @@
         "refresh_token_required": "Refresh token is required"
     },
 
-    "admin_type": {
-        "super_admin": "Super Admin",
-        "developer": "Developer",
-        "admin": "Admin"
-    },
-
-    "setting_type": {
-        "text": "Text",
-        "textarea": "Textarea",
-        "number": "Number",
-        "boolean": "Boolean",
-        "select": "Select",
-        "multiselect": "Multiselect",
-        "email": "Email",
-        "url": "URL",
-        "color": "Color",
-        "date": "Date",
-        "datetime": "Datetime",
-        "file": "File",
-        "image": "Image",
-        "json": "JSON",
-        "password": "Password",
-        "code": "Code"
-    },
-
     "login_brand_desc": "Secure administration panel. Sign in with your credentials to manage the system.",
     "login_subtitle": "Enter your credentials to continue",
     "Locale EN": "English",
     "Locale ZH": "中文",
 
-    "enabled": "Enabled",
-    "disabled": "Disabled",
     "Conversion rate": "Conversion rate",
     "Country updated": "Country updated",
     "countries_subtitle": "Manage country status and conversion rates",

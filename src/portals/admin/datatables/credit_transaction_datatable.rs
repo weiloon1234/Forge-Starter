@@ -195,25 +195,6 @@ impl Datatable for CreditTransactionDatatable {
     }
 
     async fn available_filters(_ctx: &DatatableContext) -> Result<Vec<DatatableFilterRow>> {
-        let credit_type_options = CreditType::all()
-            .into_iter()
-            .map(|credit_type| {
-                DatatableFilterOption::new(
-                    credit_type.as_key().to_string(),
-                    credit_type.label_key(),
-                )
-            })
-            .collect::<Vec<_>>();
-        let transaction_type_options = CreditTransactionType::all()
-            .into_iter()
-            .map(|transaction_type| {
-                DatatableFilterOption::new(
-                    transaction_type.as_key().to_string(),
-                    transaction_type.label_key(),
-                )
-            })
-            .collect::<Vec<_>>();
-
         Ok(vec![
             DatatableFilterRow::pair(
                 DatatableFilterField::text_search_fields(
@@ -248,14 +229,14 @@ impl Datatable for CreditTransactionDatatable {
                     "credit_type",
                     "admin.credit_transactions.columns.credit_type",
                 )
-                .options(credit_type_options),
+                .options(CreditType::options()),
             ),
             DatatableFilterRow::single(
                 DatatableFilterField::select(
                     "transaction_type",
                     "admin.credit_transactions.columns.transaction_type",
                 )
-                .options(transaction_type_options),
+                .options(CreditTransactionType::options()),
             ),
             DatatableFilterRow::pair(
                 DatatableFilterField::decimal_min(

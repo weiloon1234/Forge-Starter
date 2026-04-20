@@ -68,13 +68,6 @@ impl Datatable for SettingDatatable {
             .into_iter()
             .map(|group| DatatableFilterOption::new(group.clone(), group))
             .collect::<Vec<_>>();
-        let type_options = SettingType::all()
-            .iter()
-            .map(|(key, _)| {
-                DatatableFilterOption::new((*key).to_string(), format!("setting_type.{key}"))
-            })
-            .collect::<Vec<_>>();
-
         Ok(vec![
             DatatableFilterRow::pair(
                 DatatableFilterField::text_search_fields(
@@ -88,7 +81,7 @@ impl Datatable for SettingDatatable {
                 )
                 .placeholder("admin.settings.search_placeholder"),
                 DatatableFilterField::select("setting_type", "admin.settings.columns.type")
-                    .options(type_options),
+                    .options(SettingType::options()),
             ),
             DatatableFilterRow::pair(
                 DatatableFilterField::select("group_name", "admin.settings.columns.group")

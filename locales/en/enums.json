@@ -1,0 +1,49 @@
+{
+    "enum": {
+        "admin_type": {
+            "super_admin": "Super Admin",
+            "developer": "Developer",
+            "admin": "Admin"
+        },
+        "setting_type": {
+            "text": "Text",
+            "textarea": "Textarea",
+            "number": "Number",
+            "boolean": "Boolean",
+            "select": "Select",
+            "multiselect": "Multiselect",
+            "email": "Email",
+            "url": "URL",
+            "color": "Color",
+            "date": "Date",
+            "datetime": "Datetime",
+            "file": "File",
+            "image": "Image",
+            "json": "JSON",
+            "password": "Password",
+            "code": "Code"
+        },
+        "country_status": {
+            "enabled": "Enabled",
+            "disabled": "Disabled"
+        },
+        "credit_type": {
+            "credit_1": "Credit 1",
+            "credit_2": "Credit 2",
+            "credit_3": "Credit 3",
+            "credit_4": "Credit 4",
+            "credit_5": "Credit 5",
+            "credit_6": "Credit 6"
+        },
+        "credit_transaction_type": {
+            "admin_add": "Admin Add",
+            "admin_deduct": "Admin Deduct",
+            "transfer_received": "Transfer Received",
+            "transfer_sent": "Transfer Sent"
+        },
+        "credit_adjustment_operation": {
+            "add": "Add",
+            "deduct": "Deduct"
+        }
+    }
+}

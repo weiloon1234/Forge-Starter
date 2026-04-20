@@ -7,6 +7,8 @@ import type {
   AdminCreditAdjustmentResponse,
   AdminUserLookupOptionResponse,
 } from "@shared/types/generated";
+import { CreditTypeOptions } from "@shared/types/generated";
+import { enumLabel } from "@shared/utils";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -16,7 +18,6 @@ import {
   buildCreateCreditAdjustmentPayload,
   type CreditAdjustmentFormValues,
   creditOperationOptions,
-  creditTypeLabel,
   creditTypeOptions,
   creditTypeValue,
   emptyCreditAdjustmentFormValues,
@@ -258,7 +259,11 @@ export function CreateCreditAdjustmentModal({
                     <div>
                       <div className="sf-page-subtitle">
                         {t("admin.credits.current_balance_label", {
-                          credit_type: creditTypeLabel(currentCreditType, t),
+                          credit_type: enumLabel(
+                            CreditTypeOptions,
+                            currentCreditType,
+                            t,
+                          ),
                         })}
                       </div>
                       <div>{currentBalance}</div>

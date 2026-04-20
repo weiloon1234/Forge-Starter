@@ -273,7 +273,7 @@ export function PageFormPage() {
         <div className="sf-setting-asset-meta">
           <div className="sf-setting-asset-name">{page.cover.name}</div>
           <div className="sf-setting-asset-details">
-            {page.cover.mime_type ?? t("setting_type.image")} ·{" "}
+            {page.cover.mime_type ?? t("enum.setting_type.image")} ·{" "}
             {formatFileSize(page.cover.size_bytes)}
           </div>
         </div>

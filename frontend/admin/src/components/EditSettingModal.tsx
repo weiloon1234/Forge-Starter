@@ -34,6 +34,7 @@ import {
   settingOptions,
   settingPlaceholder,
   settingRows,
+  settingTypeLabel,
 } from "@/settings";
 
 interface SettingFormValues extends Record<string, unknown> {
@@ -216,7 +217,7 @@ export function EditSettingModal({
           />
         ) : (
           <div className="sf-setting-asset-icon">
-            {t(`setting_type.${setting.setting_type}`)}
+            {settingTypeLabel(setting.setting_type, t)}
           </div>
         )}
 
@@ -461,7 +462,7 @@ export function EditSettingModal({
                   {t("admin.settings.columns.type")}
                 </div>
                 <div className="sf-setting-meta-value">
-                  {t(`setting_type.${setting.setting_type}`)}
+                  {settingTypeLabel(setting.setting_type, t)}
                 </div>
               </div>
               <div>

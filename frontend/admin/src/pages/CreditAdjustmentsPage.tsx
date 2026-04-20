@@ -6,17 +6,18 @@ import type {
   CreditType,
   Permission,
 } from "@shared/types/generated";
+import {
+  CreditTransactionTypeOptions,
+  CreditTypeOptions,
+} from "@shared/types/generated";
+import { enumLabel } from "@shared/utils";
 import { Plus } from "lucide-react";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "@/api";
 import { auth } from "@/auth";
 import { CreateCreditAdjustmentModal } from "@/components/CreateCreditAdjustmentModal";
-import {
-  creditTransactionTypeLabel,
-  creditTypeLabel,
-  explanationKeyForTransactionType,
-} from "@/credits";
+import { explanationKeyForTransactionType } from "@/credits";
 import { hasAllPermissions, usePermission } from "@/hooks/usePermission";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
@@ -71,7 +72,7 @@ export function CreditAdjustmentsPage() {
       key: "credit_type",
       label: t("admin.credits.columns.credit_type"),
       sortable: true,
-      render: (row) => creditTypeLabel(row.credit_type, t),
+      render: (row) => enumLabel(CreditTypeOptions, row.credit_type, t),
     },
     {
       key: "amount",
@@ -96,7 +97,8 @@ export function CreditAdjustmentsPage() {
       key: "transaction_type",
       label: t("admin.credits.columns.transaction_type"),
       sortable: true,
-      render: (row) => creditTransactionTypeLabel(row.transaction_type, t),
+      render: (row) =>
+        enumLabel(CreditTransactionTypeOptions, row.transaction_type, t),
     },
     {
       key: "admin_label",

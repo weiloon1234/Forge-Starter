@@ -2,6 +2,8 @@ import { Button, DataTable } from "@shared/components";
 import { modal } from "@shared/modal";
 import type { DataTableColumn } from "@shared/types/form";
 import type { AdminType, Permission } from "@shared/types/generated";
+import { AdminTypeOptions } from "@shared/types/generated";
+import { enumLabel } from "@shared/utils";
 import { Eye, Pencil, Plus } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -182,7 +184,7 @@ export function AdminsPage({
       key: "admin_type",
       label: t("Admin Type"),
       sortable: true,
-      render: (row) => t(`admin_type.${row.admin_type}`),
+      render: (row) => enumLabel(AdminTypeOptions, row.admin_type, t),
     },
     {
       key: "permission_count",
