@@ -202,7 +202,12 @@ export function AdminsPage({
         </Button>
       ),
     },
-    { key: "created_at", label: t("Created"), sortable: true },
+    {
+      key: "created_at",
+      label: t("Created"),
+      sortable: true,
+      format: "datetime",
+    },
   ];
 
   return (

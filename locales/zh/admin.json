@@ -84,6 +84,7 @@
             "create_title": "创建页面",
             "edit_title": "编辑页面",
             "view_title": "查看页面",
+            "back": "返回页面列表",
             "create_help": "创建一个带多语言富文本内容和可选封面图的页面。",
             "edit_help": "更新这个页面的多语言内容、封面图和 slug。",
             "view_help": "以只读方式查看这个页面。",

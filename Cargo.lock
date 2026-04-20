@@ -1161,7 +1161,7 @@ checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
 [[package]]
 name = "forge"
 version = "0.1.0"
-source = "git+https://github.com/weiloon1234/Forge.git?branch=main#a10e8a70e5a55eb19a13cb640ae2e606ff55019f"
+source = "git+https://github.com/weiloon1234/Forge.git?branch=main#5237c7f494f8ff0e6bc4daa08daf6fb50f8ad036"
 dependencies = [
  "aes-gcm",
  "ammonia",
@@ -1211,12 +1211,12 @@ dependencies = [
 [[package]]
 name = "forge-build"
 version = "0.1.0"
-source = "git+https://github.com/weiloon1234/Forge.git?branch=main#a10e8a70e5a55eb19a13cb640ae2e606ff55019f"
+source = "git+https://github.com/weiloon1234/Forge.git?branch=main#5237c7f494f8ff0e6bc4daa08daf6fb50f8ad036"
 
 [[package]]
 name = "forge-macros"
 version = "0.1.0"
-source = "git+https://github.com/weiloon1234/Forge.git?branch=main#a10e8a70e5a55eb19a13cb640ae2e606ff55019f"
+source = "git+https://github.com/weiloon1234/Forge.git?branch=main#5237c7f494f8ff0e6bc4daa08daf6fb50f8ad036"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1232,6 +1232,7 @@ dependencies = [
  "forge",
  "forge-build",
  "percent-encoding",
+ "rust_xlsxwriter",
  "serde",
  "serde_json",
  "tokio",

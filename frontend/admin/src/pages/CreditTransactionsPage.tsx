@@ -45,6 +45,7 @@ export function CreditTransactionsPage() {
       key: "created_at",
       label: t("admin.credit_transactions.columns.created"),
       sortable: true,
+      format: "datetime",
     },
     {
       key: "user_label",

@@ -81,6 +81,7 @@
     @apply flex items-center rounded-lg border overflow-hidden;
     border-color: var(--color-border);
     background: var(--color-bg-input);
+    min-height: 44px;
     transition: border-color 150ms ease, box-shadow 150ms ease;
   }
   .sf-input-wrapper:focus-within {
@@ -101,6 +102,22 @@
   }
   .sf-input::placeholder {
     color: var(--color-text-hint);
+  }
+
+  /* Color input */
+  .sf-color-input-wrapper {
+    @apply pr-2;
+  }
+  .sf-color-swatch {
+    @apply relative mr-1 shrink-0 w-8 h-8 rounded-md border cursor-pointer overflow-hidden;
+    border-color: var(--color-border);
+    background: var(--color-bg);
+  }
+  .sf-color-swatch-preview {
+    @apply block w-full h-full;
+  }
+  .sf-color-native {
+    @apply absolute inset-0 w-full h-full opacity-0 cursor-pointer border-0 p-0;
   }
 
   /* Textarea */
@@ -163,6 +180,7 @@
     border-color: var(--color-border);
     background: var(--color-bg-input);
     color: var(--color-text);
+    min-height: 44px;
     transition: border-color 150ms ease, box-shadow 150ms ease;
   }
   .sf-select-trigger--with-clear {
@@ -649,6 +667,7 @@
     border-color: var(--color-border);
     background: var(--color-bg-input);
     color: var(--color-text);
+    min-height: 44px;
     transition: border-color 150ms ease, box-shadow 150ms ease;
   }
   .sf-datepicker-trigger:focus {
@@ -669,6 +688,7 @@
     @apply rounded-lg border shadow-lg p-3;
     border-color: var(--color-border);
     background: var(--color-bg);
+    width: max-content;
   }
 
   /* Calendar (react-day-picker) */
@@ -730,6 +750,7 @@
     @apply flex items-center gap-1 px-3 py-2 rounded-lg border;
     border-color: var(--color-border);
     background: var(--color-bg-input);
+    min-height: 44px;
     transition: border-color 150ms ease, box-shadow 150ms ease;
   }
   .sf-timepicker:focus-within {

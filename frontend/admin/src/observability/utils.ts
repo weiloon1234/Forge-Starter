@@ -1,3 +1,7 @@
+import {
+  formatDateTime as formatSharedDateTime,
+  parseDateTimeValue,
+} from "@shared/utils";
 import axios from "axios";
 import type {
   FailedJobEntry,
@@ -25,37 +29,8 @@ export function formatDurationMs(value: number | null | undefined) {
   return `${(value / 60_000).toFixed(1)} min`;
 }
 
-function normalizeDateValue(value: string | number | null | undefined) {
-  if (value == null) return null;
-
-  if (typeof value === "number") {
-    return new Date(value > 10_000_000_000 ? value : value * 1000);
-  }
-
-  if (value.startsWith("timestamptz:")) {
-    return new Date(value.slice("timestamptz:".length));
-  }
-
-  const parsed = new Date(value);
-  if (!Number.isNaN(parsed.getTime())) {
-    return parsed;
-  }
-
-  return null;
-}
-
 export function formatDateTime(value: string | number | null | undefined) {
-  const date = normalizeDateValue(value);
-  if (!date) return typeof value === "string" && value ? value : "—";
-
-  return date.toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
+  return formatSharedDateTime(value, { includeSeconds: true });
 }
 
 export function formatJsonPreview(value: unknown, maxLength = 120) {
@@ -121,7 +96,7 @@ export function failedJobSortValue(
     case "duration_ms":
       return job.duration_ms ?? 0;
     case "created_at":
-      return normalizeDateValue(job.created_at)?.getTime() ?? 0;
+      return parseDateTimeValue(job.created_at)?.getTime() ?? 0;
     default:
       return String(job[key] ?? "").toLowerCase();
   }

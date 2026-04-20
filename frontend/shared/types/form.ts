@@ -264,6 +264,7 @@ export interface DataTableColumn<T> {
   key: keyof T | string;
   label: string;
   sortable?: boolean;
+  format?: "date" | "datetime";
   cellClassName?: string;
   headerClassName?: string;
   render?: (row: T) => ReactNode;

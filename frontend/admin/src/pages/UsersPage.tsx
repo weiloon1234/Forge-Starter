@@ -70,7 +70,12 @@ export function UsersPage() {
       sortable: true,
       render: (row) => displayValue(row.contact_number),
     },
-    { key: "created_at", label: t("Created"), sortable: true },
+    {
+      key: "created_at",
+      label: t("Created"),
+      sortable: true,
+      format: "datetime",
+    },
   ];
 
   return (

@@ -1,4 +1,5 @@
 import { localeStore } from "@shared/i18n/localeStore";
+import { getBrowserTimezone } from "@shared/utils";
 import axios, { type AxiosError, type AxiosInstance } from "axios";
 import { toast } from "sonner";
 
@@ -83,6 +84,10 @@ export function createApi({
       config.headers.Authorization = `Bearer ${token}`;
     }
     config.headers["Accept-Language"] = localeStore.locale;
+    const timezone = getBrowserTimezone();
+    if (timezone) {
+      config.headers.TIMEZONE = timezone;
+    }
     return config;
   });
 

@@ -60,6 +60,7 @@ export function CreditAdjustmentsPage() {
       key: "created_at",
       label: t("admin.credits.columns.created"),
       sortable: true,
+      format: "datetime",
     },
     {
       key: "user_label",

@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use forge::datatable::column::DatatableFieldRef;
 use forge::prelude::*;
 use forge::settings::{Setting, SettingType};
 
@@ -76,9 +77,16 @@ impl Datatable for SettingDatatable {
 
         Ok(vec![
             DatatableFilterRow::pair(
-                DatatableFilterField::text_search("search", "Search")
-                    .server_field("key|label|description")
-                    .placeholder("admin.settings.search_placeholder"),
+                DatatableFilterField::text_search_fields(
+                    "search",
+                    "Search",
+                    [
+                        DatatableFieldRef::<Self::Row>::from(AppSetting::KEY),
+                        DatatableFieldRef::<Self::Row>::from(AppSetting::LABEL),
+                        DatatableFieldRef::<Self::Row>::from(AppSetting::DESCRIPTION),
+                    ],
+                )
+                .placeholder("admin.settings.search_placeholder"),
                 DatatableFilterField::select("setting_type", "admin.settings.columns.type")
                     .options(type_options),
             ),

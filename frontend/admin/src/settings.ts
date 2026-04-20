@@ -4,6 +4,12 @@ import type {
   AdminSettingResponse,
   SettingType,
 } from "@shared/types/generated";
+import {
+  dateStringToLocalDate,
+  dateTimeStringToDate,
+  dateToIsoString,
+  localDateToDateString,
+} from "@shared/utils";
 import type { TFunction } from "i18next";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -272,44 +278,9 @@ export function serializeSettingValue(
   }
 }
 
-export function dateStringToLocalDate(
-  value: string | null | undefined,
-): Date | null {
-  if (!value) {
-    return null;
-  }
-
-  const [year, month, day] = value.split("-").map(Number);
-  if (!year || !month || !day) {
-    return null;
-  }
-
-  return new Date(year, month - 1, day);
-}
-
-export function localDateToDateString(date: Date | null): string | null {
-  if (!date) {
-    return null;
-  }
-
-  return date.toLocaleDateString("en-CA");
-}
-
-export function dateTimeStringToDate(
-  value: string | null | undefined,
-): Date | null {
-  if (!value) {
-    return null;
-  }
-
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-export function dateToIsoString(date: Date | null): string | null {
-  if (!date) {
-    return null;
-  }
-
-  return date.toISOString();
-}
+export {
+  dateStringToLocalDate,
+  dateTimeStringToDate,
+  dateToIsoString,
+  localDateToDateString,
+};

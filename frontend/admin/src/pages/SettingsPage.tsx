@@ -2,6 +2,7 @@ import { Button, DataTable } from "@shared/components";
 import { modal } from "@shared/modal";
 import type { DataTableColumn } from "@shared/types/form";
 import type { Permission, SettingType } from "@shared/types/generated";
+import { formatDateTime } from "@shared/utils";
 import { Pencil } from "lucide-react";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -116,7 +117,7 @@ export function SettingsPage() {
       key: "updated_at",
       label: t("admin.settings.columns.updated"),
       sortable: true,
-      render: (row) => row.updated_at ?? "—",
+      render: (row) => (row.updated_at ? formatDateTime(row.updated_at) : "—"),
     },
   ];
 

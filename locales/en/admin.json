@@ -84,6 +84,7 @@
             "create_title": "Create Page",
             "edit_title": "Edit Page",
             "view_title": "View Page",
+            "back": "Back to Pages",
             "create_help": "Create a localized page with rich content and an optional cover image.",
             "edit_help": "Update localized content, cover image, and slug for this page.",
             "view_help": "Review this page in read-only mode.",

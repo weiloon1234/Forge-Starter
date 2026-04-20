@@ -53,7 +53,7 @@ export function DatePicker({
     setDropdownStyle({
       position: "fixed",
       left,
-      minWidth: rect.width,
+      maxWidth: `calc(100vw - ${viewportPadding * 2}px)`,
       zIndex: 9999,
       ...(dropUp
         ? { bottom: window.innerHeight - rect.top + offset }

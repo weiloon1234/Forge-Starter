@@ -1,13 +1,13 @@
 import { Button, DataTable } from "@shared/components";
-import { modal } from "@shared/modal";
 import type { DataTableColumn } from "@shared/types/form";
 import type { Permission } from "@shared/types/generated";
+import { formatDateTime } from "@shared/utils";
 import { Eye, Pencil, Plus } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { api } from "@/api";
 import { auth } from "@/auth";
-import { PageFormModal } from "@/components/PageFormModal";
 import { hasAllPermissions, usePermission } from "@/hooks/usePermission";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
@@ -23,19 +23,11 @@ interface PageRow {
   updated_at: string | null;
 }
 
-interface PagesPageProps {
-  modalRouteIntent?: { kind: "create" } | { kind: "target"; id: string };
-  onRouteModalClose?: () => void;
-}
-
-export function PagesPage({
-  modalRouteIntent,
-  onRouteModalClose,
-}: PagesPageProps = {}) {
+export function PagesPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { user } = auth.useAuth();
   const tableRefresh = useRef<(() => void) | null>(null);
-  const routeModalKeyRef = useRef<string | null>(null);
   const canReadPages = usePermission(PAGES_READ);
   const canManagePages = usePermission(PAGES_MANAGE);
   const canExport = hasAllPermissions(
@@ -43,89 +35,6 @@ export function PagesPage({
     [PAGES_READ, EXPORTS_READ],
     user?.admin_type,
   );
-
-  const openCreateModal = useCallback(
-    (onClose?: () => void) => {
-      modal.open(
-        PageFormModal,
-        {
-          onSaved: () => tableRefresh.current?.(),
-        },
-        {
-          title: t("admin.pages.create_title"),
-          onClose,
-        },
-      );
-    },
-    [t],
-  );
-
-  const openTargetModal = useCallback((row: PageRow, onClose?: () => void) => {
-    modal.open(
-      PageFormModal,
-      {
-        pageId: row.id,
-        onSaved: () => tableRefresh.current?.(),
-      },
-      {
-        title: row.title || row.slug,
-        onClose,
-      },
-    );
-  }, []);
-
-  const openTargetModalById = useCallback(
-    (id: string, onClose?: () => void) => {
-      modal.open(
-        PageFormModal,
-        {
-          pageId: id,
-          onSaved: () => tableRefresh.current?.(),
-        },
-        {
-          title: t("admin.pages.title"),
-          onClose,
-        },
-      );
-    },
-    [t],
-  );
-
-  useEffect(() => {
-    if (!modalRouteIntent) {
-      routeModalKeyRef.current = null;
-      return;
-    }
-
-    const nextKey =
-      modalRouteIntent.kind === "create"
-        ? "create"
-        : `target:${modalRouteIntent.id}`;
-
-    if (routeModalKeyRef.current === nextKey) {
-      return;
-    }
-
-    routeModalKeyRef.current = nextKey;
-
-    if (modalRouteIntent.kind === "create") {
-      if (!canManagePages) {
-        onRouteModalClose?.();
-        return;
-      }
-
-      openCreateModal(onRouteModalClose);
-      return;
-    }
-
-    openTargetModalById(modalRouteIntent.id, onRouteModalClose);
-  }, [
-    canManagePages,
-    modalRouteIntent,
-    onRouteModalClose,
-    openCreateModal,
-    openTargetModalById,
-  ]);
 
   if (!canReadPages) {
     return <NotFoundPage />;
@@ -150,7 +59,7 @@ export function PagesPage({
               ? t("admin.pages.edit_action")
               : t("admin.pages.view_action")
           }
-          onClick={() => openTargetModal(row)}
+          onClick={() => navigate(`/pages/${row.id}`)}
         >
           {canManagePages ? <Pencil size={16} /> : <Eye size={16} />}
         </Button>
@@ -185,7 +94,7 @@ export function PagesPage({
       key: "updated_at",
       label: t("admin.pages.columns.updated"),
       sortable: true,
-      render: (row) => row.updated_at ?? "—",
+      render: (row) => (row.updated_at ? formatDateTime(row.updated_at) : "—"),
     },
   ];
 
@@ -202,7 +111,7 @@ export function PagesPage({
             type="button"
             size="sm"
             prefix={<Plus size={16} />}
-            onClick={() => openCreateModal()}
+            onClick={() => navigate("/pages/new")}
           >
             {t("admin.pages.new")}
           </Button>

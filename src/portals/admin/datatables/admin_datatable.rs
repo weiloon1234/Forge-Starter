@@ -77,9 +77,12 @@ impl Datatable for AdminDatatable {
             DatatableFilterRow::pair(
                 DatatableFilterField::text_like("username", "Username")
                     .placeholder("Search username..."),
-                DatatableFilterField::text_search("search", "Search")
-                    .server_field("name|email")
-                    .placeholder("Name or email..."),
+                DatatableFilterField::text_search_fields(
+                    "search",
+                    "Search",
+                    [Admin::NAME, Admin::EMAIL],
+                )
+                .placeholder("Name or email..."),
             ),
             DatatableFilterRow::single(DatatableFilterField::enum_select::<
                 crate::domain::enums::AdminType,

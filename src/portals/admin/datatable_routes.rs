@@ -1,9 +1,10 @@
 use axum::extract::Path;
-use axum::http::Uri;
+use axum::http::{HeaderMap, Uri};
 use forge::prelude::*;
 use percent_encoding::percent_decode_str;
 
 use crate::ids::permissions::Permission;
+use crate::portals::admin::datatables;
 
 fn parse_request(uri: &Uri) -> DatatableRequest {
     let query_str = uri.query().unwrap_or("");
@@ -47,6 +48,14 @@ fn parse_request(uri: &Uri) -> DatatableRequest {
         filters,
         search,
     }
+}
+
+fn resolve_timezone(app: &AppContext, headers: &HeaderMap) -> Timezone {
+    headers
+        .get("timezone")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| Timezone::parse(value).ok())
+        .unwrap_or_else(|| app.timezone().unwrap_or_else(|_| Timezone::utc()))
 }
 
 fn minimum_read_permission(id: &str) -> Option<Permission> {
@@ -98,14 +107,22 @@ pub async fn query(
     CurrentActor(actor): CurrentActor,
     Path(id): Path<String>,
     uri: Uri,
+    headers: HeaderMap,
 ) -> Result<impl IntoResponse> {
     let request = parse_request(&uri);
     authorize_datatable(&app, &actor, &id, false).await?;
-    let registry = app.datatables()?;
-    let dt = registry
-        .get(&id)
-        .ok_or_else(|| Error::not_found(forge::t!(i18n, "error.not_found")))?;
-    Ok(Json(dt.json(&app, Some(&actor), request).await?))
+    let response = datatables::run_json(
+        &id,
+        &app,
+        Some(&actor),
+        request,
+        Some(i18n.locale()),
+        resolve_timezone(&app, &headers),
+    )
+    .await
+    .ok_or_else(|| Error::not_found(forge::t!(i18n, "error.not_found")))??;
+
+    Ok(Json(response))
 }
 
 pub async fn download(
@@ -114,12 +131,18 @@ pub async fn download(
     CurrentActor(actor): CurrentActor,
     Path(id): Path<String>,
     uri: Uri,
+    headers: HeaderMap,
 ) -> Result<Response> {
     let request = parse_request(&uri);
     authorize_datatable(&app, &actor, &id, true).await?;
-    let registry = app.datatables()?;
-    let dt = registry
-        .get(&id)
-        .ok_or_else(|| Error::not_found(forge::t!(i18n, "error.not_found")))?;
-    dt.download(&app, Some(&actor), request).await
+    datatables::run_download(
+        &id,
+        &app,
+        Some(&actor),
+        request,
+        Some(i18n.locale()),
+        resolve_timezone(&app, &headers),
+    )
+    .await
+    .ok_or_else(|| Error::not_found(forge::t!(i18n, "error.not_found")))?
 }

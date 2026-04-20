@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use forge::datatable::column::DatatableFieldRef;
 use forge::prelude::*;
 use serde::Serialize;
 use serde_json::Value;
@@ -27,11 +28,6 @@ pub struct CreditTransactionDatatableRow {
     related_key: Option<String>,
     related_type: Option<String>,
     created_at: DateTime,
-    created_day: Date,
-}
-
-fn escape_sql_literal(value: &str) -> String {
-    value.replace('\'', "''")
 }
 
 fn user_label_expr() -> Expr {
@@ -45,13 +41,6 @@ fn user_label_expr() -> Expr {
 
 fn user_id_expr() -> Expr {
     Expr::raw(r#""credit_transactions"."user_id"::text"#)
-}
-
-fn created_day_expr(timezone: &Timezone) -> Expr {
-    let timezone = escape_sql_literal(&timezone.as_str());
-    Expr::raw(format!(
-        r#"DATE("credit_transactions"."created_at" AT TIME ZONE '{timezone}')"#
-    ))
 }
 
 pub struct CreditTransactionDatatable;
@@ -132,10 +121,6 @@ impl Datatable for CreditTransactionDatatable {
                 CreditTransactionDatatableRow::CREATED_AT,
                 ColumnRef::new(TRANSACTIONS_TABLE, "created_at"),
             )
-            .select_field(
-                CreditTransactionDatatableRow::CREATED_DAY,
-                created_day_expr(&Timezone::utc()),
-            )
     }
 
     fn columns() -> Vec<DatatableColumn<Self::Row>> {
@@ -143,6 +128,7 @@ impl Datatable for CreditTransactionDatatable {
             DatatableColumn::field(CreditTransactionDatatableRow::CREATED_AT)
                 .label("admin.credit_transactions.columns.created")
                 .sort_by(ColumnRef::new(TRANSACTIONS_TABLE, "created_at"))
+                .filter_by(ColumnRef::new(TRANSACTIONS_TABLE, "created_at"))
                 .exportable(),
             DatatableColumn::field(CreditTransactionDatatableRow::USER_LABEL)
                 .label("admin.credit_transactions.columns.user")
@@ -182,8 +168,6 @@ impl Datatable for CreditTransactionDatatable {
                 .filter_by(ColumnRef::new(TRANSACTIONS_TABLE, "related_type")),
             DatatableColumn::field(CreditTransactionDatatableRow::RELATED_KEY)
                 .filter_by(Expr::raw(r#""credit_transactions"."related_key"::text"#)),
-            DatatableColumn::field(CreditTransactionDatatableRow::CREATED_DAY)
-                .filter_by(created_day_expr(&Timezone::utc())),
         ]
     }
 
@@ -232,35 +216,67 @@ impl Datatable for CreditTransactionDatatable {
 
         Ok(vec![
             DatatableFilterRow::pair(
-                DatatableFilterField::text_search("search", "Search").server_field(
-                    "user_label|user_name|user_username|user_email|user_id|related_type|related_key",
+                DatatableFilterField::text_search_fields(
+                    "search",
+                    "Search",
+                    [
+                        DatatableFieldRef::<Self::Row>::from(
+                            CreditTransactionDatatableRow::USER_LABEL,
+                        ),
+                        DatatableFieldRef::<Self::Row>::from(
+                            CreditTransactionDatatableRow::USER_NAME,
+                        ),
+                        DatatableFieldRef::<Self::Row>::from(
+                            CreditTransactionDatatableRow::USER_USERNAME,
+                        ),
+                        DatatableFieldRef::<Self::Row>::from(
+                            CreditTransactionDatatableRow::USER_EMAIL,
+                        ),
+                        DatatableFieldRef::<Self::Row>::from(
+                            CreditTransactionDatatableRow::USER_ID,
+                        ),
+                        DatatableFieldRef::<Self::Row>::from(
+                            CreditTransactionDatatableRow::RELATED_TYPE,
+                        ),
+                        DatatableFieldRef::<Self::Row>::from(
+                            CreditTransactionDatatableRow::RELATED_KEY,
+                        ),
+                    ],
                 )
-                    .placeholder("admin.credit_transactions.search_placeholder"),
+                .placeholder("admin.credit_transactions.search_placeholder"),
                 DatatableFilterField::select(
                     "credit_type",
                     "admin.credit_transactions.columns.credit_type",
                 )
-                    .options(credit_type_options),
+                .options(credit_type_options),
             ),
             DatatableFilterRow::single(
                 DatatableFilterField::select(
                     "transaction_type",
                     "admin.credit_transactions.columns.transaction_type",
                 )
-                    .options(transaction_type_options),
+                .options(transaction_type_options),
             ),
             DatatableFilterRow::pair(
                 DatatableFilterField::decimal_min(
                     "amount_min",
                     "admin.credit_transactions.filters.amount_min",
                 )
-                .server_field("amount")
+                .bind(
+                    CreditTransactionDatatableRow::AMOUNT.alias(),
+                    DatatableFilterOp::Gte,
+                    DatatableFilterValueKind::Decimal,
+                )
                 .placeholder("admin.credit_transactions.amount_placeholder"),
                 DatatableFilterField::decimal_max(
                     "amount_max",
                     "admin.credit_transactions.filters.amount_max",
                 )
-                .server_field("amount")
+                .bind(
+                    CreditTransactionDatatableRow::AMOUNT.alias(),
+                    DatatableFilterOp::Lte,
+                    DatatableFilterValueKind::Decimal,
+                )
                 .placeholder("admin.credit_transactions.amount_placeholder"),
             ),
             DatatableFilterRow::pair(
@@ -268,12 +284,20 @@ impl Datatable for CreditTransactionDatatable {
                     "created_from",
                     "admin.credit_transactions.filters.created_from",
                 )
-                    .server_field("created_day"),
+                .bind(
+                    CreditTransactionDatatableRow::CREATED_AT.alias(),
+                    DatatableFilterOp::DateFrom,
+                    DatatableFilterValueKind::Date,
+                ),
                 DatatableFilterField::date_to(
                     "created_to",
                     "admin.credit_transactions.filters.created_to",
                 )
-                    .server_field("created_day"),
+                .bind(
+                    CreditTransactionDatatableRow::CREATED_AT.alias(),
+                    DatatableFilterOp::DateTo,
+                    DatatableFilterValueKind::Date,
+                ),
             ),
         ])
     }

@@ -6,6 +6,12 @@ import type {
   DataTableFilterRow,
   DataTableProps,
 } from "@shared/types/form";
+import {
+  dateStringToLocalDate,
+  formatDate,
+  formatDateTime,
+  localDateToDateString,
+} from "@shared/utils";
 import { getCookie, setCookie } from "@shared/utils/cookie";
 import type { AxiosInstance } from "axios";
 import {
@@ -32,20 +38,11 @@ interface Props<T> extends DataTableProps<T> {
 }
 
 function formatDateFilterValue(date: Date | null | undefined): string {
-  if (!date) {
-    return "";
-  }
-
-  return date.toLocaleDateString("en-CA");
+  return localDateToDateString(date) ?? "";
 }
 
 function parseDateFilterValue(value: DataTableFilterInputValue): Date | null {
-  if (typeof value !== "string" || value.trim() === "") {
-    return null;
-  }
-
-  const parsed = new Date(`${value}T00:00:00`);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
+  return typeof value === "string" ? dateStringToLocalDate(value) : null;
 }
 
 function parseDateTimeFilterValue(
@@ -418,11 +415,31 @@ export function DataTable<T>({
     return String(row);
   };
 
-  const renderDefaultCell = (row: T, key: string): string => {
+  const renderDefaultCell = (
+    row: T,
+    key: string,
+    format?: "date" | "datetime",
+  ): string => {
     const value = (row as Record<string, unknown>)[key];
 
     if (value == null) {
       return "";
+    }
+
+    if (format === "date") {
+      return formatDate(
+        typeof value === "string" || value instanceof Date ? value : null,
+      );
+    }
+
+    if (format === "datetime") {
+      return formatDateTime(
+        typeof value === "string" ||
+          typeof value === "number" ||
+          value instanceof Date
+          ? value
+          : null,
+      );
     }
 
     if (
@@ -577,7 +594,7 @@ export function DataTable<T>({
                       >
                         {col.render
                           ? col.render(row)
-                          : renderDefaultCell(row, key)}
+                          : renderDefaultCell(row, key, col.format)}
                       </td>
                     );
                   })}

@@ -6,3 +6,4 @@ export * from "./i18n";
 export * from "./modal";
 export * from "./store";
 export * from "./types";
+export * from "./utils";

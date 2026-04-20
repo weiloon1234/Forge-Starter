@@ -2,6 +2,8 @@ import type { InputProps } from "@shared/types/form";
 import { useEffect, useRef } from "react";
 import { FieldMessages, fieldClasses } from "./FieldMessages";
 
+const DEFAULT_COLOR_VALUE = "#334155";
+
 // ── Money: digits + max one decimal point ───────────────
 function sanitizeMoney(raw: string): string {
   let result = "";
@@ -28,6 +30,25 @@ function formatAtm(digits: string): string {
 
 function rawAtmDigits(formatted: string): string {
   return formatted.replace(/\D/g, "");
+}
+
+function normalizeColorForPicker(value: string | undefined): string {
+  const trimmed = value?.trim() ?? "";
+
+  if (/^#[0-9a-fA-F]{3}$/.test(trimmed)) {
+    const [r, g, b] = trimmed.slice(1);
+    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+  }
+
+  if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) {
+    return trimmed.toLowerCase();
+  }
+
+  if (/^#[0-9a-fA-F]{8}$/.test(trimmed)) {
+    return `#${trimmed.slice(1, 7)}`.toLowerCase();
+  }
+
+  return DEFAULT_COLOR_VALUE;
 }
 
 export function Input({
@@ -58,6 +79,7 @@ export function Input({
   const hasErrors = !!(errors && errors.length > 0);
   const isMoney = type === "money";
   const isAtm = type === "atm";
+  const isColor = type === "color";
   const isTextarea = type === "textarea";
   const localInputRef = useRef<HTMLInputElement | null>(null);
   const localTextareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -111,6 +133,7 @@ export function Input({
 
   const nativeType = isMoney || isAtm ? "text" : type;
   const inputMode = isMoney || isAtm ? ("decimal" as const) : undefined;
+  const colorPickerValue = normalizeColorForPicker(value);
 
   return (
     <div className={fieldClasses({ hasErrors, disabled, className })}>
@@ -148,6 +171,49 @@ export function Input({
             }
           }}
         />
+      ) : isColor ? (
+        <div className="sf-input-wrapper sf-color-input-wrapper">
+          <input
+            id={name}
+            name={name}
+            type="text"
+            className="sf-input"
+            value={value}
+            defaultValue={defaultValue}
+            onChange={handleChange}
+            onKeyDown={onKeyDown}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleMouseDown}
+            placeholder={placeholder ?? DEFAULT_COLOR_VALUE}
+            disabled={disabled}
+            readOnly={readOnly}
+            maxLength={maxLength}
+            ref={(node) => {
+              localInputRef.current = node;
+              if (inputRef) {
+                inputRef.current = node;
+              }
+            }}
+          />
+          <label className="sf-color-swatch" aria-label={label ?? name}>
+            <span
+              className="sf-color-swatch-preview"
+              style={{ backgroundColor: colorPickerValue }}
+            />
+            <input
+              className="sf-color-native"
+              type="color"
+              value={colorPickerValue}
+              disabled={disabled}
+              onChange={(event) => onChange?.(event.target.value)}
+              onBlur={onBlur}
+              tabIndex={-1}
+              aria-hidden="true"
+            />
+          </label>
+        </div>
       ) : (
         <div className="sf-input-wrapper">
           {prefix && <span className="sf-input-prefix">{prefix}</span>}

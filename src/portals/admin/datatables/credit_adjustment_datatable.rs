@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use forge::datatable::column::DatatableFieldRef;
 use forge::prelude::*;
 use serde::Serialize;
 use serde_json::Value;
@@ -258,11 +259,29 @@ impl Datatable for CreditAdjustmentDatatable {
 
         Ok(vec![
             DatatableFilterRow::pair(
-                DatatableFilterField::text_search("search", "Search")
-                    .server_field(
-                        "user_label|admin_label|transaction_type|remark|related_type|related_key",
-                    )
-                    .placeholder("admin.credits.search_placeholder"),
+                DatatableFilterField::text_search_fields(
+                    "search",
+                    "Search",
+                    [
+                        DatatableFieldRef::<Self::Row>::from(
+                            CreditAdjustmentDatatableRow::USER_LABEL,
+                        ),
+                        DatatableFieldRef::<Self::Row>::from(
+                            CreditAdjustmentDatatableRow::ADMIN_LABEL,
+                        ),
+                        DatatableFieldRef::<Self::Row>::from(
+                            CreditAdjustmentDatatableRow::TRANSACTION_TYPE,
+                        ),
+                        DatatableFieldRef::<Self::Row>::from(CreditAdjustmentDatatableRow::REMARK),
+                        DatatableFieldRef::<Self::Row>::from(
+                            CreditAdjustmentDatatableRow::RELATED_TYPE,
+                        ),
+                        DatatableFieldRef::<Self::Row>::from(
+                            CreditAdjustmentDatatableRow::RELATED_KEY,
+                        ),
+                    ],
+                )
+                .placeholder("admin.credits.search_placeholder"),
                 DatatableFilterField::select("credit_type", "admin.credits.columns.credit_type")
                     .options(credit_type_options),
             ),
@@ -272,9 +291,15 @@ impl Datatable for CreditAdjustmentDatatable {
                     "admin.credits.columns.transaction_type",
                 )
                 .options(transaction_type_options),
-                DatatableFilterField::text_search("trace", "admin.credits.columns.trace")
-                    .server_field("related_type|related_key")
-                    .placeholder("admin.credits.trace_search_placeholder"),
+                DatatableFilterField::text_search_fields(
+                    "trace",
+                    "admin.credits.columns.trace",
+                    [
+                        CreditAdjustmentDatatableRow::RELATED_TYPE,
+                        CreditAdjustmentDatatableRow::RELATED_KEY,
+                    ],
+                )
+                .placeholder("admin.credits.trace_search_placeholder"),
             ),
         ])
     }

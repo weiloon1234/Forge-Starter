@@ -62,9 +62,12 @@ impl Datatable for UserDatatable {
     async fn available_filters(_ctx: &DatatableContext) -> Result<Vec<DatatableFilterRow>> {
         Ok(vec![
             DatatableFilterRow::pair(
-                DatatableFilterField::text_search("search", "Search")
-                    .server_field("username|email|name")
-                    .placeholder("Search username, email, or name..."),
+                DatatableFilterField::text_search_fields(
+                    "search",
+                    "Search",
+                    [User::USERNAME, User::EMAIL, User::NAME],
+                )
+                .placeholder("Search username, email, or name..."),
                 DatatableFilterField::text_like("contact_number", "Contact number")
                     .placeholder("Search contact number..."),
             ),

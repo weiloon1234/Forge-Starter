@@ -1,6 +1,7 @@
 use crate::domain::models::Country;
 use async_trait::async_trait;
 use forge::countries::CountryStatus;
+use forge::datatable::column::DatatableFieldRef;
 use forge::prelude::*;
 
 pub struct CountryDatatable;
@@ -67,9 +68,16 @@ impl Datatable for CountryDatatable {
     async fn available_filters(_ctx: &DatatableContext) -> Result<Vec<DatatableFilterRow>> {
         Ok(vec![
             DatatableFilterRow::pair(
-                DatatableFilterField::text_search("search", "Search")
-                    .server_field("name|iso2|primary_currency_code")
-                    .placeholder("Name, ISO2, or currency..."),
+                DatatableFilterField::text_search_fields(
+                    "search",
+                    "Search",
+                    [
+                        DatatableFieldRef::<Self::Row>::from(Country::NAME),
+                        DatatableFieldRef::<Self::Row>::from(Country::ISO2),
+                        DatatableFieldRef::<Self::Row>::from(Country::PRIMARY_CURRENCY_CODE),
+                    ],
+                )
+                .placeholder("Name, ISO2, or currency..."),
                 DatatableFilterField::enum_select::<CountryStatus>("status", "Status"),
             ),
             DatatableFilterRow::single(DatatableFilterField::checkbox(
