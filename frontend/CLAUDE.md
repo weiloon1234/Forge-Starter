@@ -48,7 +48,7 @@
 | Modal footer wrapper | `<ModalFooter>` | `@shared/modal` |
 | Close modal | `modal.close()` / `modal.closeAll()` | `@shared/modal` |
 | Render modal stack (once in App.tsx) | `<ModalProvider />` | `@shared/modal` |
-| Runtime config (app_url, ws_url, etc.) | `getConfig()` | `@shared/config` |
+| Runtime bootstrap (config + public settings + countries) | `runtimeStore` / `getConfig()` | `@shared/config` |
 | Locale display labels | `LOCALE_LABELS` | `@shared/i18n` |
 | WebSocket manager | `createWebSocket(config)` | `@shared/websocket` |
 | Toast notification | `toast.success()` / `toast.error()` | `sonner` |
@@ -174,7 +174,7 @@ frontend/
 │   ├── api/                 ← createApi factory (sends Accept-Language)
 │   ├── i18n/                ← initI18n, localeStore, useLocale, LOCALE_LABELS
 │   ├── websocket/           ← createWebSocket factory (token auth, auto-reconnect)
-│   ├── config/              ← getConfig() — reads window.__APP_CONFIG__ from SPA bootstrap
+│   ├── config/              ← getConfig() + runtimeStore — reads window.__APP_CONFIG__ from SPA bootstrap
 │   ├── utils/               ← cookie helpers, shared utilities
 │   ├── styles/forms.css     ← SSOT base sf-* classes (imported by portals)
 │   ├── types/

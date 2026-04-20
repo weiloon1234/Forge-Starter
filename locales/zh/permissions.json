@@ -20,6 +20,9 @@
         "countries": {
             "label": "国家"
         },
+        "settings": {
+            "label": "设置"
+        },
         "logs": {
             "label": "日志"
         }

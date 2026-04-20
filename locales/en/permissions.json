@@ -20,6 +20,9 @@
         "countries": {
             "label": "Countries"
         },
+        "settings": {
+            "label": "Settings"
+        },
         "logs": {
             "label": "Logs"
         }

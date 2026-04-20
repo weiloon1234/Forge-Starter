@@ -55,6 +55,11 @@
         "min_dimensions": "{{attribute}} 尺寸至少为 {{width}}x{{height}} 像素",
         "allowed_mimes": "{{attribute}} 的文件类型不被允许",
         "allowed_extensions": "{{attribute}} 的文件扩展名不被允许",
+        "setting_string": "{{attribute}} 必须是字符串",
+        "setting_boolean": "{{attribute}} 必须为 true 或 false",
+        "setting_multiselect": "{{attribute}} 必须是有效选项列表",
+        "setting_upload_write": "请使用上传操作来更新此 {{attribute}}",
+        "setting_step": "{{attribute}} 必须符合允许的步进值",
 
         "mobile": "无效的手机号码",
         "username_min": "用户名至少需要 5 个字符",
@@ -77,7 +82,8 @@
             "admin_type": "管理员类型",
             "permissions": "权限",
             "conversion_rate": "汇率",
-            "is_default": "默认"
+            "is_default": "默认",
+            "value": "值"
         }
     }
 }

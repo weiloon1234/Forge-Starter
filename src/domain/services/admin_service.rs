@@ -462,8 +462,8 @@ mod tests {
         let developer = admin_fixture(ModelId::generate(), AdminType::Developer);
         let super_admin = admin_fixture(ModelId::generate(), AdminType::SuperAdmin);
 
-        assert_eq!(permission_module_count(&developer), 6);
-        assert_eq!(permission_module_count(&super_admin), 6);
+        assert_eq!(permission_module_count(&developer), 7);
+        assert_eq!(permission_module_count(&super_admin), 7);
     }
 
     #[test]

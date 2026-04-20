@@ -2,12 +2,13 @@ use crate::ids::guards::Guard;
 use crate::ids::permissions::Permission;
 use crate::portals::admin::requests::{
     AdminLoginRequest, ChangeAdminPasswordRequest, CreateAdminRequest, UpdateAdminLocaleRequest,
-    UpdateAdminProfileRequest, UpdateAdminRequest, UpdateCountryRequest,
+    UpdateAdminProfileRequest, UpdateAdminRequest, UpdateCountryRequest, UpdateSettingValueRequest,
 };
 use crate::portals::admin::responses::{
     AdminMeResponse, AdminPermissionResponse, AdminResponse, AdminUserResponse, LogEntryResponse,
     LogFileResponse,
 };
+use crate::domain::services::settings_service::AdminSettingResponse;
 use forge::prelude::*;
 
 pub mod admin_routes;
@@ -20,6 +21,7 @@ pub mod profile_routes;
 pub mod requests;
 pub mod resources;
 pub mod responses;
+pub mod setting_routes;
 pub mod user_routes;
 
 pub fn register(r: &mut HttpRegistrar) -> Result<()> {
@@ -179,6 +181,34 @@ pub fn register(r: &mut HttpRegistrar) -> Result<()> {
                     route.summary("Update country");
                     route.request::<UpdateCountryRequest>();
                     route.response::<MessageResponse>(200);
+                });
+
+                Ok(())
+            })?;
+
+            admin.scope("/settings", |settings| {
+                settings
+                    .name_prefix("settings")
+                    .tag("admin:settings")
+                    .guard(Guard::Admin)
+                    .permission(Permission::SettingsRead);
+
+                settings.get("/{key}", "show", setting_routes::show, |route| {
+                    route.summary("Get setting detail for editing");
+                    route.response::<AdminSettingResponse>(200);
+                });
+
+                settings.put("/{key}", "update", setting_routes::update, |route| {
+                    route.permission(Permission::SettingsManage);
+                    route.summary("Update a setting value");
+                    route.request::<UpdateSettingValueRequest>();
+                    route.response::<AdminSettingResponse>(200);
+                });
+
+                settings.post("/{key}/upload", "upload", setting_routes::upload, |route| {
+                    route.permission(Permission::SettingsManage);
+                    route.summary("Upload and replace a file/image setting value");
+                    route.response::<AdminSettingResponse>(200);
                 });
 
                 Ok(())

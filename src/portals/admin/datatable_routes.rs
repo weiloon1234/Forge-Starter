@@ -54,6 +54,7 @@ fn minimum_read_permission(id: &str) -> Option<Permission> {
         "admin.users" => Some(Permission::UsersRead),
         "admin.countries" => Some(Permission::CountriesRead),
         "admin.admins" => Some(Permission::AdminsRead),
+        "admin.settings" => Some(Permission::SettingsRead),
         _ => None,
     }
 }

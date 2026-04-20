@@ -1,6 +1,7 @@
 use forge::prelude::*;
 
 use crate::domain::models::Country;
+use crate::domain::services::runtime_bootstrap_service;
 use crate::portals::admin::requests::UpdateCountryRequest;
 
 pub async fn update(
@@ -40,6 +41,7 @@ pub async fn update(
         .await?;
 
     transaction.commit().await?;
+    let _ = runtime_bootstrap_service::refresh(app).await;
 
     Ok(updated)
 }

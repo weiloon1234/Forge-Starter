@@ -114,20 +114,21 @@ src/
 
 The SPA handler (`src/portals/spa.rs`) injects `window.__APP_CONFIG__` into the HTML served to browsers. Available synchronously before React mounts — no API call needed.
 
-**Backend** — `runtime_config()` in `spa.rs` builds JSON from `AppContext`:
+**Backend** — `runtime_bootstrap_service` builds JSON from `AppContext` and `spa.rs` injects it:
 ```rust
-// Fields: app_url, ws_url, locales, default_locale
+// Fields: app_url, ws_url, locales, default_locale, settings, countries
 // Extend here when adding new runtime config
-fn runtime_config(app: &AppContext) -> String { ... }
+runtime_bootstrap_service::load(app).await?
 ```
 
-**Frontend** — typed accessor at `@shared/config`:
+**Frontend** — typed accessor and shared store live at `@shared/config`:
 ```ts
-import { getConfig } from "@shared/config";
-const config = getConfig(); // { app_url, ws_url, locales, default_locale }
+import { getConfig, runtimeStore } from "@shared/config";
+const config = getConfig();
+runtimeStore.hydrate(config);
 ```
 
-To add new config: add field to `runtime_config()` in `spa.rs` + `AppConfig` interface in `frontend/shared/config/index.ts`.
+To add new config: extend `RuntimeBootstrap` in `src/domain/services/runtime_bootstrap_service.rs` + `AppConfig` in `frontend/shared/config/index.ts`.
 
 ## WebSocket
 

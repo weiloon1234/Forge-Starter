@@ -1,3 +1,4 @@
+import { getConfig, runtimeStore } from "@shared/config";
 import { buildResources, initI18n } from "@shared/i18n";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -8,7 +9,11 @@ import "./styles/app.css";
 const localeModules = import.meta.glob("../../../locales/**/*.json", {
   eager: true,
 });
-initI18n(buildResources(localeModules));
+const runtimeConfig = getConfig();
+initI18n(buildResources(localeModules), {
+  defaultLocale: runtimeConfig.default_locale,
+});
+runtimeStore.hydrate(runtimeConfig);
 
 const rootElement = document.getElementById("root");
 
