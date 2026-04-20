@@ -258,11 +258,11 @@ impl Datatable for CreditAdjustmentDatatable {
 
         Ok(vec![
             DatatableFilterRow::pair(
-                DatatableFilterField::text(
-                    "user_label|admin_label|transaction_type|remark|related_type|related_key",
-                    "Search",
-                )
-                .placeholder("admin.credits.search_placeholder"),
+                DatatableFilterField::text_search("search", "Search")
+                    .server_field(
+                        "user_label|admin_label|transaction_type|remark|related_type|related_key",
+                    )
+                    .placeholder("admin.credits.search_placeholder"),
                 DatatableFilterField::select("credit_type", "admin.credits.columns.credit_type")
                     .options(credit_type_options),
             ),
@@ -272,11 +272,9 @@ impl Datatable for CreditAdjustmentDatatable {
                     "admin.credits.columns.transaction_type",
                 )
                 .options(transaction_type_options),
-                DatatableFilterField::text(
-                    "related_type|related_key",
-                    "admin.credits.columns.trace",
-                )
-                .placeholder("admin.credits.trace_search_placeholder"),
+                DatatableFilterField::text_search("trace", "admin.credits.columns.trace")
+                    .server_field("related_type|related_key")
+                    .placeholder("admin.credits.trace_search_placeholder"),
             ),
         ])
     }

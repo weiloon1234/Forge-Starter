@@ -222,6 +222,27 @@
                 "balance_overflow": "调整后的余额超出当前支持的数值范围。"
             }
         },
+        "credit_transactions": {
+            "title": "信用流水",
+            "subtitle": "查看完整的只追加信用账本，覆盖手动调整以及未来的自动业务流程。",
+            "search_placeholder": "搜索用户、邮箱、用户 ID、关联类型或关联键...",
+            "amount_placeholder": "100.00",
+            "columns": {
+                "created": "创建时间",
+                "user": "用户",
+                "credit_type": "信用类型",
+                "amount": "金额",
+                "explanation": "说明",
+                "transaction_type": "交易类型",
+                "balance_after": "流水后余额"
+            },
+            "filters": {
+                "created_from": "创建开始日期",
+                "created_to": "创建结束日期",
+                "amount_min": "最小金额",
+                "amount_max": "最大金额"
+            }
+        },
         "editor_assets": {
             "errors": {
                 "folder_required": "folder 字段为必填项。",

@@ -12,4 +12,4 @@ bucket = ""
 endpoint = ""
 # Stable direct URL prefix for public editor assets, e.g. https://cdn.example.com
 url = ""
-visibility = "private"
+visibility = "public"

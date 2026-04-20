@@ -69,7 +69,7 @@ src/
 │   ├── services/            # Business logic lives HERE (portal-less)
 │   ├── jobs/                # Background jobs (impl Job)
 │   ├── events/              # Domain events + listeners/
-│   ├── enums/               # AppEnum types
+│   ├── enums/               # Shared app-owned enums used across model/service/DTO/frontend boundaries
 │   └── integrations/        # Third-party API wrappers
 ├── commands/                # CLI commands
 ├── schedules/               # Cron/interval tasks
@@ -84,6 +84,7 @@ src/
 3. **Portal validates shape, service validates meaning, model enforces truth.**
 4. **One rule for IDs** — every framework concept has a typed ID in `src/ids/`. Add new IDs there, not inline.
 5. **Binary name is `app`** — never rename `Cargo.toml`. App identity comes from `.env` / `config/app.toml`.
+6. **One rule for enums** — app-owned shared enums live in `src/domain/enums/`; Forge-owned enums stay imported from Forge; file-private helper enums stay local to their module.
 
 ## Key Patterns
 

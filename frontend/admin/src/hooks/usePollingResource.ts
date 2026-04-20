@@ -31,6 +31,10 @@ export function usePollingResource<T>(
   const mountedRef = useRef(true);
 
   useEffect(() => {
+    // React Strict Mode re-runs effect cleanup/setup in development,
+    // so the mounted flag must be restored on each setup.
+    mountedRef.current = true;
+
     return () => {
       mountedRef.current = false;
     };

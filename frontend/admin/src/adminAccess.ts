@@ -12,10 +12,36 @@ interface AdminTargetLike {
 
 export type AdminFormMode = "edit" | "view";
 
+export const DEVELOPER_ADMIN_TYPE: AdminType = "developer";
+export const DEVELOPER_ONLY_ADMIN_TYPES = [
+  DEVELOPER_ADMIN_TYPE,
+] as const satisfies readonly AdminType[];
+
+export function hasAdminTypeAccess(
+  adminType: AdminType | null | undefined,
+  allowedAdminTypes?: readonly AdminType[],
+): boolean {
+  if (!allowedAdminTypes || allowedAdminTypes.length === 0) {
+    return true;
+  }
+
+  if (!adminType) {
+    return false;
+  }
+
+  return allowedAdminTypes.includes(adminType);
+}
+
+export function isDeveloperAdminType(
+  adminType: AdminType | null | undefined,
+): adminType is typeof DEVELOPER_ADMIN_TYPE {
+  return adminType === DEVELOPER_ADMIN_TYPE;
+}
+
 export function canAccessObservability(
   actor: AdminActorLike | null | undefined,
 ): boolean {
-  return actor?.admin_type === "developer";
+  return isDeveloperAdminType(actor?.admin_type);
 }
 
 export function canViewAdminTarget(

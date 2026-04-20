@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Activity,
   Cable,
+  Code2,
   FileText,
   LayoutDashboard,
   MoreHorizontal,
@@ -11,6 +12,7 @@ import {
   Shield,
   Users,
 } from "lucide-react";
+import { DEVELOPER_ONLY_ADMIN_TYPES } from "@/adminAccess";
 
 export type MenuItem = {
   key: string;
@@ -18,7 +20,7 @@ export type MenuItem = {
   icon?: LucideIcon;
   path?: string;
   permission?: Permission;
-  adminTypes?: AdminType[];
+  adminTypes?: readonly AdminType[];
   notification?: string;
   children?: MenuItem[];
 };
@@ -40,6 +42,12 @@ export const sideMenu: MenuItem[] = [
         label: "All Users",
         path: "/users",
         permission: "users.read",
+      },
+      {
+        key: "users.credit_transactions",
+        label: "Credit Transactions",
+        path: "/credits/transactions",
+        permission: "credit_transactions.read",
       },
       {
         key: "users.credit_adjustments",
@@ -82,28 +90,34 @@ export const sideMenu: MenuItem[] = [
         icon: ScrollText,
         permission: "pages.read",
       },
+    ],
+  },
+  {
+    key: "developer",
+    label: "Developer",
+    icon: Code2,
+    adminTypes: DEVELOPER_ONLY_ADMIN_TYPES,
+    children: [
       {
-        key: "other.logs",
+        key: "developer.logs",
         label: "Logs",
-        path: "/logs",
+        path: "/developer/logs",
         icon: FileText,
         permission: "logs.read",
       },
       {
-        key: "other.jobs",
+        key: "developer.jobs",
         label: "Jobs",
-        path: "/other/jobs",
+        path: "/developer/jobs",
         icon: Activity,
         permission: "observability.view",
-        adminTypes: ["developer"],
       },
       {
-        key: "other.websocket",
+        key: "developer.websocket",
         label: "WebSocket",
-        path: "/other/websocket",
+        path: "/developer/websocket",
         icon: Cable,
         permission: "observability.view",
-        adminTypes: ["developer"],
       },
     ],
   },

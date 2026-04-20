@@ -67,7 +67,8 @@ impl Datatable for CountryDatatable {
     async fn available_filters(_ctx: &DatatableContext) -> Result<Vec<DatatableFilterRow>> {
         Ok(vec![
             DatatableFilterRow::pair(
-                DatatableFilterField::text("name|iso2|primary_currency_code", "Search")
+                DatatableFilterField::text_search("search", "Search")
+                    .server_field("name|iso2|primary_currency_code")
                     .placeholder("Name, ISO2, or currency..."),
                 DatatableFilterField::enum_select::<CountryStatus>("status", "Status"),
             ),

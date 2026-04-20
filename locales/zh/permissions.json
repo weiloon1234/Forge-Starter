@@ -29,6 +29,9 @@
         "credits": {
             "label": "信用"
         },
+        "credit_transactions": {
+            "label": "信用流水"
+        },
         "logs": {
             "label": "日志"
         }

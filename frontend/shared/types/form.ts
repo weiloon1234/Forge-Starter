@@ -291,6 +291,7 @@ export type DataTableFilterRow = GeneratedDatatableFilterRow;
 
 export type DataTableFilterInputValue =
   | string
+  | number
   | boolean
   | string[]
   | null

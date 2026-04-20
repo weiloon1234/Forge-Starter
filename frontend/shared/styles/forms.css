@@ -159,11 +159,14 @@
     @apply relative;
   }
   .sf-select-trigger {
-    @apply flex items-center gap-2 w-full px-3 py-2.5 pr-10 text-sm rounded-lg border cursor-pointer;
+    @apply flex items-center w-full px-3 py-2.5 pr-9 text-sm rounded-lg border cursor-pointer;
     border-color: var(--color-border);
     background: var(--color-bg-input);
     color: var(--color-text);
     transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .sf-select-trigger--with-clear {
+    @apply pr-16;
   }
   .sf-select-trigger > span:first-child {
     @apply flex-1 text-left truncate;
@@ -180,7 +183,7 @@
     color: var(--color-text-hint);
   }
   .sf-select-clear {
-    @apply absolute right-7 top-1/2 -translate-y-1/2 shrink-0 text-xs cursor-pointer rounded-full w-4 h-4 flex items-center justify-center border-0 bg-transparent p-0;
+    @apply absolute right-8 top-1/2 -translate-y-1/2 shrink-0 text-xs cursor-pointer rounded-full w-4 h-4 flex items-center justify-center border-0 bg-transparent p-0;
     color: var(--color-text-hint);
     transition: color 150ms ease, background 150ms ease;
   }
@@ -189,7 +192,7 @@
     background: var(--color-bg-muted);
   }
   .sf-select-arrow {
-    @apply ml-1 shrink-0;
+    @apply absolute right-3 top-1/2 -translate-y-1/2 shrink-0 pointer-events-none;
     color: var(--color-text-muted);
   }
 
@@ -663,7 +666,7 @@
     color: var(--color-text-muted);
   }
   .sf-datepicker-dropdown {
-    @apply absolute z-50 mt-1 rounded-lg border shadow-lg p-3;
+    @apply rounded-lg border shadow-lg p-3;
     border-color: var(--color-border);
     background: var(--color-bg);
   }

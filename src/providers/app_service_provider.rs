@@ -1,8 +1,8 @@
 use crate::domain::jobs::SendWelcomeEmail;
 use crate::domain::models::{Admin, User};
 use crate::portals::admin::datatables::{
-    AdminDatatable, CountryDatatable, CreditAdjustmentDatatable, PageDatatable, SettingDatatable,
-    UserDatatable,
+    AdminDatatable, CountryDatatable, CreditAdjustmentDatatable, CreditTransactionDatatable,
+    PageDatatable, SettingDatatable, UserDatatable,
 };
 use async_trait::async_trait;
 use forge::prelude::*;
@@ -21,6 +21,7 @@ impl ServiceProvider for AppServiceProvider {
         registrar.register_datatable::<SettingDatatable>()?;
         registrar.register_datatable::<PageDatatable>()?;
         registrar.register_datatable::<CreditAdjustmentDatatable>()?;
+        registrar.register_datatable::<CreditTransactionDatatable>()?;
         forge::register_generated_database!(registrar)?;
         Ok(())
     }

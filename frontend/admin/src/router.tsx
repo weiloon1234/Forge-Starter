@@ -5,6 +5,7 @@ import { AdminFormPage } from "@/pages/AdminFormPage";
 import { AdminsPage } from "@/pages/AdminsPage";
 import { CountryPage } from "@/pages/CountryPage";
 import { CreditAdjustmentsPage } from "@/pages/CreditAdjustmentsPage";
+import { CreditTransactionsPage } from "@/pages/CreditTransactionsPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { ErrorPage } from "@/pages/ErrorPage";
 import { JobsDashboardPage } from "@/pages/JobsDashboardPage";
@@ -24,6 +25,7 @@ export const router = createBrowserRouter(
       children: [
         { index: true, element: <DashboardPage /> },
         { path: "users", element: <UsersPage /> },
+        { path: "credits/transactions", element: <CreditTransactionsPage /> },
         { path: "credits/adjustments", element: <CreditAdjustmentsPage /> },
         { path: "admins", element: <AdminsPage /> },
         { path: "admins/new", element: <AdminFormPage /> },
@@ -33,9 +35,16 @@ export const router = createBrowserRouter(
         { path: "pages/new", element: <PageFormPage /> },
         { path: "pages/:id", element: <PageFormPage /> },
         { path: "settings", element: <SettingsPage /> },
-        { path: "logs", element: <LogsPage /> },
         {
-          path: "other/jobs",
+          path: "developer/logs",
+          element: (
+            <DeveloperOnlyRoute>
+              <LogsPage />
+            </DeveloperOnlyRoute>
+          ),
+        },
+        {
+          path: "developer/jobs",
           element: (
             <DeveloperOnlyRoute>
               <JobsDashboardPage />
@@ -43,7 +52,7 @@ export const router = createBrowserRouter(
           ),
         },
         {
-          path: "other/websocket",
+          path: "developer/websocket",
           element: (
             <DeveloperOnlyRoute>
               <WebSocketDashboardPage />

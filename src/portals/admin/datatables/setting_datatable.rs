@@ -76,7 +76,8 @@ impl Datatable for SettingDatatable {
 
         Ok(vec![
             DatatableFilterRow::pair(
-                DatatableFilterField::text("key|label|description", "Search")
+                DatatableFilterField::text_search("search", "Search")
+                    .server_field("key|label|description")
                     .placeholder("admin.settings.search_placeholder"),
                 DatatableFilterField::select("setting_type", "admin.settings.columns.type")
                     .options(type_options),

@@ -55,6 +55,7 @@
     "logs_subtitle": "View and manage application log files.",
     "confirm_delete_log": "Delete {{filename}}? This cannot be undone.",
     "Credit Adjustments": "Credit Adjustments",
+    "Credit Transactions": "Credit Transactions",
 
     "observability": {
         "common": {

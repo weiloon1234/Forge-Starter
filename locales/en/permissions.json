@@ -29,6 +29,9 @@
         "credits": {
             "label": "Credits"
         },
+        "credit_transactions": {
+            "label": "Credit Transactions"
+        },
         "logs": {
             "label": "Logs"
         }

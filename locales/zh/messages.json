@@ -68,6 +68,7 @@
     "disconnected": "已断开",
 
     "Dashboard": "仪表盘",
+    "Developer": "开发者",
     "Jobs": "任务",
     "WebSocket": "WebSocket",
     "Users": "用户",
@@ -107,6 +108,7 @@
     "page": "页",
     "Logs": "日志",
     "Credit Adjustments": "信用调整",
+    "Credit Transactions": "信用流水",
     "logs_subtitle": "查看和管理应用程序日志文件。",
     "Log file": "日志文件",
     "Level": "级别",

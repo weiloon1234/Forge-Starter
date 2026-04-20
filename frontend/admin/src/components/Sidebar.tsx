@@ -1,9 +1,10 @@
 import { Button } from "@shared/components";
-import type { Permission } from "@shared/types/generated";
+import type { AdminType, Permission } from "@shared/types/generated";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, useLocation } from "react-router-dom";
+import { hasAdminTypeAccess } from "@/adminAccess";
 import { auth } from "@/auth";
 import type { MenuItem } from "@/config/side-menu";
 import { sideMenu } from "@/config/side-menu";
@@ -103,7 +104,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 function filterMenu(
   menu: MenuItem[],
   abilities: Permission[],
-  adminType?: "developer" | "super_admin" | "admin",
+  adminType?: AdminType,
 ): MenuItem[] {
   return menu
     .map((item) => {
@@ -114,10 +115,7 @@ function filterMenu(
         return null;
       }
 
-      if (
-        item.adminTypes &&
-        (!adminType || !item.adminTypes.includes(adminType))
-      ) {
+      if (!hasAdminTypeAccess(adminType, item.adminTypes)) {
         return null;
       }
 

@@ -26,6 +26,9 @@ Use `make lint:fix` locally when you want Rust formatting plus Biome fixes.
 - Use `JsonValidated<T>` for JSON-only request extraction in handlers.
 - Keep manual `RequestValidator` only for runtime-driven, conditional, or semantic validation that cannot be expressed declaratively.
 - Replace raw string fields with typed enums when the enum already exists.
+- Put app-owned shared enums in `src/domain/enums/` when they cross boundaries in this app, such as DB-backed model fields, services, request/response DTOs, or generated frontend types.
+- Keep Forge-owned enums imported from Forge directly instead of wrapping or duplicating them locally.
+- Keep file-private helper enums local to the module that uses them.
 - Prefer Forge-shared DTOs when they already exist, such as `RefreshTokenRequest`, `MessageResponse`, `TokenPair`, and `WsTokenResponse`.
 - Return typed success DTOs such as `MessageResponse`, `WsTokenResponse`, and `StatusResponse` instead of inline JSON objects.
 - User-facing backend messages must come from translation keys, not raw strings.

@@ -31,6 +31,8 @@ pub enum Permission {
     CreditsRead,
     #[forge(key = "credits.manage")]
     CreditsManage,
+    #[forge(key = "credit_transactions.read")]
+    CreditTransactionsRead,
     #[forge(key = "logs.read")]
     LogsRead,
     #[forge(key = "logs.manage")]
@@ -38,7 +40,7 @@ pub enum Permission {
 }
 
 impl Permission {
-    pub const fn all() -> [Self; 16] {
+    pub const fn all() -> [Self; 17] {
         [
             Self::ExportsRead,
             Self::ObservabilityView,
@@ -54,6 +56,7 @@ impl Permission {
             Self::PagesManage,
             Self::CreditsRead,
             Self::CreditsManage,
+            Self::CreditTransactionsRead,
             Self::LogsRead,
             Self::LogsManage,
         ]
@@ -75,6 +78,7 @@ impl Permission {
             Self::PagesManage => "pages.manage",
             Self::CreditsRead => "credits.read",
             Self::CreditsManage => "credits.manage",
+            Self::CreditTransactionsRead => "credit_transactions.read",
             Self::LogsRead => "logs.read",
             Self::LogsManage => "logs.manage",
         }
@@ -90,6 +94,7 @@ impl Permission {
             Self::SettingsRead | Self::SettingsManage => "settings",
             Self::PagesRead | Self::PagesManage => "pages",
             Self::CreditsRead | Self::CreditsManage => "credits",
+            Self::CreditTransactionsRead => "credit_transactions",
             Self::LogsRead | Self::LogsManage => "logs",
         }
     }
@@ -104,6 +109,7 @@ impl Permission {
             | Self::SettingsRead
             | Self::PagesRead
             | Self::CreditsRead
+            | Self::CreditTransactionsRead
             | Self::LogsRead => "read",
             Self::AdminsManage
             | Self::UsersManage

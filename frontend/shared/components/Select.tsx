@@ -1,5 +1,6 @@
 import { useDebounce } from "@shared/hooks/useDebounce";
 import type { SelectOption, SelectProps } from "@shared/types/form";
+import { ChevronDown } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
@@ -161,6 +162,7 @@ export function Select({
   }, [selectedValues, options]);
 
   const isEmpty = filteredOptions.length === 0 && !loading;
+  const showClear = Boolean(clearable && displayLabel);
 
   const dropdown = open
     ? createPortal(
@@ -251,7 +253,7 @@ export function Select({
           type="button"
           aria-expanded={open}
           aria-haspopup="listbox"
-          className="sf-select-trigger"
+          className={`sf-select-trigger${showClear ? " sf-select-trigger--with-clear" : ""}`}
           disabled={disabled}
           onClick={handleToggle}
           id={name}
@@ -261,9 +263,9 @@ export function Select({
           <span className={displayLabel ? undefined : "sf-select-placeholder"}>
             {displayLabel || placeholder || t("form.select_placeholder")}
           </span>
-          <span className="sf-select-arrow">&#9662;</span>
         </button>
-        {clearable && displayLabel && (
+        <ChevronDown className="sf-select-arrow" size={18} aria-hidden="true" />
+        {showClear && (
           <button
             type="button"
             className="sf-select-clear"

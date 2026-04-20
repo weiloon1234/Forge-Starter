@@ -222,6 +222,27 @@
                 "balance_overflow": "The resulting balance exceeds the supported numeric range."
             }
         },
+        "credit_transactions": {
+            "title": "Credit Transactions",
+            "subtitle": "Review the full append-only credit ledger across manual adjustments and future automated flows.",
+            "search_placeholder": "User, email, user ID, related type, or related key...",
+            "amount_placeholder": "100.00",
+            "columns": {
+                "created": "Created",
+                "user": "User",
+                "credit_type": "Credit type",
+                "amount": "Amount",
+                "explanation": "Explanation",
+                "transaction_type": "Transaction type",
+                "balance_after": "Balance after"
+            },
+            "filters": {
+                "created_from": "Created from",
+                "created_to": "Created to",
+                "amount_min": "Amount min",
+                "amount_max": "Amount max"
+            }
+        },
         "editor_assets": {
             "errors": {
                 "folder_required": "The folder field is required.",

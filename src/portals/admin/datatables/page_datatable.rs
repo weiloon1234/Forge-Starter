@@ -111,7 +111,8 @@ impl Datatable for PageDatatable {
 
     async fn available_filters(_ctx: &DatatableContext) -> Result<Vec<DatatableFilterRow>> {
         Ok(vec![DatatableFilterRow::pair(
-            DatatableFilterField::text("slug|title", "Search")
+            DatatableFilterField::text_search("search", "Search")
+                .server_field("slug|title")
                 .placeholder("admin.pages.search_placeholder"),
             DatatableFilterField::checkbox("is_system", "admin.pages.filters.system_only"),
         )])

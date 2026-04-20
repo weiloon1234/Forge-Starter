@@ -18,15 +18,116 @@ import {
   Download,
   RefreshCw,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "./Button";
 import { Checkbox } from "./Checkbox";
+import { DatePicker } from "./DatePicker";
+import { DateTimePicker } from "./DateTimePicker";
 import { Input } from "./Input";
 import { Select } from "./Select";
 
 interface Props<T> extends DataTableProps<T> {
   api: AxiosInstance;
+}
+
+function formatDateFilterValue(date: Date | null | undefined): string {
+  if (!date) {
+    return "";
+  }
+
+  return date.toLocaleDateString("en-CA");
+}
+
+function parseDateFilterValue(value: DataTableFilterInputValue): Date | null {
+  if (typeof value !== "string" || value.trim() === "") {
+    return null;
+  }
+
+  const parsed = new Date(`${value}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function parseDateTimeFilterValue(
+  value: DataTableFilterInputValue,
+): Date | null {
+  if (typeof value !== "string" || value.trim() === "") {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function resolveFilterBinding(field: DataTableFilterField): {
+  field: string;
+  op: DataTableFilter["op"];
+  valueKind: DataTableFilterField["binding"]["value_kind"];
+} {
+  return {
+    field: field.binding.field,
+    op: field.binding.op,
+    valueKind: field.binding.value_kind,
+  };
+}
+
+function buildDefaultFilter(
+  field: DataTableFilterField,
+  value: DataTableFilterInputValue,
+): DataTableFilter | null {
+  if (value === "" || value === null || value === undefined) {
+    return null;
+  }
+
+  if (Array.isArray(value) && value.length === 0) {
+    return null;
+  }
+
+  const target = resolveFilterBinding(field);
+
+  if (Array.isArray(value)) {
+    return {
+      field: target.field,
+      op: target.valueKind === "values" ? target.op : "in",
+      value: { values: value },
+    };
+  }
+
+  switch (target.valueKind) {
+    case "boolean":
+      if (typeof value !== "boolean") {
+        return null;
+      }
+      return { field: target.field, op: target.op, value: { bool: value } };
+    case "values":
+      if (!Array.isArray(value) || value.length === 0) {
+        return null;
+      }
+      return { field: target.field, op: target.op, value: { values: value } };
+    case "integer": {
+      const parsed =
+        typeof value === "number"
+          ? value
+          : Number.parseInt(String(value).trim(), 10);
+      if (!Number.isFinite(parsed)) {
+        return null;
+      }
+      return {
+        field: target.field,
+        op: target.op,
+        value: { number: parsed },
+      };
+    }
+    case "decimal":
+    case "date":
+    case "date_time":
+    case "text":
+      return {
+        field: target.field,
+        op: target.op,
+        value: { text: String(value) },
+      };
+  }
 }
 
 export function DataTable<T>({
@@ -104,6 +205,16 @@ export function DataTable<T>({
     filterValuesRef.current = filterValues;
   }, [filterValues]);
 
+  const filterFieldMap = useMemo<Map<string, DataTableFilterField>>(() => {
+    const next = new Map<string, DataTableFilterField>();
+    for (const row of meta?.filters ?? []) {
+      for (const field of row.fields) {
+        next.set(field.name, field);
+      }
+    }
+    return next;
+  }, [meta]);
+
   // ── Download ────────────────────────────────────────────
 
   const handleDownload = useCallback(async () => {
@@ -158,22 +269,20 @@ export function DataTable<T>({
 
   const applyAllFilters = useCallback(() => {
     const active: DataTableFilter[] = [];
-    for (const [f, v] of Object.entries(filterValuesRef.current)) {
-      if (v === "" || v === null || v === undefined) continue;
-      if (Array.isArray(v) && v.length === 0) continue;
-      const op =
-        typeof v === "boolean" ? "eq" : f.includes("|") ? "like_any" : "like";
-      const taggedValue =
-        typeof v === "boolean"
-          ? { bool: v }
-          : Array.isArray(v)
-            ? { values: v }
-            : { text: String(v) };
-      active.push({ field: f, op, value: taggedValue });
+    for (const [name, value] of Object.entries(filterValuesRef.current)) {
+      const field = filterFieldMap.get(name);
+      if (!field) {
+        continue;
+      }
+
+      const filter = buildDefaultFilter(field, value);
+      if (filter) {
+        active.push(filter);
+      }
     }
     setFilters(active);
     setPage(1);
-  }, [setFilters, setPage]);
+  }, [filterFieldMap, setFilters, setPage]);
 
   const resetFilters = useCallback(() => {
     setFilterValues({});
@@ -183,6 +292,26 @@ export function DataTable<T>({
 
   const renderFilterField = (f: DataTableFilterField) => {
     const value = filterValues[f.name] ?? "";
+
+    if (f.kind === "number") {
+      return (
+        <Input
+          key={f.name}
+          name={f.name}
+          type="number"
+          label={t(f.label)}
+          value={
+            typeof value === "string" || typeof value === "number"
+              ? String(value)
+              : ""
+          }
+          placeholder={f.placeholder ? t(f.placeholder) : ""}
+          onChange={(v) =>
+            setFilterValues((prev) => ({ ...prev, [f.name]: v }))
+          }
+        />
+      );
+    }
 
     if (f.kind === "select") {
       const options = f.options.items.map((opt) => ({
@@ -216,6 +345,42 @@ export function DataTable<T>({
           checked={value === true}
           onChange={(v) =>
             setFilterValues((prev) => ({ ...prev, [f.name]: v }))
+          }
+        />
+      );
+    }
+
+    if (f.kind === "date") {
+      return (
+        <DatePicker
+          key={f.name}
+          name={f.name}
+          label={t(f.label)}
+          value={parseDateFilterValue(value)}
+          placeholder={f.placeholder ? t(f.placeholder) : ""}
+          onChange={(date) =>
+            setFilterValues((prev) => ({
+              ...prev,
+              [f.name]: formatDateFilterValue(date),
+            }))
+          }
+        />
+      );
+    }
+
+    if (f.kind === "date_time") {
+      return (
+        <DateTimePicker
+          key={f.name}
+          name={f.name}
+          label={t(f.label)}
+          value={parseDateTimeFilterValue(value)}
+          placeholder={f.placeholder ? t(f.placeholder) : ""}
+          onChange={(date) =>
+            setFilterValues((prev) => ({
+              ...prev,
+              [f.name]: date ? date.toISOString() : "",
+            }))
           }
         />
       );
