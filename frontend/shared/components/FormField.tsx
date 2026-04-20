@@ -6,6 +6,7 @@ import { DateTimePicker } from "./DateTimePicker";
 import { FileUpload } from "./FileUpload";
 import { Input } from "./Input";
 import { Radio } from "./Radio";
+import { RichTextEditor } from "./RichTextEditor";
 import { Select } from "./Select";
 import { TimePicker } from "./TimePicker";
 
@@ -102,6 +103,32 @@ export function FormField<TValue>({ config, binding }: FormFieldProps<TValue>) {
           maxSize={config.maxSize}
           maxFiles={config.maxFiles}
           preview={config.preview}
+        />
+      );
+    case "richtext":
+      if (!config.uploadEndpoint || !config.uploadFolder) {
+        return (
+          <Input
+            {...commonProps}
+            type="textarea"
+            value={binding.value as string | undefined}
+            onChange={binding.onChange as (value: string) => void}
+            onBlur={binding.onBlur}
+            placeholder={config.placeholder}
+            rows={config.rows}
+          />
+        );
+      }
+
+      return (
+        <RichTextEditor
+          {...commonProps}
+          value={binding.value as string | undefined}
+          onChange={binding.onChange as (value: string) => void}
+          onBlur={binding.onBlur}
+          placeholder={config.placeholder}
+          uploadEndpoint={config.uploadEndpoint}
+          uploadFolder={config.uploadFolder}
         />
       );
     default:

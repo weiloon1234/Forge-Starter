@@ -11,5 +11,6 @@ export { FormField } from "./FormField";
 export { Input } from "./Input";
 export { Lightbox } from "./Lightbox";
 export { Radio } from "./Radio";
+export { RichTextEditor } from "./RichTextEditor";
 export { Select } from "./Select";
 export { TimePicker } from "./TimePicker";

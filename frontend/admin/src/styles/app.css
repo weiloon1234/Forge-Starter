@@ -352,6 +352,50 @@ body {
   @apply flex flex-wrap justify-end gap-3;
 }
 
+.sf-page-locale-tabs {
+  @apply flex flex-wrap gap-2;
+}
+
+.sf-page-locale-tab {
+  @apply inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-medium;
+  border-color: var(--color-border);
+  background: var(--color-bg-muted);
+  color: var(--color-text-muted);
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+}
+
+.sf-page-locale-tab:hover {
+  border-color: var(--color-primary);
+  background: var(--color-bg);
+  color: var(--color-primary);
+}
+
+.sf-page-locale-tab--active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.sf-page-locale-panel {
+  @apply mt-4 space-y-4 rounded-xl border p-4;
+  border-color: var(--color-border);
+  background: var(--color-bg-muted);
+}
+
+.sf-page-locale-panel__header {
+  @apply text-sm font-semibold;
+  color: var(--color-text);
+}
+
+.sf-page-modal-footer {
+  @apply flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between;
+}
+
+.sf-page-modal-note {
+  @apply text-sm;
+  color: var(--color-text-muted);
+}
+
 .sf-form-error-banner {
   @apply rounded-xl border px-4 py-3 text-sm;
   border-color: #fecaca;
@@ -760,4 +804,91 @@ body {
   background: var(--color-sidebar-bg);
   color: #e2e8f0;
   border-radius: 0.5rem;
+}
+
+/* ── Settings ───────────────────────────────────────── */
+
+.sf-setting-meta-grid {
+  @apply grid gap-3 rounded-xl border p-4 md:grid-cols-2;
+  border-color: var(--color-border);
+  background: var(--color-bg-muted);
+}
+
+.sf-setting-meta-label {
+  @apply text-xs font-semibold uppercase tracking-wide;
+  color: var(--color-text-muted);
+}
+
+.sf-setting-meta-value {
+  @apply mt-1 text-sm break-all;
+  color: var(--color-text);
+}
+
+.sf-setting-editor .sf-textarea {
+  min-height: 14rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.sf-setting-upload {
+  @apply space-y-4;
+}
+
+.sf-setting-asset-card {
+  @apply flex flex-col gap-4 rounded-xl border p-4 md:flex-row md:items-start;
+  border-color: var(--color-border);
+  background: var(--color-bg-muted);
+}
+
+.sf-setting-asset-preview,
+.sf-setting-asset-icon {
+  @apply w-full rounded-xl md:w-32 md:h-32;
+}
+
+.sf-setting-asset-preview {
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+}
+
+.sf-setting-asset-icon {
+  @apply flex items-center justify-center text-xs font-semibold tracking-[0.2em];
+  min-height: 8rem;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  border: 1px dashed var(--color-border);
+}
+
+.sf-setting-asset-meta {
+  @apply flex-1 min-w-0;
+}
+
+.sf-setting-asset-name {
+  @apply text-sm font-semibold break-all;
+}
+
+.sf-setting-asset-details {
+  @apply mt-1 text-sm;
+  color: var(--color-text-muted);
+}
+
+.sf-setting-asset-actions {
+  @apply flex flex-wrap gap-2;
+}
+
+.sf-setting-asset-link {
+  @apply inline-flex items-center rounded-full px-3 py-1 text-sm font-medium no-underline;
+  color: var(--color-primary);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+
+.sf-setting-asset-link:hover {
+  color: var(--color-primary-hover);
+  border-color: var(--color-primary);
+}
+
+.sf-setting-asset-empty {
+  @apply rounded-xl border border-dashed px-4 py-3 text-sm;
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+  background: var(--color-bg-muted);
 }

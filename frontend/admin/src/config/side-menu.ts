@@ -6,6 +6,8 @@ import {
   FileText,
   LayoutDashboard,
   MoreHorizontal,
+  ScrollText,
+  Settings,
   Shield,
   Users,
 } from "lucide-react";
@@ -58,6 +60,20 @@ export const sideMenu: MenuItem[] = [
         label: "Countries",
         path: "/countries",
         permission: "countries.read",
+      },
+      {
+        key: "other.settings",
+        label: "Settings",
+        path: "/settings",
+        icon: Settings,
+        permission: "settings.read",
+      },
+      {
+        key: "other.pages",
+        label: "Pages",
+        path: "/pages",
+        icon: ScrollText,
+        permission: "pages.read",
       },
       {
         key: "other.logs",

@@ -83,6 +83,9 @@
             "permissions": "Permissions",
             "conversion_rate": "Conversion rate",
             "is_default": "Default",
+            "slug": "Slug",
+            "title": "Title",
+            "content": "Content",
             "value": "Value"
         }
     }

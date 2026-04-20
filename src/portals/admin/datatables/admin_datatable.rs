@@ -7,18 +7,16 @@ use crate::domain::services::admin_service;
 pub struct AdminDatatable;
 
 #[async_trait]
-impl ModelDatatable for AdminDatatable {
-    type Model = Admin;
+impl Datatable for AdminDatatable {
+    type Row = Admin;
+    type Query = ModelQuery<Admin>;
     const ID: &'static str = "admin.admins";
 
-    fn query(_ctx: &DatatableContext) -> ModelQuery<Admin> {
+    fn query(_ctx: &DatatableContext) -> Self::Query {
         Admin::model_query()
     }
 
-    async fn filters(
-        ctx: &DatatableContext,
-        query: ModelQuery<Admin>,
-    ) -> Result<ModelQuery<Admin>> {
+    async fn filters(ctx: &DatatableContext, query: Self::Query) -> Result<Self::Query> {
         let Some(actor) = ctx.actor else {
             return Ok(query.where_(Admin::ID.is_null()));
         };
@@ -29,7 +27,7 @@ impl ModelDatatable for AdminDatatable {
         Ok(admin_service::scope_visible_admins(query, &admin))
     }
 
-    fn columns() -> Vec<DatatableColumn<Admin>> {
+    fn columns() -> Vec<DatatableColumn<Self::Row>> {
         vec![
             DatatableColumn::field(Admin::USERNAME)
                 .label("Username")
@@ -59,7 +57,7 @@ impl ModelDatatable for AdminDatatable {
         ]
     }
 
-    fn mappings() -> Vec<DatatableMapping<Admin>> {
+    fn mappings() -> Vec<DatatableMapping<Self::Row>> {
         vec![
             DatatableMapping::new("id", |admin: &Admin, _ctx| {
                 DatatableValue::string(admin.id.to_string())
@@ -70,7 +68,7 @@ impl ModelDatatable for AdminDatatable {
         ]
     }
 
-    fn default_sort() -> Vec<DatatableSort<Admin>> {
+    fn default_sort() -> Vec<DatatableSort<Self::Row>> {
         vec![DatatableSort::desc(Admin::CREATED_AT)]
     }
 

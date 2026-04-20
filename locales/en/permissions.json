@@ -23,6 +23,9 @@
         "settings": {
             "label": "Settings"
         },
+        "pages": {
+            "label": "Pages"
+        },
         "logs": {
             "label": "Logs"
         }

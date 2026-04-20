@@ -6,15 +6,16 @@ use forge::prelude::*;
 pub struct CountryDatatable;
 
 #[async_trait]
-impl ModelDatatable for CountryDatatable {
-    type Model = Country;
+impl Datatable for CountryDatatable {
+    type Row = Country;
+    type Query = ModelQuery<Country>;
     const ID: &'static str = "admin.countries";
 
-    fn query(_ctx: &DatatableContext) -> ModelQuery<Country> {
+    fn query(_ctx: &DatatableContext) -> Self::Query {
         Country::model_query()
     }
 
-    fn columns() -> Vec<DatatableColumn<Country>> {
+    fn columns() -> Vec<DatatableColumn<Self::Row>> {
         vec![
             DatatableColumn::field(Country::FLAG_EMOJI)
                 .label("")
@@ -59,7 +60,7 @@ impl ModelDatatable for CountryDatatable {
         ]
     }
 
-    fn default_sort() -> Vec<DatatableSort<Country>> {
+    fn default_sort() -> Vec<DatatableSort<Self::Row>> {
         vec![DatatableSort::asc(Country::NAME)]
     }
 

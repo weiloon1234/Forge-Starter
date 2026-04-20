@@ -23,6 +23,10 @@ pub enum Permission {
     SettingsRead,
     #[forge(key = "settings.manage")]
     SettingsManage,
+    #[forge(key = "pages.read")]
+    PagesRead,
+    #[forge(key = "pages.manage")]
+    PagesManage,
     #[forge(key = "logs.read")]
     LogsRead,
     #[forge(key = "logs.manage")]
@@ -30,7 +34,7 @@ pub enum Permission {
 }
 
 impl Permission {
-    pub const fn all() -> [Self; 12] {
+    pub const fn all() -> [Self; 14] {
         [
             Self::ExportsRead,
             Self::ObservabilityView,
@@ -42,6 +46,8 @@ impl Permission {
             Self::CountriesManage,
             Self::SettingsRead,
             Self::SettingsManage,
+            Self::PagesRead,
+            Self::PagesManage,
             Self::LogsRead,
             Self::LogsManage,
         ]
@@ -59,6 +65,8 @@ impl Permission {
             Self::CountriesManage => "countries.manage",
             Self::SettingsRead => "settings.read",
             Self::SettingsManage => "settings.manage",
+            Self::PagesRead => "pages.read",
+            Self::PagesManage => "pages.manage",
             Self::LogsRead => "logs.read",
             Self::LogsManage => "logs.manage",
         }
@@ -72,6 +80,7 @@ impl Permission {
             Self::UsersRead | Self::UsersManage => "users",
             Self::CountriesRead | Self::CountriesManage => "countries",
             Self::SettingsRead | Self::SettingsManage => "settings",
+            Self::PagesRead | Self::PagesManage => "pages",
             Self::LogsRead | Self::LogsManage => "logs",
         }
     }
@@ -84,14 +93,14 @@ impl Permission {
             | Self::UsersRead
             | Self::CountriesRead
             | Self::SettingsRead
+            | Self::PagesRead
             | Self::LogsRead => "read",
             Self::AdminsManage
             | Self::UsersManage
             | Self::CountriesManage
             | Self::SettingsManage
-            | Self::LogsManage => {
-                "manage"
-            }
+            | Self::PagesManage
+            | Self::LogsManage => "manage",
         }
     }
 
@@ -101,6 +110,7 @@ impl Permission {
             Self::UsersManage => Some(Self::UsersRead),
             Self::CountriesManage => Some(Self::CountriesRead),
             Self::SettingsManage => Some(Self::SettingsRead),
+            Self::PagesManage => Some(Self::PagesRead),
             Self::LogsManage => Some(Self::LogsRead),
             _ => None,
         }

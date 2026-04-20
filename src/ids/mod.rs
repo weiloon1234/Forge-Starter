@@ -4,4 +4,5 @@ pub mod guards;
 pub mod jobs;
 pub mod permissions;
 pub mod schedules;
+pub mod upload_folders;
 pub mod validation;

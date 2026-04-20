@@ -1,14 +1,17 @@
+use crate::domain::services::editor_asset_service::AdminEditorAssetUploadResponse;
+use crate::domain::services::page_service::AdminPageResponse;
+use crate::domain::services::settings_service::AdminSettingResponse;
 use crate::ids::guards::Guard;
 use crate::ids::permissions::Permission;
 use crate::portals::admin::requests::{
-    AdminLoginRequest, ChangeAdminPasswordRequest, CreateAdminRequest, UpdateAdminLocaleRequest,
-    UpdateAdminProfileRequest, UpdateAdminRequest, UpdateCountryRequest, UpdateSettingValueRequest,
+    AdminLoginRequest, ChangeAdminPasswordRequest, CreateAdminRequest, CreatePageRequest,
+    UpdateAdminLocaleRequest, UpdateAdminProfileRequest, UpdateAdminRequest, UpdateCountryRequest,
+    UpdatePageRequest, UpdateSettingValueRequest,
 };
 use crate::portals::admin::responses::{
     AdminMeResponse, AdminPermissionResponse, AdminResponse, AdminUserResponse, LogEntryResponse,
     LogFileResponse,
 };
-use crate::domain::services::settings_service::AdminSettingResponse;
 use forge::prelude::*;
 
 pub mod admin_routes;
@@ -16,7 +19,9 @@ pub mod auth_routes;
 pub mod country_routes;
 pub mod datatable_routes;
 pub mod datatables;
+pub mod editor_asset_routes;
 pub mod log_routes;
+pub mod page_routes;
 pub mod profile_routes;
 pub mod requests;
 pub mod resources;
@@ -209,6 +214,77 @@ pub fn register(r: &mut HttpRegistrar) -> Result<()> {
                     route.permission(Permission::SettingsManage);
                     route.summary("Upload and replace a file/image setting value");
                     route.response::<AdminSettingResponse>(200);
+                });
+
+                Ok(())
+            })?;
+
+            admin.scope("/pages", |pages| {
+                pages
+                    .name_prefix("pages")
+                    .tag("admin:pages")
+                    .guard(Guard::Admin)
+                    .permission(Permission::PagesRead);
+
+                pages.get("/{id}", "show", page_routes::show, |route| {
+                    route.summary("Get page detail for editing");
+                    route.response::<AdminPageResponse>(200);
+                });
+
+                pages.post("", "store", page_routes::store, |route| {
+                    route.permission(Permission::PagesManage);
+                    route.summary("Create page");
+                    route.request::<CreatePageRequest>();
+                    route.response::<AdminPageResponse>(200);
+                });
+
+                pages.put("/{id}", "update", page_routes::update, |route| {
+                    route.permission(Permission::PagesManage);
+                    route.summary("Update page");
+                    route.request::<UpdatePageRequest>();
+                    route.response::<AdminPageResponse>(200);
+                });
+
+                pages.delete("/{id}", "destroy", page_routes::destroy, |route| {
+                    route.permission(Permission::PagesManage);
+                    route.summary("Delete page");
+                    route.response::<MessageResponse>(200);
+                });
+
+                pages.post(
+                    "/{id}/cover",
+                    "upload_cover",
+                    page_routes::upload_cover,
+                    |route| {
+                        route.permission(Permission::PagesManage);
+                        route.summary("Upload or replace page cover");
+                        route.response::<AdminPageResponse>(200);
+                    },
+                );
+
+                pages.delete(
+                    "/{id}/cover",
+                    "delete_cover",
+                    page_routes::delete_cover,
+                    |route| {
+                        route.permission(Permission::PagesManage);
+                        route.summary("Delete page cover");
+                        route.response::<AdminPageResponse>(200);
+                    },
+                );
+
+                Ok(())
+            })?;
+
+            admin.scope("/editor-assets", |editor_assets| {
+                editor_assets
+                    .name_prefix("editor_assets")
+                    .tag("admin:editor-assets")
+                    .guard(Guard::Admin);
+
+                editor_assets.post("/upload", "upload", editor_asset_routes::upload, |route| {
+                    route.summary("Upload a Froala editor file or image");
+                    route.response::<AdminEditorAssetUploadResponse>(200);
                 });
 
                 Ok(())

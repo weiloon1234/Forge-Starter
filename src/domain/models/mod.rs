@@ -1,8 +1,12 @@
 pub mod admin;
 pub mod country;
+pub mod page;
+pub mod page_translation;
 pub mod setting;
 pub mod user;
 pub use admin::Admin;
 pub use country::Country;
+pub use page::Page;
+pub use page_translation::PageTranslation;
 pub use setting::AppSetting;
 pub use user::User;

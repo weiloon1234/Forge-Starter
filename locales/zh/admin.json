@@ -39,6 +39,117 @@
             "implicit_permissions_help": "此管理员类型会自动获得完整访问权限。",
             "implicit_permissions_note": "逐模块权限仅适用于管理员层级。",
             "confirm_delete": "删除 {{name}}？此操作无法撤销。"
+        },
+        "settings": {
+            "title": "设置",
+            "subtitle": "查看运行时设置并编辑它们的当前值。",
+            "edit_title": "编辑 {{label}}",
+            "edit_action": "编辑设置",
+            "updated": "设置已更新",
+            "search_placeholder": "键名、标签或说明...",
+            "replace_asset": "替换文件",
+            "upload_replace_hint": "上传新文件以替换当前保存的值。",
+            "no_asset": "尚未上传文件。",
+            "asset_will_clear": "保存后将清除当前文件。",
+            "clear_asset": "清除当前文件",
+            "preview": "预览",
+            "download": "下载",
+            "language_hint": "语言：{{language}}",
+            "public_state": {
+                "public": "公开",
+                "private": "私有"
+            },
+            "columns": {
+                "key": "键名",
+                "label": "标签",
+                "type": "类型",
+                "group": "分组",
+                "public": "公开",
+                "value": "值",
+                "updated": "更新时间"
+            },
+            "filters": {
+                "public_only": "仅公开项"
+            },
+            "errors": {
+                "invalid_number": "请先输入有效的数字再保存。",
+                "invalid_json": "请先输入有效的 JSON 再保存。",
+                "upload_not_allowed": "此设置不接受文件上传。"
+            }
+        },
+        "pages": {
+            "title": "页面",
+            "subtitle": "管理带封面图的多语言富文本页面。",
+            "new": "新增页面",
+            "create_title": "创建页面",
+            "edit_title": "编辑页面",
+            "view_title": "查看页面",
+            "create_help": "创建一个带多语言富文本内容和可选封面图的页面。",
+            "edit_help": "更新这个页面的多语言内容、封面图和 slug。",
+            "view_help": "以只读方式查看这个页面。",
+            "created": "页面已创建",
+            "updated": "页面已更新",
+            "deleted": "页面已删除",
+            "delete_title": "删除 {{slug}}",
+            "confirm_delete": "删除 {{slug}}？此操作无法撤销。",
+            "edit_action": "编辑页面",
+            "view_action": "查看页面",
+            "load_failed": "页面加载失败。",
+            "cover_save_failed": "页面已保存，但封面图更新失败。",
+            "cover_will_remove": "保存后将移除当前封面图。",
+            "no_cover": "尚未上传封面图。",
+            "preview_cover": "预览封面",
+            "remove_cover": "移除封面",
+            "cover_upload_hint": "上传一张图片作为此页面的封面图。",
+            "default_locale_hint": "这个语言版本为必填。",
+            "system_slug_hint": "系统页面的 slug 已锁定，不能修改。",
+            "slug_hint": "只允许使用小写字母、数字和连字符。",
+            "system_delete_disabled": "系统页面不能被删除。",
+            "search_placeholder": "搜索 slug...",
+            "locale_panel_title": "{{locale}} 内容",
+            "sections": {
+                "page": "页面",
+                "page_help": "设置页面 slug，并查看系统页面限制。",
+                "content": "多语言内容",
+                "content_help": "为每个语言填写标题和富文本 HTML 内容。",
+                "cover": "封面图",
+                "cover_help": "为这个页面添加一张封面图附件。"
+            },
+            "fields": {
+                "slug": "Slug",
+                "title": "标题",
+                "content": "内容",
+                "cover": "封面图"
+            },
+            "columns": {
+                "slug": "Slug",
+                "title": "标题",
+                "system": "系统",
+                "updated": "更新时间"
+            },
+            "system_state": {
+                "system": "系统",
+                "custom": "自定义"
+            },
+            "filters": {
+                "system_only": "仅系统页面"
+            },
+            "errors": {
+                "system_slug_locked": "系统页面的 slug 不能修改。",
+                "system_delete_forbidden": "系统页面不能被删除。",
+                "cover_must_be_image": "请上传图片作为页面封面。"
+            }
+        },
+        "editor_assets": {
+            "errors": {
+                "folder_required": "folder 字段为必填项。",
+                "kind_required": "kind 字段为必填项。",
+                "file_required": "file 字段为必填项。",
+                "forbidden": "你没有权限上传文件到这个目录。",
+                "invalid_folder": "所选上传目录无效。",
+                "kind_not_allowed": "该目录不接受这种上传类型。",
+                "image_required": "请上传图片文件。"
+            }
         }
     }
 }

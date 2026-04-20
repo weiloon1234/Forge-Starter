@@ -147,10 +147,7 @@ async fn load_setting(app: &AppContext, i18n: &I18n, key: &str) -> Result<Loaded
     Ok(LoadedSetting { record, setting })
 }
 
-async fn present_setting(
-    app: &AppContext,
-    loaded: LoadedSetting,
-) -> Result<AdminSettingResponse> {
+async fn present_setting(app: &AppContext, loaded: LoadedSetting) -> Result<AdminSettingResponse> {
     let mut asset = asset_from_value(loaded.record.value.as_ref());
 
     if let Some(current_asset) = asset.as_mut() {
@@ -227,7 +224,9 @@ async fn validate_value(
                 .collect::<Option<Vec<_>>>()
                 .ok_or_else(|| field_error(app, i18n, "setting_multiselect", &[]))?;
             validate_multiselect_value(app, i18n, &strings, &setting.parameters).await?;
-            Ok(Value::Array(strings.into_iter().map(Value::String).collect()))
+            Ok(Value::Array(
+                strings.into_iter().map(Value::String).collect(),
+            ))
         }
         SettingType::Date => {
             let text = value
@@ -244,12 +243,9 @@ async fn validate_value(
             Ok(Value::String(text.to_string()))
         }
         SettingType::Json => Ok(value),
-        SettingType::File | SettingType::Image => Err(field_error(
-            app,
-            i18n,
-            "setting_upload_write",
-            &[],
-        )),
+        SettingType::File | SettingType::Image => {
+            Err(field_error(app, i18n, "setting_upload_write", &[]))
+        }
     }
 }
 
@@ -429,7 +425,10 @@ async fn validate_upload(
                 validator.add_error(
                     "value",
                     "max_dimensions",
-                    &[("width", width_text.as_str()), ("height", height_text.as_str())],
+                    &[
+                        ("width", width_text.as_str()),
+                        ("height", height_text.as_str()),
+                    ],
                 );
             }
         }

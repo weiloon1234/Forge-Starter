@@ -1,6 +1,7 @@
 import type { ReactNode, RefObject } from "react";
 import type {
   DatatableJsonResponse,
+  EditorUploadFolder,
   DatatableFilterField as GeneratedDatatableFilterField,
   DatatableFilterInput as GeneratedDatatableFilterInput,
   DatatableFilterOp as GeneratedDatatableFilterOp,
@@ -37,6 +38,7 @@ export type InputType =
   | "email"
   | "password"
   | "number"
+  | "color"
   | "tel"
   | "url"
   | "search"
@@ -116,6 +118,17 @@ export interface FileUploadProps extends FieldBase {
   preview?: boolean;
 }
 
+// ── Rich Text Editor ───────────────────────────────────
+
+export interface RichTextEditorProps extends FieldBase {
+  value?: string;
+  onChange?: (value: string) => void;
+  onBlur?: () => void;
+  placeholder?: string;
+  uploadEndpoint: string;
+  uploadFolder: EditorUploadFolder;
+}
+
 // ── Button ──────────────────────────────────────────────
 
 export type ButtonVariant =
@@ -185,6 +198,7 @@ export type FieldType =
   | "email"
   | "password"
   | "number"
+  | "color"
   | "tel"
   | "url"
   | "search"
@@ -196,6 +210,7 @@ export type FieldType =
   | "checkbox-group"
   | "radio"
   | "file"
+  | "richtext"
   | "date"
   | "time"
   | "datetime";
@@ -232,6 +247,9 @@ export interface FieldConfig {
   maxSize?: number;
   maxFiles?: number;
   preview?: boolean;
+  // Rich text-specific
+  uploadEndpoint?: string;
+  uploadFolder?: EditorUploadFolder;
 }
 
 // ── DataTable ───────────────────────────────────────────

@@ -5,15 +5,16 @@ use forge::prelude::*;
 pub struct UserDatatable;
 
 #[async_trait]
-impl ModelDatatable for UserDatatable {
-    type Model = User;
+impl Datatable for UserDatatable {
+    type Row = User;
+    type Query = ModelQuery<User>;
     const ID: &'static str = "admin.users";
 
-    fn query(_ctx: &DatatableContext) -> ModelQuery<User> {
+    fn query(_ctx: &DatatableContext) -> Self::Query {
         User::model_query()
     }
 
-    fn columns() -> Vec<DatatableColumn<User>> {
+    fn columns() -> Vec<DatatableColumn<Self::Row>> {
         vec![
             DatatableColumn::field(User::ID).label("ID").sortable(),
             DatatableColumn::field(User::USERNAME)
@@ -54,7 +55,7 @@ impl ModelDatatable for UserDatatable {
         ]
     }
 
-    fn default_sort() -> Vec<DatatableSort<User>> {
+    fn default_sort() -> Vec<DatatableSort<Self::Row>> {
         vec![DatatableSort::desc(User::CREATED_AT)]
     }
 

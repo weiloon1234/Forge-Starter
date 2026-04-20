@@ -23,6 +23,9 @@
         "settings": {
             "label": "设置"
         },
+        "pages": {
+            "label": "页面"
+        },
         "logs": {
             "label": "日志"
         }

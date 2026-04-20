@@ -83,6 +83,9 @@
             "permissions": "权限",
             "conversion_rate": "汇率",
             "is_default": "默认",
+            "slug": "Slug",
+            "title": "标题",
+            "content": "内容",
             "value": "值"
         }
     }

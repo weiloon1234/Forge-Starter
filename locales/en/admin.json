@@ -39,6 +39,117 @@
             "implicit_permissions_help": "This admin type receives full access automatically.",
             "implicit_permissions_note": "Per-module permissions only apply to the Admin tier.",
             "confirm_delete": "Delete {{name}}? This action cannot be undone."
+        },
+        "settings": {
+            "title": "Settings",
+            "subtitle": "Review runtime settings and edit their current values.",
+            "edit_title": "Edit {{label}}",
+            "edit_action": "Edit setting",
+            "updated": "Setting updated",
+            "search_placeholder": "Key, label, or description...",
+            "replace_asset": "Replace file",
+            "upload_replace_hint": "Upload a new file to replace the saved value.",
+            "no_asset": "No file uploaded yet.",
+            "asset_will_clear": "The current file will be cleared when you save.",
+            "clear_asset": "Clear current file",
+            "preview": "Preview",
+            "download": "Download",
+            "language_hint": "Language: {{language}}",
+            "public_state": {
+                "public": "Public",
+                "private": "Private"
+            },
+            "columns": {
+                "key": "Key",
+                "label": "Label",
+                "type": "Type",
+                "group": "Group",
+                "public": "Public",
+                "value": "Value",
+                "updated": "Updated"
+            },
+            "filters": {
+                "public_only": "Public only"
+            },
+            "errors": {
+                "invalid_number": "Enter a valid number before saving.",
+                "invalid_json": "Enter valid JSON before saving.",
+                "upload_not_allowed": "This setting does not accept file uploads."
+            }
+        },
+        "pages": {
+            "title": "Pages",
+            "subtitle": "Manage localized rich-content pages with cover images.",
+            "new": "New Page",
+            "create_title": "Create Page",
+            "edit_title": "Edit Page",
+            "view_title": "View Page",
+            "create_help": "Create a localized page with rich content and an optional cover image.",
+            "edit_help": "Update localized content, cover image, and slug for this page.",
+            "view_help": "Review this page in read-only mode.",
+            "created": "Page created",
+            "updated": "Page updated",
+            "deleted": "Page deleted",
+            "delete_title": "Delete {{slug}}",
+            "confirm_delete": "Delete {{slug}}? This action cannot be undone.",
+            "edit_action": "Edit page",
+            "view_action": "View page",
+            "load_failed": "The page could not be loaded.",
+            "cover_save_failed": "The page was saved, but the cover image could not be updated.",
+            "cover_will_remove": "The current cover will be removed when you save.",
+            "no_cover": "No cover image uploaded yet.",
+            "preview_cover": "Preview cover",
+            "remove_cover": "Remove cover",
+            "cover_upload_hint": "Upload a single image to use as this page's cover.",
+            "default_locale_hint": "This locale is required.",
+            "system_slug_hint": "System page slugs are locked and cannot be changed.",
+            "slug_hint": "Use lowercase letters, numbers, and hyphens only.",
+            "system_delete_disabled": "System pages cannot be deleted.",
+            "search_placeholder": "Search slug...",
+            "locale_panel_title": "Content for {{locale}}",
+            "sections": {
+                "page": "Page",
+                "page_help": "Define the page slug and review system-page protections.",
+                "content": "Localized Content",
+                "content_help": "Write each locale's title and rich HTML content.",
+                "cover": "Cover Image",
+                "cover_help": "Add a single cover image attachment for this page."
+            },
+            "fields": {
+                "slug": "Slug",
+                "title": "Title",
+                "content": "Content",
+                "cover": "Cover image"
+            },
+            "columns": {
+                "slug": "Slug",
+                "title": "Title",
+                "system": "System",
+                "updated": "Updated"
+            },
+            "system_state": {
+                "system": "System",
+                "custom": "Custom"
+            },
+            "filters": {
+                "system_only": "System only"
+            },
+            "errors": {
+                "system_slug_locked": "System page slugs cannot be changed.",
+                "system_delete_forbidden": "System pages cannot be deleted.",
+                "cover_must_be_image": "Please upload an image for the page cover."
+            }
+        },
+        "editor_assets": {
+            "errors": {
+                "folder_required": "The folder field is required.",
+                "kind_required": "The kind field is required.",
+                "file_required": "The file field is required.",
+                "forbidden": "You do not have permission to upload files to this folder.",
+                "invalid_folder": "The selected upload folder is invalid.",
+                "kind_not_allowed": "This folder does not accept that upload kind.",
+                "image_required": "Please upload an image file."
+            }
         }
     }
 }

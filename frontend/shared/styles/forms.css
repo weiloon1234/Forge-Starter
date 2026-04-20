@@ -957,4 +957,49 @@
     background: var(--color-primary-hover);
     color: var(--color-text-on-primary);
   }
+
+  /* Rich text editor */
+  .sf-richtext-shell {
+    @apply rounded-lg border overflow-hidden;
+    border-color: var(--color-border);
+    background: var(--color-bg-input);
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .sf-richtext-shell:focus-within {
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+  }
+  .sf-field--error .sf-richtext-shell {
+    border-color: var(--color-danger);
+  }
+  .sf-field--error .sf-richtext-shell:focus-within {
+    box-shadow: 0 0 0 3px var(--color-danger-light);
+  }
+  .sf-richtext-loading {
+    @apply px-3 py-3 text-sm;
+    color: var(--color-text-muted);
+  }
+  .sf-richtext-shell .fr-box.fr-basic {
+    @apply border-0 rounded-none;
+    border-color: transparent;
+  }
+  .sf-richtext-shell .fr-toolbar,
+  .sf-richtext-shell .fr-second-toolbar {
+    background: var(--color-bg-muted);
+    border-color: var(--color-border);
+  }
+  .sf-richtext-shell .fr-wrapper {
+    background: var(--color-bg-input);
+    border-top: 1px solid var(--color-border);
+  }
+  .sf-richtext-shell .fr-element,
+  .sf-richtext-shell .fr-view {
+    color: var(--color-text);
+  }
+  .sf-richtext-shell .fr-element.fr-disabled {
+    background: var(--color-bg-muted);
+  }
+  .sf-richtext-shell .fr-placeholder {
+    color: var(--color-text-hint);
+  }
 }

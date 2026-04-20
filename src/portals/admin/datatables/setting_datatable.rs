@@ -7,52 +7,53 @@ use crate::domain::models::AppSetting;
 pub struct SettingDatatable;
 
 #[async_trait]
-impl ModelDatatable for SettingDatatable {
-    type Model = AppSetting;
+impl Datatable for SettingDatatable {
+    type Row = AppSetting;
+    type Query = ModelQuery<AppSetting>;
     const ID: &'static str = "admin.settings";
 
-    fn query(_ctx: &DatatableContext) -> ModelQuery<AppSetting> {
+    fn query(_ctx: &DatatableContext) -> Self::Query {
         AppSetting::model_query()
     }
 
-    fn columns() -> Vec<DatatableColumn<AppSetting>> {
+    fn columns() -> Vec<DatatableColumn<Self::Row>> {
         vec![
             DatatableColumn::field(AppSetting::KEY)
-                .label("Key")
+                .label("admin.settings.columns.key")
                 .sortable()
                 .filterable()
                 .exportable(),
             DatatableColumn::field(AppSetting::LABEL)
-                .label("Label")
+                .label("admin.settings.columns.label")
                 .sortable()
                 .filterable()
                 .exportable(),
             DatatableColumn::field(AppSetting::SETTING_TYPE)
-                .label("Type")
+                .label("admin.settings.columns.type")
                 .sortable()
                 .filterable()
                 .exportable(),
             DatatableColumn::field(AppSetting::GROUP_NAME)
-                .label("Group")
+                .label("admin.settings.columns.group")
                 .sortable()
                 .filterable()
                 .exportable(),
             DatatableColumn::field(AppSetting::IS_PUBLIC)
-                .label("Public")
+                .label("admin.settings.columns.public")
                 .sortable()
                 .filterable()
                 .exportable(),
             DatatableColumn::field(AppSetting::VALUE)
-                .label("Value")
+                .label("admin.settings.columns.value")
                 .exportable(),
             DatatableColumn::field(AppSetting::UPDATED_AT)
-                .label("Updated")
+                .label("admin.settings.columns.updated")
                 .sortable()
                 .exportable(),
         ]
     }
 
-    fn default_sort() -> Vec<DatatableSort<AppSetting>> {
+    fn default_sort() -> Vec<DatatableSort<Self::Row>> {
         vec![
             DatatableSort::asc(AppSetting::GROUP_NAME),
             DatatableSort::asc(AppSetting::SORT_ORDER),
@@ -66,16 +67,24 @@ impl ModelDatatable for SettingDatatable {
             .into_iter()
             .map(|group| DatatableFilterOption::new(group.clone(), group))
             .collect::<Vec<_>>();
+        let type_options = SettingType::all()
+            .iter()
+            .map(|(key, _)| {
+                DatatableFilterOption::new((*key).to_string(), format!("setting_type.{key}"))
+            })
+            .collect::<Vec<_>>();
 
         Ok(vec![
             DatatableFilterRow::pair(
                 DatatableFilterField::text("key|label|description", "Search")
-                    .placeholder("Key, label, or description..."),
-                DatatableFilterField::enum_select::<SettingType>("setting_type", "Type"),
+                    .placeholder("admin.settings.search_placeholder"),
+                DatatableFilterField::select("setting_type", "admin.settings.columns.type")
+                    .options(type_options),
             ),
             DatatableFilterRow::pair(
-                DatatableFilterField::select("group_name", "Group").options(group_options),
-                DatatableFilterField::checkbox("is_public", "Public only"),
+                DatatableFilterField::select("group_name", "admin.settings.columns.group")
+                    .options(group_options),
+                DatatableFilterField::checkbox("is_public", "admin.settings.filters.public_only"),
             ),
         ])
     }
