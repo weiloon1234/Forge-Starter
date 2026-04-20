@@ -140,6 +140,88 @@
                 "cover_must_be_image": "Please upload an image for the page cover."
             }
         },
+        "credits": {
+            "title": "Credit Adjustments",
+            "subtitle": "Review the credit ledger and create append-only manual balance adjustments.",
+            "new": "New Adjustment",
+            "create_title": "Create Credit Adjustment",
+            "create_help": "Adjust a user's balance in one credit bucket and leave a traceable ledger entry behind.",
+            "created": "Credit adjustment created",
+            "search_placeholder": "User, admin, type, remark, or trace...",
+            "trace_search_placeholder": "Related type or key...",
+            "user_placeholder": "Search a user by name, username, or email...",
+            "amount_placeholder": "100.00",
+            "amount_hint": "Enter a positive amount. Deduction is controlled by the operation field.",
+            "override_hint": "Leave blank to use the generic translated explanation.",
+            "preview_label": "Preview",
+            "remark_hint": "This remark is stored for admins only and is never shown in the generic explanation text.",
+            "related_type_hint": "Optional business-flow label such as order_dispatch. Leave blank to default to admin_credit_adjustment.",
+            "related_key_hint": "Optional shared correlation UUID. Leave blank to auto-generate one for this adjustment.",
+            "context_hint": "Optional JSON object for machine-readable trace context.",
+            "current_balance_label": "Current {{credit_type}} balance",
+            "projected_balance_label": "Projected balance after save",
+            "override_panel_title": "Override for {{locale}}",
+            "sections": {
+                "adjustment": "Adjustment",
+                "adjustment_help": "Choose a user, credit bucket, operation, and amount.",
+                "explanation": "Explanation",
+                "explanation_help": "Optionally override the generic transaction explanation per locale.",
+                "trace": "Trace Context",
+                "trace_help": "Add internal remarks and optional correlation metadata for future investigation."
+            },
+            "fields": {
+                "user": "User",
+                "credit_type": "Credit type",
+                "operation": "Operation",
+                "amount": "Amount",
+                "explanation_override": "Explanation override",
+                "remark": "Admin remark",
+                "related_type": "Related type",
+                "related_key": "Related key",
+                "context": "Context JSON"
+            },
+            "columns": {
+                "created": "Created",
+                "user": "User",
+                "credit_type": "Credit type",
+                "amount": "Amount",
+                "balance_after": "Balance after",
+                "explanation": "Explanation",
+                "transaction_type": "Transaction type",
+                "admin": "Admin",
+                "trace": "Trace",
+                "related_type": "Related type",
+                "related_key": "Related key",
+                "remark": "Remark"
+            },
+            "credit_types": {
+                "credit_1": "Credit 1",
+                "credit_2": "Credit 2",
+                "credit_3": "Credit 3",
+                "credit_4": "Credit 4",
+                "credit_5": "Credit 5",
+                "credit_6": "Credit 6"
+            },
+            "transaction_types": {
+                "admin_add": "Admin Add",
+                "admin_deduct": "Admin Deduct",
+                "transfer_received": "Transfer Received",
+                "transfer_sent": "Transfer Sent"
+            },
+            "operations": {
+                "add": "Add",
+                "deduct": "Deduct"
+            },
+            "errors": {
+                "invalid_amount": "Enter a valid positive credit amount.",
+                "invalid_user": "Select a valid user.",
+                "invalid_overrides": "Explanation overrides must be a locale-to-string object.",
+                "invalid_context": "Context must be a JSON object.",
+                "invalid_context_json": "Enter a valid JSON object for context.",
+                "invalid_related_key": "Related key must be a valid UUID.",
+                "balance_overflow": "The resulting balance exceeds the supported numeric range."
+            }
+        },
         "editor_assets": {
             "errors": {
                 "folder_required": "The folder field is required.",

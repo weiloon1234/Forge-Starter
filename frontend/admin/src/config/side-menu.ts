@@ -42,6 +42,13 @@ export const sideMenu: MenuItem[] = [
         permission: "users.read",
       },
       {
+        key: "users.credit_adjustments",
+        label: "Credit Adjustments",
+        path: "/credits/adjustments",
+        icon: ScrollText,
+        permission: "credits.read",
+      },
+      {
         key: "users.admins",
         label: "Admins",
         path: "/admins",

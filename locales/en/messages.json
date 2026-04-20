@@ -54,6 +54,7 @@
     "log_deleted_message": "Log file {{filename}} deleted.",
     "logs_subtitle": "View and manage application log files.",
     "confirm_delete_log": "Delete {{filename}}? This cannot be undone.",
+    "Credit Adjustments": "Credit Adjustments",
 
     "observability": {
         "common": {
@@ -194,6 +195,15 @@
         "user_not_found": "User not found",
         "something_went_wrong": "Something went wrong",
         "validation_failed": "Validation failed"
+    },
+
+    "credits": {
+        "transactions": {
+            "admin_add": "Admin added credit",
+            "admin_deduct": "Admin deducted credit",
+            "transfer_received": "Transfer received",
+            "transfer_sent": "Transfer sent"
+        }
     },
 
     "form": {

@@ -26,6 +26,9 @@
         "pages": {
             "label": "Pages"
         },
+        "credits": {
+            "label": "Credits"
+        },
         "logs": {
             "label": "Logs"
         }

@@ -1,12 +1,15 @@
+use crate::domain::services::credit_service::{
+    AdminCreditAdjustmentResponse, AdminUserLookupOptionResponse,
+};
 use crate::domain::services::editor_asset_service::AdminEditorAssetUploadResponse;
 use crate::domain::services::page_service::AdminPageResponse;
 use crate::domain::services::settings_service::AdminSettingResponse;
 use crate::ids::guards::Guard;
 use crate::ids::permissions::Permission;
 use crate::portals::admin::requests::{
-    AdminLoginRequest, ChangeAdminPasswordRequest, CreateAdminRequest, CreatePageRequest,
-    UpdateAdminLocaleRequest, UpdateAdminProfileRequest, UpdateAdminRequest, UpdateCountryRequest,
-    UpdatePageRequest, UpdateSettingValueRequest,
+    AdminLoginRequest, ChangeAdminPasswordRequest, CreateAdminCreditAdjustmentRequest,
+    CreateAdminRequest, CreatePageRequest, UpdateAdminLocaleRequest, UpdateAdminProfileRequest,
+    UpdateAdminRequest, UpdateCountryRequest, UpdatePageRequest, UpdateSettingValueRequest,
 };
 use crate::portals::admin::responses::{
     AdminMeResponse, AdminPermissionResponse, AdminResponse, AdminUserResponse, LogEntryResponse,
@@ -17,6 +20,7 @@ use forge::prelude::*;
 pub mod admin_routes;
 pub mod auth_routes;
 pub mod country_routes;
+pub mod credit_routes;
 pub mod datatable_routes;
 pub mod datatables;
 pub mod editor_asset_routes;
@@ -187,6 +191,42 @@ pub fn register(r: &mut HttpRegistrar) -> Result<()> {
                     route.request::<UpdateCountryRequest>();
                     route.response::<MessageResponse>(200);
                 });
+
+                Ok(())
+            })?;
+
+            admin.scope("/credits", |credits| {
+                credits
+                    .name_prefix("credits")
+                    .tag("admin:credits")
+                    .guard(Guard::Admin)
+                    .permission(Permission::CreditsRead);
+
+                credits.get(
+                    "/users/options",
+                    "user_options",
+                    credit_routes::user_options,
+                    |route| {
+                        route.permission(Permission::CreditsManage);
+                        route.summary("Search users for credit adjustment selection");
+                        route.response::<Vec<AdminUserLookupOptionResponse>>(200);
+                    },
+                );
+
+                credits.scope("/adjustments", |adjustments| {
+                    adjustments
+                        .name_prefix("adjustments")
+                        .tag("admin:credit-adjustments");
+
+                    adjustments.post("", "store", credit_routes::store, |route| {
+                        route.permission(Permission::CreditsManage);
+                        route.summary("Create a manual admin credit adjustment");
+                        route.request::<CreateAdminCreditAdjustmentRequest>();
+                        route.response::<AdminCreditAdjustmentResponse>(201);
+                    });
+
+                    Ok(())
+                })?;
 
                 Ok(())
             })?;

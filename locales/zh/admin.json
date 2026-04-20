@@ -140,6 +140,88 @@
                 "cover_must_be_image": "请上传图片作为页面封面。"
             }
         },
+        "credits": {
+            "title": "信用调整",
+            "subtitle": "查看信用流水，并创建只追加的手动余额调整记录。",
+            "new": "新增调整",
+            "create_title": "创建信用调整",
+            "create_help": "调整用户某个信用栏位的余额，并留下可追踪的流水记录。",
+            "created": "信用调整已创建",
+            "search_placeholder": "搜索用户、管理员、类型、备注或追踪信息...",
+            "trace_search_placeholder": "搜索 related type 或 related key...",
+            "user_placeholder": "按姓名、用户名或邮箱搜索用户...",
+            "amount_placeholder": "100.00",
+            "amount_hint": "请输入正数金额，扣减由操作类型决定。",
+            "override_hint": "留空则使用系统默认的多语言说明。",
+            "preview_label": "预览",
+            "remark_hint": "此备注仅供管理员查看，不会显示在通用说明文本中。",
+            "related_type_hint": "可选业务流程标签，例如 order_dispatch。留空则默认使用 admin_credit_adjustment。",
+            "related_key_hint": "可选共享关联 UUID。留空时系统会自动生成。",
+            "context_hint": "可选 JSON 对象，用于保存机器可读的追踪上下文。",
+            "current_balance_label": "当前 {{credit_type}} 余额",
+            "projected_balance_label": "保存后的预计余额",
+            "override_panel_title": "{{locale}} 覆盖说明",
+            "sections": {
+                "adjustment": "调整内容",
+                "adjustment_help": "选择用户、信用栏位、操作方式和金额。",
+                "explanation": "说明文本",
+                "explanation_help": "可按语言覆盖系统默认的交易说明文本。",
+                "trace": "追踪上下文",
+                "trace_help": "添加管理员内部备注，以及可选的关联元数据，方便日后追查。"
+            },
+            "fields": {
+                "user": "用户",
+                "credit_type": "信用类型",
+                "operation": "操作",
+                "amount": "金额",
+                "explanation_override": "覆盖说明",
+                "remark": "管理员备注",
+                "related_type": "关联类型",
+                "related_key": "关联键",
+                "context": "上下文 JSON"
+            },
+            "columns": {
+                "created": "创建时间",
+                "user": "用户",
+                "credit_type": "信用类型",
+                "amount": "金额",
+                "balance_after": "调整后余额",
+                "explanation": "说明",
+                "transaction_type": "交易类型",
+                "admin": "管理员",
+                "trace": "追踪",
+                "related_type": "关联类型",
+                "related_key": "关联键",
+                "remark": "备注"
+            },
+            "credit_types": {
+                "credit_1": "信用 1",
+                "credit_2": "信用 2",
+                "credit_3": "信用 3",
+                "credit_4": "信用 4",
+                "credit_5": "信用 5",
+                "credit_6": "信用 6"
+            },
+            "transaction_types": {
+                "admin_add": "管理员加值",
+                "admin_deduct": "管理员扣值",
+                "transfer_received": "收到转账",
+                "transfer_sent": "发出转账"
+            },
+            "operations": {
+                "add": "增加",
+                "deduct": "扣减"
+            },
+            "errors": {
+                "invalid_amount": "请输入有效且大于 0 的信用金额。",
+                "invalid_user": "请选择有效的用户。",
+                "invalid_overrides": "覆盖说明必须是语言到字符串的对象。",
+                "invalid_context": "上下文必须是 JSON 对象。",
+                "invalid_context_json": "请输入有效的 JSON 对象作为上下文。",
+                "invalid_related_key": "关联键必须是有效的 UUID。",
+                "balance_overflow": "调整后的余额超出当前支持的数值范围。"
+            }
+        },
         "editor_assets": {
             "errors": {
                 "folder_required": "folder 字段为必填项。",

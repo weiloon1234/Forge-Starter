@@ -26,6 +26,9 @@
         "pages": {
             "label": "页面"
         },
+        "credits": {
+            "label": "信用"
+        },
         "logs": {
             "label": "日志"
         }

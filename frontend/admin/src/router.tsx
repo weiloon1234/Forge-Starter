@@ -4,6 +4,7 @@ import { AdminLayout } from "@/layouts/AdminLayout";
 import { AdminFormPage } from "@/pages/AdminFormPage";
 import { AdminsPage } from "@/pages/AdminsPage";
 import { CountryPage } from "@/pages/CountryPage";
+import { CreditAdjustmentsPage } from "@/pages/CreditAdjustmentsPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { ErrorPage } from "@/pages/ErrorPage";
 import { JobsDashboardPage } from "@/pages/JobsDashboardPage";
@@ -23,6 +24,7 @@ export const router = createBrowserRouter(
       children: [
         { index: true, element: <DashboardPage /> },
         { path: "users", element: <UsersPage /> },
+        { path: "credits/adjustments", element: <CreditAdjustmentsPage /> },
         { path: "admins", element: <AdminsPage /> },
         { path: "admins/new", element: <AdminFormPage /> },
         { path: "admins/:id", element: <AdminFormPage /> },

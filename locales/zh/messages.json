@@ -106,6 +106,7 @@
     "View": "查看",
     "page": "页",
     "Logs": "日志",
+    "Credit Adjustments": "信用调整",
     "logs_subtitle": "查看和管理应用程序日志文件。",
     "Log file": "日志文件",
     "Level": "级别",
@@ -270,6 +271,15 @@
         "user_not_found": "用户未找到",
         "something_went_wrong": "出了点问题",
         "validation_failed": "验证失败"
+    },
+
+    "credits": {
+        "transactions": {
+            "admin_add": "管理员增加点数",
+            "admin_deduct": "管理员扣除点数",
+            "transfer_received": "收到转账",
+            "transfer_sent": "发出转账"
+        }
     },
 
     "form": {

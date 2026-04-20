@@ -1,0 +1,301 @@
+use async_trait::async_trait;
+use forge::prelude::*;
+use serde::Serialize;
+use serde_json::Value;
+
+use crate::domain::enums::{CreditTransactionType, CreditType};
+use crate::domain::services::credit_service;
+
+const ADJUSTMENTS_TABLE: &str = "admin_credit_adjustments";
+const TRANSACTIONS_TABLE: &str = "credit_transactions";
+const USERS_TABLE: &str = "users";
+const ADMINS_TABLE: &str = "admins";
+
+#[derive(Clone, Debug, Serialize, forge::Projection)]
+pub struct CreditAdjustmentDatatableRow {
+    id: String,
+    credit_transaction_id: String,
+    user_id: String,
+    user_label: String,
+    credit_type: String,
+    transaction_type: String,
+    amount: Numeric,
+    balance_after: Numeric,
+    explanation_key: String,
+    explanation_params_json: String,
+    explanation_overrides_json: String,
+    admin_id: String,
+    admin_label: String,
+    remark: Option<String>,
+    related_key: Option<String>,
+    related_type: Option<String>,
+    context_json: String,
+    created_at: DateTime,
+}
+
+fn user_label_expr() -> Expr {
+    Sql::coalesce([
+        Expr::column(ColumnRef::new(USERS_TABLE, "name")),
+        Expr::column(ColumnRef::new(USERS_TABLE, "username")),
+        Expr::column(ColumnRef::new(USERS_TABLE, "email")),
+        Expr::raw(r#""users"."id"::text"#),
+    ])
+}
+
+fn admin_label_expr() -> Expr {
+    Sql::coalesce([
+        Expr::column(ColumnRef::new(ADMINS_TABLE, "name")),
+        Expr::column(ColumnRef::new(ADMINS_TABLE, "username")),
+        Expr::column(ColumnRef::new(ADMINS_TABLE, "email")),
+        Expr::raw(r#""admins"."id"::text"#),
+    ])
+}
+
+pub struct CreditAdjustmentDatatable;
+
+#[async_trait]
+impl Datatable for CreditAdjustmentDatatable {
+    type Row = CreditAdjustmentDatatableRow;
+    type Query = ProjectionQuery<CreditAdjustmentDatatableRow>;
+
+    const ID: &'static str = "admin.credit_adjustments";
+
+    fn query(_ctx: &DatatableContext) -> Self::Query {
+        CreditAdjustmentDatatableRow::source(ADJUSTMENTS_TABLE)
+            .join(
+                JoinKind::Inner,
+                TableRef::new(TRANSACTIONS_TABLE),
+                Condition::compare(
+                    Expr::column(ColumnRef::new(ADJUSTMENTS_TABLE, "credit_transaction_id")),
+                    ComparisonOp::Eq,
+                    Expr::column(ColumnRef::new(TRANSACTIONS_TABLE, "id")),
+                ),
+            )
+            .join(
+                JoinKind::Inner,
+                TableRef::new(USERS_TABLE),
+                Condition::compare(
+                    Expr::column(ColumnRef::new(TRANSACTIONS_TABLE, "user_id")),
+                    ComparisonOp::Eq,
+                    Expr::column(ColumnRef::new(USERS_TABLE, "id")),
+                ),
+            )
+            .join(
+                JoinKind::Inner,
+                TableRef::new(ADMINS_TABLE),
+                Condition::compare(
+                    Expr::column(ColumnRef::new(ADJUSTMENTS_TABLE, "admin_id")),
+                    ComparisonOp::Eq,
+                    Expr::column(ColumnRef::new(ADMINS_TABLE, "id")),
+                ),
+            )
+            .select_field(
+                CreditAdjustmentDatatableRow::ID,
+                Expr::raw(r#""admin_credit_adjustments"."id"::text"#),
+            )
+            .select_field(
+                CreditAdjustmentDatatableRow::CREDIT_TRANSACTION_ID,
+                Expr::raw(r#""credit_transactions"."id"::text"#),
+            )
+            .select_field(
+                CreditAdjustmentDatatableRow::USER_ID,
+                Expr::raw(r#""credit_transactions"."user_id"::text"#),
+            )
+            .select_field(CreditAdjustmentDatatableRow::USER_LABEL, user_label_expr())
+            .select_field(
+                CreditAdjustmentDatatableRow::CREDIT_TYPE,
+                ColumnRef::new(TRANSACTIONS_TABLE, "credit_type"),
+            )
+            .select_field(
+                CreditAdjustmentDatatableRow::TRANSACTION_TYPE,
+                ColumnRef::new(TRANSACTIONS_TABLE, "transaction_type"),
+            )
+            .select_field(
+                CreditAdjustmentDatatableRow::AMOUNT,
+                ColumnRef::new(TRANSACTIONS_TABLE, "amount"),
+            )
+            .select_field(
+                CreditAdjustmentDatatableRow::BALANCE_AFTER,
+                ColumnRef::new(TRANSACTIONS_TABLE, "balance_after"),
+            )
+            .select_field(
+                CreditAdjustmentDatatableRow::EXPLANATION_KEY,
+                ColumnRef::new(TRANSACTIONS_TABLE, "explanation_key"),
+            )
+            .select_field(
+                CreditAdjustmentDatatableRow::EXPLANATION_PARAMS_JSON,
+                Expr::raw(r#""credit_transactions"."explanation_params"::text"#),
+            )
+            .select_field(
+                CreditAdjustmentDatatableRow::EXPLANATION_OVERRIDES_JSON,
+                Expr::raw(r#""credit_transactions"."explanation_overrides"::text"#),
+            )
+            .select_field(
+                CreditAdjustmentDatatableRow::ADMIN_ID,
+                Expr::raw(r#""admin_credit_adjustments"."admin_id"::text"#),
+            )
+            .select_field(
+                CreditAdjustmentDatatableRow::ADMIN_LABEL,
+                admin_label_expr(),
+            )
+            .select_field(
+                CreditAdjustmentDatatableRow::REMARK,
+                ColumnRef::new(ADJUSTMENTS_TABLE, "remark"),
+            )
+            .select_field(
+                CreditAdjustmentDatatableRow::RELATED_KEY,
+                Expr::raw(r#""credit_transactions"."related_key"::text"#),
+            )
+            .select_field(
+                CreditAdjustmentDatatableRow::RELATED_TYPE,
+                ColumnRef::new(TRANSACTIONS_TABLE, "related_type"),
+            )
+            .select_field(
+                CreditAdjustmentDatatableRow::CONTEXT_JSON,
+                Expr::raw(r#""credit_transactions"."context"::text"#),
+            )
+            .select_field(
+                CreditAdjustmentDatatableRow::CREATED_AT,
+                ColumnRef::new(ADJUSTMENTS_TABLE, "created_at"),
+            )
+    }
+
+    fn columns() -> Vec<DatatableColumn<Self::Row>> {
+        vec![
+            DatatableColumn::field(CreditAdjustmentDatatableRow::CREATED_AT)
+                .label("admin.credits.columns.created")
+                .sortable()
+                .exportable(),
+            DatatableColumn::field(CreditAdjustmentDatatableRow::USER_LABEL)
+                .label("admin.credits.columns.user")
+                .sortable()
+                .filter_by(user_label_expr())
+                .exportable(),
+            DatatableColumn::field(CreditAdjustmentDatatableRow::CREDIT_TYPE)
+                .label("admin.credits.columns.credit_type")
+                .sortable()
+                .filter_by(ColumnRef::new(TRANSACTIONS_TABLE, "credit_type"))
+                .exportable(),
+            DatatableColumn::field(CreditAdjustmentDatatableRow::AMOUNT)
+                .label("admin.credits.columns.amount")
+                .sortable()
+                .exportable(),
+            DatatableColumn::field(CreditAdjustmentDatatableRow::BALANCE_AFTER)
+                .label("admin.credits.columns.balance_after")
+                .sortable()
+                .exportable(),
+            DatatableColumn::field(CreditAdjustmentDatatableRow::EXPLANATION_KEY)
+                .label("admin.credits.columns.explanation")
+                .exportable(),
+            DatatableColumn::field(CreditAdjustmentDatatableRow::TRANSACTION_TYPE)
+                .label("admin.credits.columns.transaction_type")
+                .sortable()
+                .filter_by(ColumnRef::new(TRANSACTIONS_TABLE, "transaction_type"))
+                .exportable(),
+            DatatableColumn::field(CreditAdjustmentDatatableRow::ADMIN_LABEL)
+                .label("admin.credits.columns.admin")
+                .sortable()
+                .filter_by(admin_label_expr())
+                .exportable(),
+            DatatableColumn::field(CreditAdjustmentDatatableRow::REMARK)
+                .label("admin.credits.columns.remark")
+                .filter_by(ColumnRef::new(ADJUSTMENTS_TABLE, "remark"))
+                .exportable(),
+            DatatableColumn::field(CreditAdjustmentDatatableRow::RELATED_TYPE)
+                .label("admin.credits.columns.related_type")
+                .sortable()
+                .filter_by(ColumnRef::new(TRANSACTIONS_TABLE, "related_type"))
+                .exportable(),
+            DatatableColumn::field(CreditAdjustmentDatatableRow::RELATED_KEY)
+                .label("admin.credits.columns.related_key")
+                .filter_by(Expr::raw(r#""credit_transactions"."related_key"::text"#))
+                .exportable(),
+        ]
+    }
+
+    fn mappings() -> Vec<DatatableMapping<Self::Row>> {
+        vec![
+            DatatableMapping::new(
+                "explanation_key",
+                |row: &CreditAdjustmentDatatableRow, ctx| {
+                    DatatableValue::string(explanation_text(row, ctx))
+                },
+            ),
+            DatatableMapping::new(
+                "explanation_text",
+                |row: &CreditAdjustmentDatatableRow, ctx| {
+                    DatatableValue::string(explanation_text(row, ctx))
+                },
+            ),
+        ]
+    }
+
+    fn default_sort() -> Vec<DatatableSort<Self::Row>> {
+        vec![DatatableSort::desc(
+            CreditAdjustmentDatatableRow::CREATED_AT,
+        )]
+    }
+
+    async fn available_filters(_ctx: &DatatableContext) -> Result<Vec<DatatableFilterRow>> {
+        let credit_type_options = CreditType::all()
+            .into_iter()
+            .map(|credit_type| {
+                DatatableFilterOption::new(
+                    credit_type.as_key().to_string(),
+                    credit_type.label_key(),
+                )
+            })
+            .collect::<Vec<_>>();
+        let transaction_type_options = CreditTransactionType::all()
+            .into_iter()
+            .map(|transaction_type| {
+                DatatableFilterOption::new(
+                    transaction_type.as_key().to_string(),
+                    transaction_type.label_key(),
+                )
+            })
+            .collect::<Vec<_>>();
+
+        Ok(vec![
+            DatatableFilterRow::pair(
+                DatatableFilterField::text(
+                    "user_label|admin_label|transaction_type|remark|related_type|related_key",
+                    "Search",
+                )
+                .placeholder("admin.credits.search_placeholder"),
+                DatatableFilterField::select("credit_type", "admin.credits.columns.credit_type")
+                    .options(credit_type_options),
+            ),
+            DatatableFilterRow::pair(
+                DatatableFilterField::select(
+                    "transaction_type",
+                    "admin.credits.columns.transaction_type",
+                )
+                .options(transaction_type_options),
+                DatatableFilterField::text(
+                    "related_type|related_key",
+                    "admin.credits.columns.trace",
+                )
+                .placeholder("admin.credits.trace_search_placeholder"),
+            ),
+        ])
+    }
+}
+
+fn parse_json_text(value: &str) -> Value {
+    serde_json::from_str(value).unwrap_or_else(|_| Value::Object(Default::default()))
+}
+
+fn explanation_text(row: &CreditAdjustmentDatatableRow, ctx: &DatatableContext) -> String {
+    let locale = ctx.locale.unwrap_or("en");
+    let explanation_params = parse_json_text(&row.explanation_params_json);
+    let explanation_overrides = parse_json_text(&row.explanation_overrides_json);
+
+    credit_service::render_explanation(
+        ctx.app,
+        locale,
+        &row.explanation_key,
+        &explanation_params,
+        &explanation_overrides,
+    )
+}

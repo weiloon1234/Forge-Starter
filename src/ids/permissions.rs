@@ -27,6 +27,10 @@ pub enum Permission {
     PagesRead,
     #[forge(key = "pages.manage")]
     PagesManage,
+    #[forge(key = "credits.read")]
+    CreditsRead,
+    #[forge(key = "credits.manage")]
+    CreditsManage,
     #[forge(key = "logs.read")]
     LogsRead,
     #[forge(key = "logs.manage")]
@@ -34,7 +38,7 @@ pub enum Permission {
 }
 
 impl Permission {
-    pub const fn all() -> [Self; 14] {
+    pub const fn all() -> [Self; 16] {
         [
             Self::ExportsRead,
             Self::ObservabilityView,
@@ -48,6 +52,8 @@ impl Permission {
             Self::SettingsManage,
             Self::PagesRead,
             Self::PagesManage,
+            Self::CreditsRead,
+            Self::CreditsManage,
             Self::LogsRead,
             Self::LogsManage,
         ]
@@ -67,6 +73,8 @@ impl Permission {
             Self::SettingsManage => "settings.manage",
             Self::PagesRead => "pages.read",
             Self::PagesManage => "pages.manage",
+            Self::CreditsRead => "credits.read",
+            Self::CreditsManage => "credits.manage",
             Self::LogsRead => "logs.read",
             Self::LogsManage => "logs.manage",
         }
@@ -81,6 +89,7 @@ impl Permission {
             Self::CountriesRead | Self::CountriesManage => "countries",
             Self::SettingsRead | Self::SettingsManage => "settings",
             Self::PagesRead | Self::PagesManage => "pages",
+            Self::CreditsRead | Self::CreditsManage => "credits",
             Self::LogsRead | Self::LogsManage => "logs",
         }
     }
@@ -94,12 +103,14 @@ impl Permission {
             | Self::CountriesRead
             | Self::SettingsRead
             | Self::PagesRead
+            | Self::CreditsRead
             | Self::LogsRead => "read",
             Self::AdminsManage
             | Self::UsersManage
             | Self::CountriesManage
             | Self::SettingsManage
             | Self::PagesManage
+            | Self::CreditsManage
             | Self::LogsManage => "manage",
         }
     }
@@ -111,6 +122,7 @@ impl Permission {
             Self::CountriesManage => Some(Self::CountriesRead),
             Self::SettingsManage => Some(Self::SettingsRead),
             Self::PagesManage => Some(Self::PagesRead),
+            Self::CreditsManage => Some(Self::CreditsRead),
             Self::LogsManage => Some(Self::LogsRead),
             _ => None,
         }
