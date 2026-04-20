@@ -1161,7 +1161,7 @@ checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
 [[package]]
 name = "forge"
 version = "0.1.0"
-source = "git+https://github.com/weiloon1234/Forge.git?branch=main#2c1160a338cf0fe0bf71bc2a80cd89dfe0e509cb"
+source = "git+https://github.com/weiloon1234/Forge.git?branch=main#7b79eb5a2870976eae88e8bc6fcf2dd1fb94645e"
 dependencies = [
  "aes-gcm",
  "ammonia",
@@ -1211,12 +1211,12 @@ dependencies = [
 [[package]]
 name = "forge-build"
 version = "0.1.0"
-source = "git+https://github.com/weiloon1234/Forge.git?branch=main#2c1160a338cf0fe0bf71bc2a80cd89dfe0e509cb"
+source = "git+https://github.com/weiloon1234/Forge.git?branch=main#7b79eb5a2870976eae88e8bc6fcf2dd1fb94645e"
 
 [[package]]
 name = "forge-macros"
 version = "0.1.0"
-source = "git+https://github.com/weiloon1234/Forge.git?branch=main#2c1160a338cf0fe0bf71bc2a80cd89dfe0e509cb"
+source = "git+https://github.com/weiloon1234/Forge.git?branch=main#7b79eb5a2870976eae88e8bc6fcf2dd1fb94645e"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -1,9 +1,9 @@
 use std::collections::BTreeMap;
 
+use crate::domain::enums::enum_key_string;
 use crate::domain::enums::{AdminType, CreditAdjustmentOperation, CreditType};
 use crate::ids;
 use crate::ids::permissions::Permission;
-use crate::types::app_enum::enum_key_string;
 use async_trait::async_trait;
 use forge::countries::CountryStatus;
 use forge::prelude::*;

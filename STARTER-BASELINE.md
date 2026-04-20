@@ -1,6 +1,6 @@
-# Forge Starter Consistency Baseline
+# Consistency Baseline
 
-This starter is the team reference implementation for Forge-first Rust and system-first React/TypeScript. Keep it strict, teachable, and boring in the right places.
+Baseline conventions for Forge-first Rust and system-first React/TypeScript. Keep it strict and consistent.
 
 ## Required Verification
 
@@ -12,11 +12,11 @@ Use `make lint:fix` locally when you want Rust formatting plus Biome fixes.
 
 ## Auth Baseline
 
-- Admin and user portals both use token auth in this starter.
+- Admin and user portals both use token auth.
 - Frontend auth should go through `createAuth({ mode: "token", ... })`.
 - Refresh uses Forge's shared `RefreshTokenRequest` DTO.
 - WebSocket token exchange uses Forge's shared `WsTokenResponse` DTO.
-- Forge observability stays enabled at `/_forge/*`, but the starter locks it to authenticated developer admins only by default.
+- Forge observability stays enabled at `/_forge/*`, but is locked to authenticated developer admins only by default.
 - WebSocket observability payloads stay redacted by default via `observability.websocket.include_payloads = false`.
 - If a project wants broader observability access, relax the authorizer intentionally in `src/bootstrap/http.rs`.
 
@@ -55,7 +55,7 @@ Use `make lint:fix` locally when you want Rust formatting plus Biome fixes.
 - `.vscode/settings.json` configures Biome formatting, rustfmt, and rust-analyzer clippy checks on save.
 - `.claude/settings.json` runs the repo formatter hook after Claude Code file edits.
 - `opencode.json` configures Rust and React/TypeScript formatters for OpenCode.
-- `.codex/config.toml` currently provides project-doc fallback for Codex. This starter does not have a Codex-specific formatter hook configured yet.
+- `.codex/config.toml` currently provides project-doc fallback for Codex. A Codex-specific formatter hook is not configured yet.
 
 ## Docs To Keep In Sync
 
@@ -67,4 +67,4 @@ Use `make lint:fix` locally when you want Rust formatting plus Biome fixes.
 
 ## Forge Follow-Ups
 
-Forward framework-level cleanup items from [FORGE-FOLLOW-UPS.md](FORGE-FOLLOW-UPS.md).
+Forward framework-level cleanup items from [docs/forge-internals/FORGE-FOLLOW-UPS.md](docs/forge-internals/FORGE-FOLLOW-UPS.md).

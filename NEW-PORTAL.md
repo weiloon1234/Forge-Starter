@@ -34,7 +34,7 @@ server: {
 ## 4. Update index.html
 
 ```html
-<title>Merchant Portal — Forge Starter</title>
+<title>Merchant Portal</title>
 ```
 
 ## 5. Register in frontend/tsconfig.json
@@ -63,7 +63,7 @@ See `CLAUDE.md` > "Adding a new portal" for the full backend checklist:
 
 ## 7. Auth baseline
 
-This starter uses token auth for every portal. Keep the new portal aligned:
+Token auth is used for every portal. Keep the new portal aligned:
 
 - `frontend/merchant/src/auth.ts` should use `createAuth({ mode: "token", ... })`
 - refresh endpoints should use the shared `RefreshTokenRequest` shape

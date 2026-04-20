@@ -3,11 +3,10 @@ use std::net::SocketAddr;
 use axum::http::StatusCode;
 use forge::prelude::*;
 use forge_starter::bootstrap::{cli, http};
-use forge_starter::domain::enums::AdminType;
+use forge_starter::domain::enums::{enum_key_string, AdminType};
 use forge_starter::domain::models::Admin;
 use forge_starter::domain::services::admin_service;
 use forge_starter::ids::permissions::Permission;
-use forge_starter::types::app_enum::enum_key_string;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 

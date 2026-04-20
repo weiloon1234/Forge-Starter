@@ -1,7 +1,7 @@
 # Admin Permission System — Design
 
 **Date:** 2026-04-18
-**Status:** Implemented in starter
+**Status:** Implemented
 **Scope:** Admin portal only
 
 ## Goal
@@ -50,7 +50,7 @@ Derived rules:
 
 Format: dot-delimited `<resource>.<action>`.
 
-Implementation note for the current starter: Forge route authorization still checks exact permission IDs on the resolved actor. To keep the app behavior aligned with the desired `manage -> read` implication and bypass tiers, the starter expands permissions explicitly when issuing and syncing admin tokens:
+Implementation note: Forge route authorization still checks exact permission IDs on the resolved actor. To keep the app behavior aligned with the desired `manage -> read` implication and bypass tiers, permissions are expanded explicitly when issuing and syncing admin tokens:
 - `resource.manage` is expanded to include `resource.read`
 - `SuperAdmin` / `Developer` tokens receive the full registered permission catalogue
 
@@ -116,7 +116,7 @@ After running `make types`, the frontend imports `Permission` as a typed string-
 
 ### Effective Abilities
 
-Admin abilities are stored on issued tokens and then loaded by the normal auth middleware on each request. The starter resolves abilities like this when issuing login / websocket tokens and when syncing active admin tokens after permission changes:
+Admin abilities are stored on issued tokens and then loaded by the normal auth middleware on each request. Abilities are resolved like this when issuing login / websocket tokens and when syncing active admin tokens after permission changes:
 
 ```
 if admin.admin_type in { SuperAdmin, Developer } → all registered permissions
@@ -198,7 +198,7 @@ pub struct Admin {
 
 Two enforcement layers:
 
-- **Token abilities:** auth reads explicit permissions from the token row. The starter writes expanded abilities at issue time and syncs active token rows after admin updates.
+- **Token abilities:** auth reads explicit permissions from the token row. Expanded abilities are written at issue time and active token rows are synced after admin updates.
 - **Service layer (tier hierarchy):** needs both actor and target rows — can only run after target is loaded. Lives in `domain/services/admin_service.rs`.
 
 ## New Files
@@ -248,7 +248,7 @@ locales/{en,zh}/admin.json                        # modified: add error messages
 
 ### Token ability resolution
 
-The starter does not add a separate admin-abilities HTTP middleware. Instead:
+A separate admin-abilities HTTP middleware is not added. Instead:
 
 - admin login issues token pairs with `admin_service::effective_permission_keys(&admin)`
 - admin websocket token exchange does the same
@@ -277,7 +277,7 @@ All error messages go through `t!(i18n, "admin.errors.…")`.
 
 ### Route handlers — `src/portals/admin/admin_routes.rs`
 
-Thin per starter convention. Example:
+Thin per convention. Example:
 
 ```rust
 pub async fn store(

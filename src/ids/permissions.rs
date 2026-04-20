@@ -139,7 +139,7 @@ mod tests {
 
     #[test]
     fn variants_include_observability_view() {
-        assert!(crate::types::app_enum::enum_variants::<Permission>()
+        assert!(crate::domain::enums::enum_variants::<Permission>()
             .contains(&Permission::ObservabilityView));
     }
 }

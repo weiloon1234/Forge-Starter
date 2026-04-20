@@ -1,12 +1,12 @@
 ## What This Is
 
-A Forge framework starter — multi-portal Rust backend + React frontends. Single binary, 4 runtime processes (HTTP, Worker, Scheduler, WebSocket). Forge handles infrastructure; app code stays in `src/domain/` and `src/portals/`.
+A Forge framework multi-portal Rust backend with React frontends. Single binary, 4 runtime processes (HTTP, Worker, Scheduler, WebSocket). Forge handles infrastructure; app code stays in `src/domain/` and `src/portals/`.
 
-## Starter Baseline
+## Baseline
 
-Read `STARTER-BASELINE.md` first before extending the starter.
+Read `STARTER-BASELINE.md` first before making structural changes.
 
-- Admin and user portals are both token-auth in this starter.
+- Admin and user portals both use token auth.
 - Required verification commands: `make check`, `make lint`, `make types`.
 - Simple JSON DTOs should prefer `#[derive(Validate)]` + `forge::ApiSchema`; runtime-driven or conditional rules can stay manual.
 - JSON-only handlers should use `JsonValidated<T>`.
@@ -74,6 +74,7 @@ src/
 ├── commands/                # CLI commands
 ├── schedules/               # Cron/interval tasks
 ├── realtime/                # WebSocket channels
+├── types/                   # App-level shared response DTOs (StatusResponse, ApiError, FieldError)
 └── validation/              # Custom validation rules
 ```
 
@@ -208,6 +209,7 @@ Translation files in `locales/` are shared between Rust backend and React fronte
 7. **Always parameterize.** Write `t("welcome_user", { name })` not `` `${t("welcome")} ${name}` ``. Parameters go inside `{{}}` in the JSON.
 8. **Group parameterized translations together** in the JSON file. Keep related keys in nearby lines for context.
 9. **Backend error messages MUST use translation keys.** Any `Error::http(...)`, `Error::not_found(...)`, validation message, or API response text that the user will see must use `t!(i18n, "key")`, not a raw English string. The frontend displays these in toasts and error UI — they must be translatable.
+10. **Key style: English-as-key is the default.** Static user-facing strings use the English display text itself as the key: `t("Save")`, `t("Password changed")`, `t("Welcome")`. Skip the English entry when key == display (see rules 1–2); non-English locales translate to the actual word. Namespaced keys (`admin.credits.fields.user`, `enums.AdminType.Developer`) are reserved for **convention-driven translations** — field labels referenced by AppEnum validators, enum variant display names, and other programmatically-generated keys where the key is a structural path, not user-visible text. Coded keys (`"greeting": "Hello, {{name}}!"`) are for parameterized strings where the key alone is not readable.
 
 **Example:**
 ```json

@@ -2,12 +2,11 @@ use std::collections::BTreeSet;
 
 use forge::prelude::*;
 
-use crate::domain::enums::AdminType;
+use crate::domain::enums::{enum_key_string, enum_variants, AdminType};
 use crate::domain::models::Admin;
 use crate::ids::guards::Guard;
 use crate::ids::permissions::Permission;
 use crate::portals::admin::requests::{CreateAdminRequest, UpdateAdminRequest};
-use crate::types::app_enum::{enum_key_string, enum_variants};
 
 fn parse_permissions(values: &[String]) -> Vec<Permission> {
     values

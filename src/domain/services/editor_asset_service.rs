@@ -85,12 +85,11 @@ async fn public_url(app: &AppContext, path: &str) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::upload_directory;
-    use crate::domain::enums::AdminType;
+    use crate::domain::enums::{enum_key_string, AdminType};
     use crate::domain::models::Admin;
     use crate::domain::services::admin_service;
     use crate::ids::permissions::Permission;
     use crate::ids::upload_folders::EditorUploadFolder;
-    use crate::types::app_enum::enum_key_string;
     use forge::prelude::*;
 
     fn admin_fixture(admin_type: AdminType, permissions: Vec<Permission>) -> Admin {

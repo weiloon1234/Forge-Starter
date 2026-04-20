@@ -1,36 +1,56 @@
 ## Route Rules
 
-Every route MUST use `route_named_with_options` with:
-
-1. **Named route** — `"{portal}.{resource}.{action}"` (e.g., `admin.users.index`)
-2. **OpenAPI doc** — `.document(RouteDoc::new().{method}().summary("...").tag("..."))` on every route
-3. **Request DTO** — `.request::<T>()` on POST/PUT/PATCH routes (the struct must derive `ApiSchema`)
-4. **Response DTO** — `.response::<T>(status)` where the response shape is known
-5. **Guard** — `.guard(Guard::Admin)` / `.guard(Guard::User)` on protected routes
-6. **Permission** — `.permission(Permission::X)` where access control is needed
+Routes live in `portals/{portal}/mod.rs` using Forge's scope DSL. Group defaults (`name_prefix`, `tag`, `guard`, `permission`) cascade to routes inside the scope; individual routes can override with their own `.guard()`, `.permission()`, or `.public()`.
 
 ```rust
-// Correct
-r.route_named_with_options(
-    "admin.users.index",
-    "/users",
-    get(user_routes::index),
-    HttpRouteOptions::new()
-        .guard(Guard::Admin)
-        .permission(Permission::UsersManage)
-        .document(RouteDoc::new()
-            .get()
-            .summary("List users (paginated)")
-            .tag("admin:users")),
-);
+r.api_version(1, |r| {
+    r.scope("/admin", |admin| {
+        admin.name_prefix("admin");
 
-// WRONG — never do this
-r.route("/users", get(user_routes::index));
+        admin.scope("/users", |users| {
+            users
+                .name_prefix("users")
+                .tag("admin:users")
+                .guard(Guard::Admin)
+                .permission(Permission::UsersRead);
+
+            users.get("", "index", user_routes::index, |route| {
+                route.summary("List users (paginated)");
+            });
+
+            users.post("", "store", user_routes::store, |route| {
+                route.permission(Permission::UsersManage);
+                route.summary("Create user");
+                route.request::<CreateUserRequest>();
+                route.response::<UserResponse>(201);
+            });
+
+            Ok(())
+        })?;
+
+        Ok(())
+    })?;
+    Ok(())
+})?;
 ```
+
+Every route MUST have:
+
+1. **Name** — second argument, relative. Scope composes: `{name_prefix}.{route_name}` → `admin.users.index`.
+2. **Summary** — `route.summary("...")` — shows in OpenAPI docs.
+3. **Request DTO** — `route.request::<T>()` on POST/PUT/PATCH routes (struct derives `ApiSchema`).
+4. **Response DTO** — `route.response::<T>(status)` where the response shape is known.
+5. **Access** — inherited from scope (`.guard(...)`, `.permission(...)`) or declared on the route (`.public()`, `.permission(...)`).
 
 ## Route Naming Convention
 
-Format: `{portal}.{resource}.{action}`
+Format: `{portal}.{resource}.{action}` — produced automatically by scope composition.
+
+- Scope `/admin` sets `name_prefix("admin")`
+- Nested scope `/users` sets `name_prefix("users")`
+- Route `users.get("", "index", ...)` → full name `admin.users.index`
+
+Examples:
 
 ```
 admin.auth.login
@@ -38,9 +58,9 @@ admin.auth.logout
 admin.auth.me
 admin.users.index
 admin.users.show
-admin.users.store
-admin.users.update
-admin.users.destroy
+admin.admins.store
+admin.admins.update
+admin.admins.destroy
 admin.datatables.query
 admin.datatables.download
 user.auth.login
@@ -51,7 +71,7 @@ user.me.update
 
 ## Tag Convention
 
-Format: `{portal}:{resource}`
+Format: `{portal}:{resource}` — set once per scope with `.tag("admin:users")`.
 
 ```
 admin:auth
@@ -65,7 +85,7 @@ user:profile
 
 ```
 portals/{portal}/
-├── mod.rs              # Route registration (api_version + group)
+├── mod.rs              # Route registration (api_version + nested scopes)
 ├── auth_routes.rs      # Auth handlers (login, logout, me)
 ├── {resource}_routes.rs  # Resource handlers (index, show, store, update, destroy)
 ├── requests.rs         # Request DTOs (Deserialize + RequestValidator + ApiSchema + TS)
