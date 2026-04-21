@@ -81,6 +81,7 @@ export function UsersPage() {
           user: userLabel,
           credit_type: creditTypeLabel,
         }),
+        containerClassName: "sf-modal-container--wide",
       },
     );
   };

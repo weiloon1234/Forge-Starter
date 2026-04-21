@@ -9,6 +9,7 @@ export type ModalProps = object;
 export interface ModalOptions {
   title?: ReactNode;
   onClose?: () => void;
+  containerClassName?: string;
 }
 
 export interface ModalEntry {
@@ -17,6 +18,7 @@ export interface ModalEntry {
   props?: ModalProps;
   title?: ReactNode;
   onClose?: () => void;
+  containerClassName?: string;
 }
 
 export interface ModalState {

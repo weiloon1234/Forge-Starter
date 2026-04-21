@@ -37,6 +37,8 @@ interface Props<T> extends DataTableProps<T> {
   api: AxiosInstance;
 }
 
+const EMPTY_FILTERS: DataTableFilter[] = [];
+
 function formatDateFilterValue(date: Date | null | undefined): string {
   return localDateToDateString(date) ?? "";
 }
@@ -133,7 +135,7 @@ export function DataTable<T>({
   title,
   subtitle,
   columns,
-  baseFilters = [],
+  baseFilters = EMPTY_FILTERS,
   downloadUrl,
   refreshInterval,
   defaultPerPage = 20,
@@ -506,7 +508,10 @@ export function DataTable<T>({
       {meta && meta.filters.length > 0 && (
         <div className="sf-datatable-filters">
           {meta.filters.map((row) => (
-            <div key={getFilterRowKey(row)} className="sf-datatable-filter-row">
+            <div
+              key={getFilterRowKey(row)}
+              className={`sf-datatable-filter-row${row.fields.length === 1 ? " sf-datatable-filter-row--single" : ""}`}
+            >
               {row.fields.map(renderFilterField)}
             </div>
           ))}

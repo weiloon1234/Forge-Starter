@@ -1,7 +1,12 @@
 import { Button } from "@shared/components";
-import { getLocaleLabel, localeStore, useLocale } from "@shared/i18n";
+import {
+  getLocaleFlag,
+  getLocaleLabel,
+  localeStore,
+  useLocale,
+} from "@shared/i18n";
 import { modal } from "@shared/modal";
-import { Globe, Lock, LogOut, User } from "lucide-react";
+import { Lock, LogOut, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "@/api";
 import { auth } from "@/auth";
@@ -14,8 +19,8 @@ interface AccountDropdownProps {
 
 export function AccountDropdown({ onClose }: AccountDropdownProps) {
   const { t } = useTranslation();
-  const { locale, available } = useLocale();
   const { user } = auth.useAuth();
+  const { locale, available } = useLocale();
 
   const openProfile = () => {
     onClose();
@@ -36,32 +41,17 @@ export function AccountDropdown({ onClose }: AccountDropdownProps) {
     });
   };
 
+  const selectLocale = (code: string) => {
+    if (code === locale) {
+      return;
+    }
+
+    localeStore.setLocale(code);
+    api.put("/profile/locale", { locale: code }).catch(() => {});
+  };
+
   return (
     <div className="sf-account-dropdown">
-      <div className="sf-account-section">
-        <div className="sf-account-locale">
-          <Globe size={16} className="sf-account-item-icon" />
-          <span className="sf-account-locale-label">{t("Language")}</span>
-          <div className="sf-account-locale-switcher">
-            {available.map((code) => (
-              <Button
-                key={code}
-                type="button"
-                unstyled
-                className={`sf-account-locale-btn ${locale === code ? "sf-account-locale-btn--active" : ""}`}
-                onClick={() => {
-                  if (code === locale) return;
-                  localeStore.setLocale(code);
-                  api.put("/profile/locale", { locale: code }).catch(() => {});
-                }}
-              >
-                {getLocaleLabel(code, t)}
-              </Button>
-            ))}
-          </div>
-        </div>
-      </div>
-
       <div className="sf-account-section">
         <Button
           type="button"
@@ -81,6 +71,35 @@ export function AccountDropdown({ onClose }: AccountDropdownProps) {
           <Lock size={16} className="sf-account-item-icon" />
           <span>{t("Account Security")}</span>
         </Button>
+      </div>
+
+      <div className="sf-account-section sf-account-section--locale">
+        <div className="sf-account-locale-selector">
+          {available.map((code) => {
+            const label = getLocaleLabel(code, t);
+            const selected = code === locale;
+
+            return (
+              <Button
+                key={code}
+                type="button"
+                unstyled
+                className={`sf-account-locale-pill${selected ? " sf-account-locale-pill--active" : ""}`}
+                onClick={() => selectLocale(code)}
+                title={label}
+                ariaLabel={label}
+              >
+                <span
+                  className="sf-account-locale-pill-flag"
+                  aria-hidden="true"
+                >
+                  {getLocaleFlag(code)}
+                </span>
+                <span className="sf-account-locale-pill-label">{label}</span>
+              </Button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="sf-account-section sf-account-section--last">

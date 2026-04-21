@@ -1,14 +1,13 @@
 import { Button, Input } from "@shared/components";
 import { useForm } from "@shared/hooks";
-import { getLocaleLabel, localeStore, useLocale } from "@shared/i18n";
 import type { AdminLoginRequest } from "@shared/types/generated";
 import { Shield } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { auth } from "@/auth";
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 
 export function LoginPage() {
   const { t } = useTranslation();
-  const { locale, available } = useLocale();
 
   const form = useForm<AdminLoginRequest>({
     initialValues: { username: "", password: "" },
@@ -37,19 +36,7 @@ export function LoginPage() {
             </div>
             <span className="sf-login-mobile-title">{t("Admin Portal")}</span>
           </div>
-          <div className="sf-login-locale">
-            {available.map((code) => (
-              <Button
-                key={code}
-                type="button"
-                unstyled
-                className={`sf-account-locale-btn ${locale === code ? "sf-account-locale-btn--active" : ""}`}
-                onClick={() => localeStore.setLocale(code)}
-              >
-                {getLocaleLabel(code, t)}
-              </Button>
-            ))}
-          </div>
+          <LocaleSwitcher className="sf-login-locale" />
         </div>
 
         <div className="sf-login-card">

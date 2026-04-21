@@ -142,7 +142,7 @@ impl Datatable for IntroducerChangeDatatable {
 
     async fn available_filters(_ctx: &DatatableContext) -> Result<Vec<DatatableFilterRow>> {
         Ok(vec![
-            DatatableFilterRow::pair(
+            DatatableFilterRow::single(
                 DatatableFilterField::text_search_fields(
                     "search",
                     "Search",
@@ -162,34 +162,23 @@ impl Datatable for IntroducerChangeDatatable {
                     ],
                 )
                 .placeholder("admin.introducer_changes.search_placeholder"),
-                DatatableFilterField::text_like(
-                    "from_introducer_username",
-                    "admin.introducer_changes.filters.from_introducer",
-                )
-                .placeholder("admin.introducer_changes.filters.from_introducer"),
             ),
             DatatableFilterRow::pair(
                 DatatableFilterField::text_like(
-                    "to_introducer_username",
-                    "admin.introducer_changes.filters.to_introducer",
+                    "from_introducer_username",
+                    "From introducer username",
                 )
-                .placeholder("admin.introducer_changes.filters.to_introducer"),
-                DatatableFilterField::date_from(
-                    "created_from",
-                    "admin.introducer_changes.filters.created_from",
-                )
-                .bind(
+                .placeholder("From introducer username"),
+                DatatableFilterField::text_like("to_introducer_username", "To introducer username")
+                    .placeholder("To introducer username"),
+            ),
+            DatatableFilterRow::pair(
+                DatatableFilterField::date_from("created_from", "Created from").bind(
                     IntroducerChangeDatatableRow::CREATED_AT.alias(),
                     DatatableFilterOp::DateFrom,
                     DatatableFilterValueKind::Date,
                 ),
-            ),
-            DatatableFilterRow::single(
-                DatatableFilterField::date_to(
-                    "created_to",
-                    "admin.introducer_changes.filters.created_to",
-                )
-                .bind(
+                DatatableFilterField::date_to("created_to", "Created to").bind(
                     IntroducerChangeDatatableRow::CREATED_AT.alias(),
                     DatatableFilterOp::DateTo,
                     DatatableFilterValueKind::Date,

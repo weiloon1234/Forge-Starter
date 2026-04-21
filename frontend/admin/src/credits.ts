@@ -32,9 +32,6 @@ export interface CreditAdjustmentFormValues extends Record<string, unknown> {
   operation: CreditAdjustmentOperation;
   amount: string;
   remark: string;
-  related_key: string;
-  related_type: string;
-  context_json: string;
 }
 
 export function explanationOverrideFieldKey(locale: string): string {
@@ -50,9 +47,6 @@ export function emptyCreditAdjustmentFormValues(
     operation: "add",
     amount: "",
     remark: "",
-    related_key: "",
-    related_type: "",
-    context_json: "{}",
   };
 
   for (const locale of locales) {
@@ -152,8 +146,6 @@ export function buildCreateCreditAdjustmentPayload(
   values: CreditAdjustmentFormValues,
   locales: string[],
 ): CreateAdminCreditAdjustmentRequest {
-  const contextJson = String(values.context_json ?? "").trim();
-  const context = contextJson === "" ? {} : parseJsonObject(contextJson);
   const explanationOverrides = Object.fromEntries(
     locales
       .map((locale) => [
@@ -170,9 +162,9 @@ export function buildCreateCreditAdjustmentPayload(
     amount: String(values.amount ?? "").trim(),
     explanation_overrides: explanationOverrides,
     remark: optionalTrimmed(values.remark) ?? null,
-    related_key: optionalTrimmed(values.related_key) ?? null,
-    related_type: optionalTrimmed(values.related_type) ?? null,
-    context,
+    related_key: null,
+    related_type: null,
+    context: {},
   };
 }
 
@@ -199,14 +191,6 @@ export function operationValue(
 function optionalTrimmed(value: unknown): string | undefined {
   const trimmed = String(value ?? "").trim();
   return trimmed === "" ? undefined : trimmed;
-}
-
-function parseJsonObject(input: string): Record<string, unknown> {
-  const parsed = JSON.parse(input) as unknown;
-  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    throw new Error("invalid_context");
-  }
-  return parsed as Record<string, unknown>;
 }
 
 function parseFixedDecimal(value: string): bigint | null {

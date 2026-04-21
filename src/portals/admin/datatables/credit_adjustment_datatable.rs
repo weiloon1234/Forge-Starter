@@ -2,10 +2,8 @@ use async_trait::async_trait;
 use forge::datatable::column::DatatableFieldRef;
 use forge::prelude::*;
 use serde::Serialize;
-use serde_json::Value;
 
 use crate::domain::enums::{CreditTransactionType, CreditType};
-use crate::domain::services::credit_service;
 
 const ADJUSTMENTS_TABLE: &str = "admin_credit_adjustments";
 const TRANSACTIONS_TABLE: &str = "credit_transactions";
@@ -21,16 +19,11 @@ pub struct CreditAdjustmentDatatableRow {
     credit_type: String,
     transaction_type: String,
     amount: Numeric,
-    balance_after: Numeric,
-    explanation_key: String,
-    explanation_params_json: String,
-    explanation_overrides_json: String,
     admin_id: String,
     admin_label: String,
     remark: Option<String>,
     related_key: Option<String>,
     related_type: Option<String>,
-    context_json: String,
     created_at: DateTime,
 }
 
@@ -116,22 +109,6 @@ impl Datatable for CreditAdjustmentDatatable {
                 ColumnRef::new(TRANSACTIONS_TABLE, "amount"),
             )
             .select_field(
-                CreditAdjustmentDatatableRow::BALANCE_AFTER,
-                ColumnRef::new(TRANSACTIONS_TABLE, "balance_after"),
-            )
-            .select_field(
-                CreditAdjustmentDatatableRow::EXPLANATION_KEY,
-                ColumnRef::new(TRANSACTIONS_TABLE, "explanation_key"),
-            )
-            .select_field(
-                CreditAdjustmentDatatableRow::EXPLANATION_PARAMS_JSON,
-                Expr::raw(r#""credit_transactions"."explanation_params"::text"#),
-            )
-            .select_field(
-                CreditAdjustmentDatatableRow::EXPLANATION_OVERRIDES_JSON,
-                Expr::raw(r#""credit_transactions"."explanation_overrides"::text"#),
-            )
-            .select_field(
                 CreditAdjustmentDatatableRow::ADMIN_ID,
                 Expr::raw(r#""admin_credit_adjustments"."admin_id"::text"#),
             )
@@ -152,10 +129,6 @@ impl Datatable for CreditAdjustmentDatatable {
                 ColumnRef::new(TRANSACTIONS_TABLE, "related_type"),
             )
             .select_field(
-                CreditAdjustmentDatatableRow::CONTEXT_JSON,
-                Expr::raw(r#""credit_transactions"."context"::text"#),
-            )
-            .select_field(
                 CreditAdjustmentDatatableRow::CREATED_AT,
                 ColumnRef::new(ADJUSTMENTS_TABLE, "created_at"),
             )
@@ -163,10 +136,6 @@ impl Datatable for CreditAdjustmentDatatable {
 
     fn columns() -> Vec<DatatableColumn<Self::Row>> {
         vec![
-            DatatableColumn::field(CreditAdjustmentDatatableRow::CREATED_AT)
-                .label("admin.credits.columns.created")
-                .sortable()
-                .exportable(),
             DatatableColumn::field(CreditAdjustmentDatatableRow::USER_LABEL)
                 .label("admin.credits.columns.user")
                 .sortable()
@@ -181,53 +150,29 @@ impl Datatable for CreditAdjustmentDatatable {
                 .label("admin.credits.columns.amount")
                 .sortable()
                 .exportable(),
-            DatatableColumn::field(CreditAdjustmentDatatableRow::BALANCE_AFTER)
-                .label("admin.credits.columns.balance_after")
+            DatatableColumn::field(CreditAdjustmentDatatableRow::ADMIN_LABEL)
+                .label("admin.credits.columns.admin")
                 .sortable()
-                .exportable(),
-            DatatableColumn::field(CreditAdjustmentDatatableRow::EXPLANATION_KEY)
-                .label("admin.credits.columns.explanation")
+                .filter_by(admin_label_expr())
                 .exportable(),
             DatatableColumn::field(CreditAdjustmentDatatableRow::TRANSACTION_TYPE)
                 .label("admin.credits.columns.transaction_type")
                 .sortable()
                 .filter_by(ColumnRef::new(TRANSACTIONS_TABLE, "transaction_type"))
                 .exportable(),
-            DatatableColumn::field(CreditAdjustmentDatatableRow::ADMIN_LABEL)
-                .label("admin.credits.columns.admin")
-                .sortable()
-                .filter_by(admin_label_expr())
-                .exportable(),
             DatatableColumn::field(CreditAdjustmentDatatableRow::REMARK)
                 .label("admin.credits.columns.remark")
                 .filter_by(ColumnRef::new(ADJUSTMENTS_TABLE, "remark"))
                 .exportable(),
-            DatatableColumn::field(CreditAdjustmentDatatableRow::RELATED_TYPE)
-                .label("admin.credits.columns.related_type")
+            DatatableColumn::field(CreditAdjustmentDatatableRow::CREATED_AT)
+                .label("admin.credits.columns.created")
                 .sortable()
-                .filter_by(ColumnRef::new(TRANSACTIONS_TABLE, "related_type"))
+                .filter_by(ColumnRef::new(ADJUSTMENTS_TABLE, "created_at"))
                 .exportable(),
+            DatatableColumn::field(CreditAdjustmentDatatableRow::RELATED_TYPE)
+                .filter_by(ColumnRef::new(TRANSACTIONS_TABLE, "related_type")),
             DatatableColumn::field(CreditAdjustmentDatatableRow::RELATED_KEY)
-                .label("admin.credits.columns.related_key")
-                .filter_by(Expr::raw(r#""credit_transactions"."related_key"::text"#))
-                .exportable(),
-        ]
-    }
-
-    fn mappings() -> Vec<DatatableMapping<Self::Row>> {
-        vec![
-            DatatableMapping::new(
-                "explanation_key",
-                |row: &CreditAdjustmentDatatableRow, ctx| {
-                    DatatableValue::string(explanation_text(row, ctx))
-                },
-            ),
-            DatatableMapping::new(
-                "explanation_text",
-                |row: &CreditAdjustmentDatatableRow, ctx| {
-                    DatatableValue::string(explanation_text(row, ctx))
-                },
-            ),
+                .filter_by(Expr::raw(r#""credit_transactions"."related_key"::text"#)),
         ]
     }
 
@@ -263,43 +208,25 @@ impl Datatable for CreditAdjustmentDatatable {
                     ],
                 )
                 .placeholder("admin.credits.search_placeholder"),
-                DatatableFilterField::select("credit_type", "admin.credits.columns.credit_type")
+                DatatableFilterField::select("credit_type", "Credit type")
                     .options(CreditType::options()),
             ),
+            DatatableFilterRow::single(
+                DatatableFilterField::select("transaction_type", "Transaction type")
+                    .options(CreditTransactionType::options()),
+            ),
             DatatableFilterRow::pair(
-                DatatableFilterField::select(
-                    "transaction_type",
-                    "admin.credits.columns.transaction_type",
-                )
-                .options(CreditTransactionType::options()),
-                DatatableFilterField::text_search_fields(
-                    "trace",
-                    "admin.credits.columns.trace",
-                    [
-                        CreditAdjustmentDatatableRow::RELATED_TYPE,
-                        CreditAdjustmentDatatableRow::RELATED_KEY,
-                    ],
-                )
-                .placeholder("admin.credits.trace_search_placeholder"),
+                DatatableFilterField::date_from("created_from", "Created from").bind(
+                    CreditAdjustmentDatatableRow::CREATED_AT.alias(),
+                    DatatableFilterOp::DateFrom,
+                    DatatableFilterValueKind::Date,
+                ),
+                DatatableFilterField::date_to("created_to", "Created to").bind(
+                    CreditAdjustmentDatatableRow::CREATED_AT.alias(),
+                    DatatableFilterOp::DateTo,
+                    DatatableFilterValueKind::Date,
+                ),
             ),
         ])
     }
-}
-
-fn parse_json_text(value: &str) -> Value {
-    serde_json::from_str(value).unwrap_or_else(|_| Value::Object(Default::default()))
-}
-
-fn explanation_text(row: &CreditAdjustmentDatatableRow, ctx: &DatatableContext) -> String {
-    let locale = ctx.locale.unwrap_or("en");
-    let explanation_params = parse_json_text(&row.explanation_params_json);
-    let explanation_overrides = parse_json_text(&row.explanation_overrides_json);
-
-    credit_service::render_explanation(
-        ctx.app,
-        locale,
-        &row.explanation_key,
-        &explanation_params,
-        &explanation_overrides,
-    )
 }

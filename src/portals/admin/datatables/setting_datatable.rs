@@ -80,13 +80,12 @@ impl Datatable for SettingDatatable {
                     ],
                 )
                 .placeholder("admin.settings.search_placeholder"),
-                DatatableFilterField::select("setting_type", "admin.settings.columns.type")
+                DatatableFilterField::select("setting_type", "Type")
                     .options(SettingType::options()),
             ),
             DatatableFilterRow::pair(
-                DatatableFilterField::select("group_name", "admin.settings.columns.group")
-                    .options(group_options),
-                DatatableFilterField::checkbox("is_public", "admin.settings.filters.public_only"),
+                DatatableFilterField::select("group_name", "Group").options(group_options),
+                DatatableFilterField::checkbox("is_public", "Public only"),
             ),
         ])
     }

@@ -59,7 +59,11 @@ export function ModalProvider() {
               aria-label={t("Close")}
               disabled={!isTop}
             />
-            <div className="sf-modal-container">
+            <div
+              className={["sf-modal-container", entry.containerClassName]
+                .filter(Boolean)
+                .join(" ")}
+            >
               {entry.title && (
                 <div className="sf-modal-header">
                   <h2 className="sf-modal-header-title">{entry.title}</h2>

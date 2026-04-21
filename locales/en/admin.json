@@ -39,12 +39,6 @@
                 "to_introducer": "To introducer",
                 "admin": "Admin"
             },
-            "filters": {
-                "created_from": "Created from",
-                "created_to": "Created to",
-                "from_introducer": "From introducer username",
-                "to_introducer": "To introducer username"
-            },
             "errors": {
                 "current_introducer_required": "Only users with an existing introducer can be reassigned.",
                 "same_introducer": "Select a different introducer.",
@@ -108,9 +102,6 @@
                 "value": "Value",
                 "updated": "Updated"
             },
-            "filters": {
-                "public_only": "Public only"
-            },
             "errors": {
                 "invalid_number": "Enter a valid number before saving.",
                 "invalid_json": "Enter valid JSON before saving.",
@@ -172,9 +163,6 @@
                 "system": "System",
                 "custom": "Custom"
             },
-            "filters": {
-                "system_only": "System only"
-            },
             "errors": {
                 "system_slug_locked": "System page slugs cannot be changed.",
                 "system_delete_forbidden": "System pages cannot be deleted.",
@@ -207,8 +195,8 @@
                 "adjustment_help": "Choose a user, credit bucket, operation, and amount.",
                 "explanation": "Explanation",
                 "explanation_help": "Optionally override the generic transaction explanation per locale.",
-                "trace": "Trace Context",
-                "trace_help": "Add internal remarks and optional correlation metadata for future investigation."
+                "remark": "Remark",
+                "remark_help": "Add an internal admin note for this manual adjustment."
             },
             "fields": {
                 "user": "User",
@@ -258,12 +246,6 @@
                 "explanation": "Explanation",
                 "transaction_type": "Transaction type",
                 "balance_after": "Balance after"
-            },
-            "filters": {
-                "created_from": "Created from",
-                "created_to": "Created to",
-                "amount_min": "Amount min",
-                "amount_max": "Amount max"
             }
         },
         "editor_assets": {

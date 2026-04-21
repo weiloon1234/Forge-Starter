@@ -29,11 +29,9 @@ interface UserCreditTransactionsModalProps {
 
 interface CreditTransactionRow {
   id: string;
-  created_at: string;
-  amount: string;
-  explanation_text?: string;
   transaction_type: CreditTransactionType;
-  balance_after: string;
+  amount: string;
+  created_at: string;
 }
 
 export function UserCreditTransactionsModal({
@@ -68,10 +66,11 @@ export function UserCreditTransactionsModal({
 
   const columns: DataTableColumn<CreditTransactionRow>[] = [
     {
-      key: "created_at",
-      label: t("admin.credit_transactions.columns.created"),
+      key: "transaction_type",
+      label: t("admin.credit_transactions.columns.transaction_type"),
       sortable: true,
-      format: "datetime",
+      render: (row) =>
+        enumLabel(CreditTransactionTypeOptions, row.transaction_type, t),
     },
     {
       key: "amount",
@@ -80,22 +79,10 @@ export function UserCreditTransactionsModal({
       render: (row) => row.amount,
     },
     {
-      key: "explanation_text",
-      label: t("admin.credit_transactions.columns.explanation"),
-      render: (row) => row.explanation_text ?? "—",
-    },
-    {
-      key: "transaction_type",
-      label: t("admin.credit_transactions.columns.transaction_type"),
+      key: "created_at",
+      label: t("admin.credit_transactions.columns.created"),
       sortable: true,
-      render: (row) =>
-        enumLabel(CreditTransactionTypeOptions, row.transaction_type, t),
-    },
-    {
-      key: "balance_after",
-      label: t("admin.credit_transactions.columns.balance_after"),
-      sortable: true,
-      render: (row) => row.balance_after,
+      format: "datetime",
     },
   ];
 
@@ -116,8 +103,7 @@ export function UserCreditTransactionsModal({
             : undefined
         }
         defaultPerPage={20}
-        showIndex={false}
-        className="rounded-none border-x-0 border-y-0"
+        className="sf-datatable--modal rounded-none border-x-0 border-y-0"
       />
     </ModalBody>
   );

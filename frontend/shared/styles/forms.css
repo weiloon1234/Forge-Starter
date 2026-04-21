@@ -554,7 +554,7 @@
   /* ── Modal ─────────────────────────────────────────── */
 
   .sf-modal-overlay {
-    @apply fixed inset-0 flex items-end sm:items-center justify-center sm:p-4;
+    @apply fixed inset-0 flex items-center justify-center p-2 sm:p-4 overflow-y-auto;
   }
 
   .sf-modal-backdrop {
@@ -568,22 +568,27 @@
   }
 
   .sf-modal-container {
-    @apply flex flex-col w-full max-h-[90vh] rounded-t-xl sm:rounded-xl shadow-xl sm:max-w-lg;
+    @apply flex flex-col w-full max-w-full rounded-2xl shadow-xl overflow-hidden sm:max-w-lg;
     background: var(--color-bg);
+    max-height: calc(100dvh - 1rem);
+  }
+
+  .sf-modal-container--wide {
+    max-width: min(72rem, calc(100vw - 1rem));
   }
 
   .sf-modal-header {
-    @apply flex items-center justify-between px-6 py-4 border-b flex-shrink-0;
+    @apply flex items-center justify-between gap-3 px-4 py-4 border-b flex-shrink-0 sm:px-6;
     border-color: var(--color-border);
   }
 
   .sf-modal-header-title {
-    @apply text-lg font-semibold;
+    @apply min-w-0 flex-1 text-base sm:text-lg font-semibold leading-tight;
     color: var(--color-text);
   }
 
   .sf-modal-close {
-    @apply flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer border-none;
+    @apply flex shrink-0 items-center justify-center w-8 h-8 rounded-lg cursor-pointer border-none;
     color: var(--color-text-muted);
     background: transparent;
     transition: color 150ms ease, background 150ms ease;
@@ -594,11 +599,11 @@
   }
 
   .sf-modal-body {
-    @apply flex-1 overflow-y-auto px-6 py-4;
+    @apply min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6;
   }
 
   .sf-modal-footer {
-    @apply flex justify-end gap-3 px-6 py-4 border-t flex-shrink-0;
+    @apply flex flex-wrap justify-end gap-3 px-4 py-4 border-t flex-shrink-0 sm:px-6;
     border-color: var(--color-border);
   }
 
@@ -817,7 +822,7 @@
   }
 
   .sf-datatable-header {
-    @apply flex items-center justify-between px-5 py-4 border-b;
+    @apply flex flex-col items-start gap-3 px-4 py-4 border-b sm:flex-row sm:items-center sm:justify-between sm:px-5;
     border-color: var(--color-border);
   }
   .sf-datatable-title {
@@ -829,7 +834,7 @@
     color: var(--color-text-muted);
   }
   .sf-datatable-controls {
-    @apply flex items-center gap-3;
+    @apply flex w-full min-w-0 flex-wrap items-center justify-between gap-2 sm:w-auto sm:justify-end sm:gap-3;
   }
   .sf-datatable-autorefresh {
     @apply flex items-center gap-1.5 text-xs cursor-pointer select-none;
@@ -852,18 +857,21 @@
 
   /* Filters */
   .sf-datatable-filters {
-    @apply px-5 py-3 space-y-2 border-b;
+    @apply px-4 py-3 space-y-3 border-b sm:px-5;
     border-color: var(--color-border);
     background: var(--color-bg-muted);
   }
   .sf-datatable-filter-row {
-    @apply flex flex-wrap gap-3;
+    @apply grid grid-cols-1 gap-3 sm:grid-cols-2;
+  }
+  .sf-datatable-filter-row--single {
+    @apply sm:grid-cols-1;
   }
   .sf-datatable-filters .sf-field {
-    @apply mb-0 min-w-48 flex-1 relative;
+    @apply mb-0 min-w-0 relative;
   }
   .sf-datatable-filter-actions {
-    @apply flex gap-2 pt-1;
+    @apply flex flex-wrap gap-2 pt-1;
   }
   .sf-datatable-filters .sf-select-dropdown {
     @apply max-w-full;
@@ -872,7 +880,7 @@
   /* Table */
   .sf-datatable-table-wrapper {
     @apply relative overflow-auto;
-    max-height: 70vh;
+    max-height: min(48dvh, 26rem);
   }
   .sf-datatable-table {
     @apply w-full text-sm;
@@ -881,7 +889,7 @@
     border-bottom: 1px solid var(--color-border);
   }
   .sf-datatable-th {
-    @apply px-4 py-3 text-left text-xs font-medium uppercase tracking-wider select-none whitespace-nowrap;
+    @apply px-3 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider select-none whitespace-nowrap sm:px-4 sm:py-3 sm:text-xs;
     position: sticky;
     top: 0;
     z-index: 1;
@@ -926,7 +934,7 @@
     background: var(--color-bg-muted);
   }
   .sf-datatable-td {
-    @apply px-4 py-3 whitespace-nowrap;
+    @apply px-3 py-2.5 whitespace-nowrap text-xs sm:px-4 sm:py-3 sm:text-sm;
     color: var(--color-text);
   }
   .sf-datatable-tfoot {
@@ -951,7 +959,7 @@
 
   /* Pagination */
   .sf-datatable-pagination {
-    @apply flex items-center justify-between px-5 py-3 border-t;
+    @apply flex flex-col items-start gap-3 px-4 py-3 border-t sm:flex-row sm:items-center sm:justify-between sm:px-5;
     border-color: var(--color-border);
   }
   .sf-datatable-pagination-info {
@@ -959,7 +967,7 @@
     color: var(--color-text-muted);
   }
   .sf-datatable-pagination-buttons {
-    @apply flex items-center gap-1;
+    @apply flex flex-wrap items-center gap-1;
   }
   .sf-datatable-pagination-btn {
     @apply p-1.5 rounded-lg cursor-pointer;
@@ -980,6 +988,28 @@
   .sf-datatable-pagination-btn--active:hover {
     background: var(--color-primary-hover);
     color: var(--color-text-on-primary);
+  }
+
+  @media (min-width: 640px) {
+    .sf-modal-container {
+      max-height: calc(100dvh - 2rem);
+    }
+
+    .sf-modal-container--wide {
+      max-width: min(72rem, calc(100vw - 2rem));
+    }
+
+    .sf-datatable-filters .sf-field {
+      min-width: 12rem;
+    }
+
+    .sf-datatable-table-wrapper {
+      max-height: 70vh;
+    }
+  }
+
+  .sf-datatable--modal .sf-datatable-table-wrapper {
+    max-height: min(36dvh, 18rem);
   }
 
   /* Rich text editor */

@@ -117,7 +117,7 @@ impl Datatable for PageDatatable {
                 [PageDatatableRow::SLUG, PageDatatableRow::TITLE],
             )
             .placeholder("admin.pages.search_placeholder"),
-            DatatableFilterField::checkbox("is_system", "admin.pages.filters.system_only"),
+            DatatableFilterField::checkbox("is_system", "System only"),
         )])
     }
 }

@@ -31,6 +31,7 @@ interface UseDataTableReturn<T> {
 }
 
 const COOKIE_PREFIX = "dt_autorefresh_";
+const EMPTY_FILTERS: DataTableFilter[] = [];
 
 export { COOKIE_PREFIX, getCookie, setCookie };
 
@@ -41,7 +42,7 @@ export function serializeSorts(sorts: DataTableSort[]): DataTableSort[] {
 export function useDataTable<T>(
   config: UseDataTableConfig,
 ): UseDataTableReturn<T> {
-  const { api, url, baseFilters = [], defaultPerPage = 20 } = config;
+  const { api, url, baseFilters = EMPTY_FILTERS, defaultPerPage = 20 } = config;
 
   const [rows, setRows] = useState<T[]>([]);
   const [meta, setMeta] = useState<DataTableMeta | null>(null);

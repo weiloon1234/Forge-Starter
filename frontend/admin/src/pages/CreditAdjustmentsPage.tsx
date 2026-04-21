@@ -17,7 +17,6 @@ import { useTranslation } from "react-i18next";
 import { api } from "@/api";
 import { auth } from "@/auth";
 import { CreateCreditAdjustmentModal } from "@/components/CreateCreditAdjustmentModal";
-import { explanationKeyForTransactionType } from "@/credits";
 import { hasAllPermissions, usePermission } from "@/hooks/usePermission";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
@@ -27,17 +26,13 @@ const EXPORTS_READ: Permission = "exports.read";
 
 interface CreditAdjustmentRow {
   id: string;
-  created_at: string;
   user_label: string;
   credit_type: CreditType;
   transaction_type: CreditTransactionType;
   amount: string;
-  balance_after: string;
-  explanation_text?: string;
   admin_label: string;
   remark: string | null;
-  related_type: string | null;
-  related_key: string | null;
+  created_at: string;
 }
 
 export function CreditAdjustmentsPage() {
@@ -58,12 +53,6 @@ export function CreditAdjustmentsPage() {
 
   const columns: DataTableColumn<CreditAdjustmentRow>[] = [
     {
-      key: "created_at",
-      label: t("admin.credits.columns.created"),
-      sortable: true,
-      format: "datetime",
-    },
-    {
       key: "user_label",
       label: t("admin.credits.columns.user"),
       sortable: true,
@@ -81,17 +70,9 @@ export function CreditAdjustmentsPage() {
       render: (row) => row.amount,
     },
     {
-      key: "balance_after",
-      label: t("admin.credits.columns.balance_after"),
+      key: "admin_label",
+      label: t("admin.credits.columns.admin"),
       sortable: true,
-      render: (row) => row.balance_after,
-    },
-    {
-      key: "explanation_text",
-      label: t("admin.credits.columns.explanation"),
-      render: (row) =>
-        row.explanation_text ||
-        t(explanationKeyForTransactionType(row.transaction_type)),
     },
     {
       key: "transaction_type",
@@ -101,27 +82,15 @@ export function CreditAdjustmentsPage() {
         enumLabel(CreditTransactionTypeOptions, row.transaction_type, t),
     },
     {
-      key: "admin_label",
-      label: t("admin.credits.columns.admin"),
-      sortable: true,
-    },
-    {
-      key: "related_key",
-      label: t("admin.credits.columns.trace"),
-      render: (row) => {
-        if (!row.related_key && !row.related_type) {
-          return "—";
-        }
-        if (row.related_type && row.related_key) {
-          return `${row.related_type} · ${row.related_key}`;
-        }
-        return row.related_type ?? row.related_key ?? "—";
-      },
-    },
-    {
       key: "remark",
       label: t("admin.credits.columns.remark"),
       render: (row) => row.remark ?? "—",
+    },
+    {
+      key: "created_at",
+      label: t("admin.credits.columns.created"),
+      sortable: true,
+      format: "datetime",
     },
   ];
 

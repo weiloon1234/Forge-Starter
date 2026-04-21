@@ -2,13 +2,9 @@ import { DataTable } from "@shared/components";
 import type { DataTableColumn } from "@shared/types/form";
 import type {
   CreditTransactionType,
-  CreditType,
   Permission,
 } from "@shared/types/generated";
-import {
-  CreditTransactionTypeOptions,
-  CreditTypeOptions,
-} from "@shared/types/generated";
+import { CreditTransactionTypeOptions } from "@shared/types/generated";
 import { enumLabel } from "@shared/utils";
 import { useTranslation } from "react-i18next";
 import { api } from "@/api";
@@ -21,13 +17,10 @@ const EXPORTS_READ: Permission = "exports.read";
 
 interface CreditTransactionRow {
   id: string;
-  created_at: string;
-  user_label: string;
-  credit_type: CreditType;
-  amount: string;
-  explanation_text?: string;
+  user_username?: string | null;
   transaction_type: CreditTransactionType;
-  balance_after: string;
+  amount: string;
+  created_at: string;
 }
 
 export function CreditTransactionsPage() {
@@ -46,32 +39,10 @@ export function CreditTransactionsPage() {
 
   const columns: DataTableColumn<CreditTransactionRow>[] = [
     {
-      key: "created_at",
-      label: t("admin.credit_transactions.columns.created"),
+      key: "user_username",
+      label: t("Username"),
       sortable: true,
-      format: "datetime",
-    },
-    {
-      key: "user_label",
-      label: t("admin.credit_transactions.columns.user"),
-      sortable: true,
-    },
-    {
-      key: "credit_type",
-      label: t("admin.credit_transactions.columns.credit_type"),
-      sortable: true,
-      render: (row) => enumLabel(CreditTypeOptions, row.credit_type, t),
-    },
-    {
-      key: "amount",
-      label: t("admin.credit_transactions.columns.amount"),
-      sortable: true,
-      render: (row) => row.amount,
-    },
-    {
-      key: "explanation_text",
-      label: t("admin.credit_transactions.columns.explanation"),
-      render: (row) => row.explanation_text ?? "—",
+      render: (row) => row.user_username ?? "—",
     },
     {
       key: "transaction_type",
@@ -81,10 +52,16 @@ export function CreditTransactionsPage() {
         enumLabel(CreditTransactionTypeOptions, row.transaction_type, t),
     },
     {
-      key: "balance_after",
-      label: t("admin.credit_transactions.columns.balance_after"),
+      key: "amount",
+      label: t("admin.credit_transactions.columns.amount"),
       sortable: true,
-      render: (row) => row.balance_after,
+      render: (row) => row.amount,
+    },
+    {
+      key: "created_at",
+      label: t("admin.credit_transactions.columns.created"),
+      sortable: true,
+      format: "datetime",
     },
   ];
 

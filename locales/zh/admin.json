@@ -39,12 +39,6 @@
                 "to_introducer": "新推荐人",
                 "admin": "管理员"
             },
-            "filters": {
-                "created_from": "创建开始日期",
-                "created_to": "创建结束日期",
-                "from_introducer": "原推荐人用户名",
-                "to_introducer": "新推荐人用户名"
-            },
             "errors": {
                 "current_introducer_required": "只有已经有推荐人的用户才可以改挂。",
                 "same_introducer": "请选择不同的推荐人。",
@@ -108,9 +102,6 @@
                 "value": "值",
                 "updated": "更新时间"
             },
-            "filters": {
-                "public_only": "仅公开项"
-            },
             "errors": {
                 "invalid_number": "请先输入有效的数字再保存。",
                 "invalid_json": "请先输入有效的 JSON 再保存。",
@@ -172,9 +163,6 @@
                 "system": "系统",
                 "custom": "自定义"
             },
-            "filters": {
-                "system_only": "仅系统页面"
-            },
             "errors": {
                 "system_slug_locked": "系统页面的 slug 不能修改。",
                 "system_delete_forbidden": "系统页面不能被删除。",
@@ -207,8 +195,8 @@
                 "adjustment_help": "选择用户、信用栏位、操作方式和金额。",
                 "explanation": "说明文本",
                 "explanation_help": "可按语言覆盖系统默认的交易说明文本。",
-                "trace": "追踪上下文",
-                "trace_help": "添加管理员内部备注，以及可选的关联元数据，方便日后追查。"
+                "remark": "备注",
+                "remark_help": "为这次手动调整添加一条仅供管理员查看的内部备注。"
             },
             "fields": {
                 "user": "用户",
@@ -258,12 +246,6 @@
                 "explanation": "说明",
                 "transaction_type": "交易类型",
                 "balance_after": "流水后余额"
-            },
-            "filters": {
-                "created_from": "创建开始日期",
-                "created_to": "创建结束日期",
-                "amount_min": "最小金额",
-                "amount_max": "最大金额"
             }
         },
         "editor_assets": {

@@ -11,8 +11,8 @@ help:
 	@echo ""
 	@echo "  make setup        First-time setup (publish migrations, generate keys)"
 	@echo ""
-	@echo "  make dev          Start ALL (backend + admin + user) in one terminal"
-	@echo "  make dev:api      Backend API only (:3000)"
+	@echo "  make dev          Start ALL with Rust auto-restart + Vite hot reload"
+	@echo "  make dev:api      Backend API only (:3000, Rust auto-restart)"
 	@echo "  make dev:admin    Admin frontend only (:5173)"
 	@echo "  make dev:user     User frontend only (:5174)"
 	@echo ""
@@ -45,13 +45,13 @@ dev: types
 	@trap 'kill 0' EXIT; \
 	(cd frontend/admin && exec npm run dev) & \
 	(cd frontend/user && exec npm run dev) & \
-	(PROCESS=websocket exec cargo run) & \
-	(PROCESS=scheduler exec cargo run) & \
-	cargo run
+	(PROCESS=websocket exec bash scripts/watch-rust.sh cargo run) & \
+	(PROCESS=scheduler exec bash scripts/watch-rust.sh cargo run) & \
+	exec bash scripts/watch-rust.sh cargo run
 
 # Backend API only
 dev\:api:
-	cargo run
+	bash scripts/watch-rust.sh cargo run
 
 # Frontend dev servers (Vite hot reload)
 dev\:admin:

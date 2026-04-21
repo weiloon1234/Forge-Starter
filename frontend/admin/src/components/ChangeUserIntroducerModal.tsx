@@ -6,11 +6,11 @@ import type {
   AdminUserLookupOptionResponse,
   ChangeUserIntroducerRequest,
 } from "@shared/types/generated";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { api } from "@/api";
-import { userOptionLabel } from "@/userLookup";
+import { mergeUserOptions, userOptionLabel } from "@/userLookup";
 
 const FORM_ID = "change-user-introducer-form";
 
@@ -42,6 +42,7 @@ export function ChangeUserIntroducerModal({
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [selectedUser, setSelectedUser] =
     useState<AdminUserLookupOptionResponse | null>(null);
+  const userSearchRequestRef = useRef(0);
 
   const form = useForm<ChangeUserIntroducerFormValues>({
     initialValues: {
@@ -90,33 +91,34 @@ export function ChangeUserIntroducerModal({
 
   const fetchUsers = useCallback(
     async (query = "") => {
+      const requestId = ++userSearchRequestRef.current;
+      const trimmedQuery = query.trim();
+      if (trimmedQuery === "") {
+        setUserOptions(() => mergeUserOptions([], selectedUser));
+        setOptionsLoading(false);
+        return;
+      }
+
       setOptionsLoading(true);
       try {
         const { data } = await api.get<AdminUserLookupOptionResponse[]>(
           "/users/options",
           {
-            params: query.trim() === "" ? undefined : { q: query.trim() },
+            params: { q: trimmedQuery },
           },
         );
-        setUserOptions(() => {
-          if (!selectedUser) {
-            return data;
-          }
-
-          return data.some((user) => user.id === selectedUser.id)
-            ? data
-            : [selectedUser, ...data];
-        });
+        if (requestId !== userSearchRequestRef.current) {
+          return;
+        }
+        setUserOptions(() => mergeUserOptions(data, selectedUser));
       } finally {
-        setOptionsLoading(false);
+        if (requestId === userSearchRequestRef.current) {
+          setOptionsLoading(false);
+        }
       }
     },
     [selectedUser],
   );
-
-  useEffect(() => {
-    void fetchUsers();
-  }, [fetchUsers]);
 
   const introducerField = form.field("introducer_user_id");
   const userSelectOptions = useMemo(
@@ -193,9 +195,10 @@ export function ChangeUserIntroducerModal({
                     ? (value[0] ?? "")
                     : value;
                   introducerField.onChange(nextValue);
-                  setSelectedUser(
-                    userOptions.find((user) => user.id === nextValue) ?? null,
-                  );
+                  const nextUser =
+                    userOptions.find((user) => user.id === nextValue) ?? null;
+                  setSelectedUser(nextUser);
+                  setUserOptions(() => mergeUserOptions([], nextUser));
                 }}
                 errors={introducerField.errors}
                 placeholder={t("admin.introducer_changes.user_placeholder")}

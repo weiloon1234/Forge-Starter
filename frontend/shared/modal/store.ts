@@ -31,6 +31,7 @@ export const modal = {
       props: props as ModalProps | undefined,
       title: options?.title,
       onClose: options?.onClose,
+      containerClassName: options?.containerClassName,
     };
     store.setState((prev) => ({
       stack: [...prev.stack, entry],

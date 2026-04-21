@@ -9,7 +9,7 @@ import type {
 } from "@shared/types/generated";
 import { CreditTypeOptions } from "@shared/types/generated";
 import { enumLabel } from "@shared/utils";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { api } from "@/api";
@@ -26,7 +26,7 @@ import {
   projectedBalance,
   resolveExplanationPreview,
 } from "@/credits";
-import { userOptionLabel } from "@/userLookup";
+import { mergeUserOptions, userOptionLabel } from "@/userLookup";
 
 const FORM_ID = "credit-adjustment-form";
 
@@ -52,25 +52,16 @@ export function CreateCreditAdjustmentModal({
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [selectedUser, setSelectedUser] =
     useState<AdminUserLookupOptionResponse | null>(null);
+  const userSearchRequestRef = useRef(0);
 
   const form = useForm<CreditAdjustmentFormValues>({
     initialValues: emptyCreditAdjustmentFormValues(locales),
     onSubmit: async (values) => {
-      try {
-        const payload = buildCreateCreditAdjustmentPayload(values, locales);
-        await api.post<AdminCreditAdjustmentResponse>(
-          "/credits/adjustments",
-          payload,
-        );
-      } catch (error) {
-        if (error instanceof Error && error.message === "invalid_context") {
-          form.setFieldError("context_json", [
-            t("admin.credits.errors.invalid_context_json"),
-          ]);
-          return;
-        }
-        throw error;
-      }
+      const payload = buildCreateCreditAdjustmentPayload(values, locales);
+      await api.post<AdminCreditAdjustmentResponse>(
+        "/credits/adjustments",
+        payload,
+      );
 
       toast.success(t("admin.credits.created"));
       onSaved?.();
@@ -80,41 +71,40 @@ export function CreateCreditAdjustmentModal({
 
   const fetchUsers = useCallback(
     async (query = "") => {
+      const requestId = ++userSearchRequestRef.current;
+      const trimmedQuery = query.trim();
+      if (trimmedQuery === "") {
+        setUserOptions(() => mergeUserOptions([], selectedUser));
+        setOptionsLoading(false);
+        return;
+      }
+
       setOptionsLoading(true);
       try {
         const { data } = await api.get<AdminUserLookupOptionResponse[]>(
           "/credits/users/options",
           {
-            params: query.trim() === "" ? undefined : { q: query.trim() },
+            params: { q: trimmedQuery },
           },
         );
-        setUserOptions(() => {
-          if (!selectedUser) {
-            return data;
-          }
-          return data.some((user) => user.id === selectedUser.id)
-            ? data
-            : [selectedUser, ...data];
-        });
+        if (requestId !== userSearchRequestRef.current) {
+          return;
+        }
+        setUserOptions(() => mergeUserOptions(data, selectedUser));
       } finally {
-        setOptionsLoading(false);
+        if (requestId === userSearchRequestRef.current) {
+          setOptionsLoading(false);
+        }
       }
     },
     [selectedUser],
   );
-
-  useEffect(() => {
-    void fetchUsers();
-  }, [fetchUsers]);
 
   const userField = form.field("user_id");
   const creditTypeField = form.field("credit_type");
   const operationField = form.field("operation");
   const amountField = form.field("amount");
   const remarkField = form.field("remark");
-  const relatedKeyField = form.field("related_key");
-  const relatedTypeField = form.field("related_type");
-  const contextField = form.field("context_json");
   const overrideField = form.field(
     explanationOverrideFieldKey(
       activeLocale,
@@ -190,6 +180,7 @@ export function CreateCreditAdjustmentModal({
                   const nextUser =
                     userOptions.find((user) => user.id === nextValue) ?? null;
                   setSelectedUser(nextUser);
+                  setUserOptions(() => mergeUserOptions([], nextUser));
                 }}
                 errors={userField.errors}
                 placeholder={t("admin.credits.user_placeholder")}
@@ -331,8 +322,8 @@ export function CreateCreditAdjustmentModal({
 
             <div className="sf-admin-form-section">
               <div className="sf-admin-form-section__header">
-                <h2>{t("admin.credits.sections.trace")}</h2>
-                <p>{t("admin.credits.sections.trace_help")}</p>
+                <h2>{t("admin.credits.sections.remark")}</h2>
+                <p>{t("admin.credits.sections.remark_help")}</p>
               </div>
 
               <Input
@@ -347,52 +338,6 @@ export function CreateCreditAdjustmentModal({
                 errors={remarkField.errors}
                 rows={3}
                 hints={[t("admin.credits.remark_hint")]}
-              />
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Input
-                  name={relatedTypeField.name}
-                  label={t("admin.credits.fields.related_type")}
-                  value={
-                    typeof relatedTypeField.value === "string"
-                      ? relatedTypeField.value
-                      : ""
-                  }
-                  onChange={relatedTypeField.onChange}
-                  onBlur={relatedTypeField.onBlur}
-                  errors={relatedTypeField.errors}
-                  hints={[t("admin.credits.related_type_hint")]}
-                />
-
-                <Input
-                  name={relatedKeyField.name}
-                  label={t("admin.credits.fields.related_key")}
-                  value={
-                    typeof relatedKeyField.value === "string"
-                      ? relatedKeyField.value
-                      : ""
-                  }
-                  onChange={relatedKeyField.onChange}
-                  onBlur={relatedKeyField.onBlur}
-                  errors={relatedKeyField.errors}
-                  hints={[t("admin.credits.related_key_hint")]}
-                />
-              </div>
-
-              <Input
-                name={contextField.name}
-                type="textarea"
-                label={t("admin.credits.fields.context")}
-                value={
-                  typeof contextField.value === "string"
-                    ? contextField.value
-                    : ""
-                }
-                onChange={contextField.onChange}
-                onBlur={contextField.onBlur}
-                errors={contextField.errors}
-                rows={5}
-                hints={[t("admin.credits.context_hint")]}
               />
             </div>
           </form>
