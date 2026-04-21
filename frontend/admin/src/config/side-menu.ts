@@ -21,7 +21,7 @@ export type MenuItem = {
   path?: string;
   permission?: Permission;
   adminTypes?: readonly AdminType[];
-  notification?: string;
+  badge?: string;
   children?: MenuItem[];
 };
 
