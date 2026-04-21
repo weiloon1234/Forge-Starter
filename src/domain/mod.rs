@@ -1,3 +1,4 @@
+pub mod badges;
 pub mod enums;
 pub mod events;
 pub mod integrations;

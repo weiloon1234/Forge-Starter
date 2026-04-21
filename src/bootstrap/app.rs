@@ -7,6 +7,7 @@ pub fn base() -> AppBuilder {
         .load_config_dir("config")
         .register_provider(providers::AppServiceProvider)
         .register_provider(providers::EventServiceProvider)
+        .register_provider(providers::BadgeServiceProvider)
         .register_validation_rule(
             ids::validation::ACTIVE_COUNTRY,
             validation::ActiveCountryRule,

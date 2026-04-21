@@ -14,6 +14,7 @@ export type { AdminUserIntroducerChangeResponse } from "./AdminUserIntroducerCha
 export type { AdminUserLookupOptionResponse } from "./AdminUserLookupOptionResponse";
 export type { AdminUserResponse } from "./AdminUserResponse";
 export type { ApiError } from "./ApiError";
+export type { BadgeCountsResponse } from "./BadgeCountsResponse";
 export type { ChangeAdminPasswordRequest } from "./ChangeAdminPasswordRequest";
 export type { ChangeUserIntroducerRequest } from "./ChangeUserIntroducerRequest";
 export { type CountryStatus, CountryStatusValues, CountryStatusOptions, CountryStatusMeta } from "./CountryStatus";

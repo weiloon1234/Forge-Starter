@@ -14,13 +14,14 @@ use crate::portals::admin::requests::{
     UpdatePageRequest, UpdateSettingValueRequest,
 };
 use crate::portals::admin::responses::{
-    AdminMeResponse, AdminPermissionResponse, AdminResponse, AdminUserResponse, LogEntryResponse,
-    LogFileResponse,
+    AdminMeResponse, AdminPermissionResponse, AdminResponse, AdminUserResponse,
+    BadgeCountsResponse, LogEntryResponse, LogFileResponse,
 };
 use forge::prelude::*;
 
 pub mod admin_routes;
 pub mod auth_routes;
+pub mod badge_routes;
 pub mod country_routes;
 pub mod credit_routes;
 pub mod datatable_routes;
@@ -109,6 +110,20 @@ pub fn register(r: &mut HttpRegistrar) -> Result<()> {
                         route.response::<MessageResponse>(200);
                     },
                 );
+
+                Ok(())
+            })?;
+
+            admin.scope("/badges", |badges| {
+                badges
+                    .name_prefix("badges")
+                    .tag("admin:badges")
+                    .guard(Guard::Admin);
+
+                badges.get("", "index", badge_routes::index, |route| {
+                    route.summary("Current admin badge counts");
+                    route.response::<BadgeCountsResponse>(200);
+                });
 
                 Ok(())
             })?;

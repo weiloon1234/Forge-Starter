@@ -20,5 +20,11 @@ pub fn register(registrar: &mut WebSocketRegistrar) -> Result<()> {
             .presence(true),
     )?;
 
+    registrar.channel_with_options(
+        ids::channels::ADMIN_BADGES,
+        |_context: WebSocketContext, _payload: serde_json::Value| async move { Ok(()) },
+        WebSocketChannelOptions::new().guard(ids::guards::Guard::Admin),
+    )?;
+
     Ok(())
 }
