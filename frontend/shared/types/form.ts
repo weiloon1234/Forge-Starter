@@ -276,6 +276,7 @@ export interface DataTableProps<T> {
   title?: string;
   subtitle?: string;
   columns: DataTableColumn<T>[];
+  baseFilters?: DataTableFilter[];
   downloadUrl?: string;
   refreshInterval?: number;
   defaultPerPage?: number;

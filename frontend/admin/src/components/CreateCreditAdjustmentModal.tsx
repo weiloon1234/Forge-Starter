@@ -25,8 +25,8 @@ import {
   operationValue,
   projectedBalance,
   resolveExplanationPreview,
-  userOptionLabel,
 } from "@/credits";
+import { userOptionLabel } from "@/userLookup";
 
 const FORM_ID = "credit-adjustment-form";
 

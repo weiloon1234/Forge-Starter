@@ -84,6 +84,124 @@ impl RequestValidator for ChangeAdminPasswordRequest {
 
 #[derive(Debug, Deserialize, ts_rs::TS, forge::ApiSchema)]
 #[ts(export)]
+pub struct CreateUserRequest {
+    pub introducer_user_id: String,
+    pub username: Option<String>,
+    pub email: Option<String>,
+    pub name: Option<String>,
+    pub password: String,
+    pub country_iso2: Option<String>,
+    pub contact_country_iso2: Option<String>,
+    pub contact_number: Option<String>,
+}
+
+#[async_trait]
+impl RequestValidator for CreateUserRequest {
+    async fn validate(&self, validator: &mut Validator) -> Result<()> {
+        validator
+            .field("introducer_user_id", &self.introducer_user_id)
+            .bail()
+            .required()
+            .uuid()
+            .apply()
+            .await?;
+
+        if let Some(username) = self.username.as_deref() {
+            validator
+                .field("username", username)
+                .bail()
+                .nullable()
+                .max(50)
+                .rule(ids::validation::USERNAME)
+                .apply()
+                .await?;
+        }
+
+        if let Some(email) = self.email.as_deref() {
+            validator
+                .field("email", email)
+                .bail()
+                .nullable()
+                .email()
+                .max(255)
+                .apply()
+                .await?;
+        }
+
+        if let Some(name) = self.name.as_deref() {
+            validator
+                .field("name", name)
+                .bail()
+                .nullable()
+                .min(2)
+                .max(100)
+                .apply()
+                .await?;
+        }
+
+        validator
+            .field("password", &self.password)
+            .bail()
+            .required()
+            .rule(ids::validation::PASSWORD)
+            .apply()
+            .await?;
+
+        if let Some(country_iso2) = self.country_iso2.as_deref() {
+            validator
+                .field("country_iso2", country_iso2)
+                .bail()
+                .nullable()
+                .rule(ids::validation::ACTIVE_COUNTRY)
+                .apply()
+                .await?;
+        }
+
+        if let Some(contact_country_iso2) = self.contact_country_iso2.as_deref() {
+            validator
+                .field("contact_country_iso2", contact_country_iso2)
+                .bail()
+                .nullable()
+                .rule(ids::validation::ACTIVE_COUNTRY)
+                .apply()
+                .await?;
+        }
+
+        if let Some(contact_number) = self.contact_number.as_deref() {
+            validator
+                .field("contact_number", contact_number)
+                .nullable()
+                .apply()
+                .await?;
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(Debug, Deserialize, ts_rs::TS, forge::ApiSchema)]
+#[ts(export)]
+pub struct ChangeUserIntroducerRequest {
+    pub introducer_user_id: String,
+}
+
+#[async_trait]
+impl RequestValidator for ChangeUserIntroducerRequest {
+    async fn validate(&self, validator: &mut Validator) -> Result<()> {
+        validator
+            .field("introducer_user_id", &self.introducer_user_id)
+            .bail()
+            .required()
+            .uuid()
+            .apply()
+            .await?;
+
+        Ok(())
+    }
+}
+
+#[derive(Debug, Deserialize, ts_rs::TS, forge::ApiSchema)]
+#[ts(export)]
 pub struct UpdateAdminLocaleRequest {
     pub locale: String,
 }

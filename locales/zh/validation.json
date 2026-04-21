@@ -74,6 +74,7 @@
             "password": "密码",
             "current_password": "当前密码",
             "password_confirmation": "密码确认",
+            "introducer_user_id": "介绍人",
             "country_iso2": "国家",
             "contact_country_iso2": "联系国家",
             "contact_number": "联系电话",

@@ -4,6 +4,7 @@ pub mod admin_datatable;
 pub mod country_datatable;
 pub mod credit_adjustment_datatable;
 pub mod credit_transaction_datatable;
+pub mod introducer_change_datatable;
 pub mod page_datatable;
 pub mod runner;
 pub mod setting_datatable;
@@ -12,7 +13,10 @@ pub mod user_datatable;
 pub use admin_datatable::AdminDatatable;
 pub use country_datatable::CountryDatatable;
 pub use credit_adjustment_datatable::CreditAdjustmentDatatable;
-pub use credit_transaction_datatable::CreditTransactionDatatable;
+pub use credit_transaction_datatable::{
+    CreditTransactionDatatable, UserCreditTransactionDatatable,
+};
+pub use introducer_change_datatable::IntroducerChangeDatatable;
 pub use page_datatable::PageDatatable;
 pub use setting_datatable::SettingDatatable;
 pub use user_datatable::UserDatatable;
@@ -25,6 +29,8 @@ pub fn register_all(registrar: &mut ServiceRegistrar) -> Result<()> {
     registrar.register_datatable::<PageDatatable>()?;
     registrar.register_datatable::<CreditAdjustmentDatatable>()?;
     registrar.register_datatable::<CreditTransactionDatatable>()?;
+    registrar.register_datatable::<UserCreditTransactionDatatable>()?;
+    registrar.register_datatable::<IntroducerChangeDatatable>()?;
     Ok(())
 }
 
@@ -65,6 +71,18 @@ pub async fn run_json(
         }
         CreditTransactionDatatable::ID => {
             runner::build_json_response::<CreditTransactionDatatable>(
+                app, actor, request, locale, timezone,
+            )
+            .await
+        }
+        UserCreditTransactionDatatable::ID => {
+            runner::build_json_response::<UserCreditTransactionDatatable>(
+                app, actor, request, locale, timezone,
+            )
+            .await
+        }
+        IntroducerChangeDatatable::ID => {
+            runner::build_json_response::<IntroducerChangeDatatable>(
                 app, actor, request, locale, timezone,
             )
             .await
@@ -114,6 +132,18 @@ pub async fn run_download(
         }
         CreditTransactionDatatable::ID => {
             runner::build_download_response::<CreditTransactionDatatable>(
+                app, actor, request, locale, timezone,
+            )
+            .await
+        }
+        UserCreditTransactionDatatable::ID => {
+            runner::build_download_response::<UserCreditTransactionDatatable>(
+                app, actor, request, locale, timezone,
+            )
+            .await
+        }
+        IntroducerChangeDatatable::ID => {
+            runner::build_download_response::<IntroducerChangeDatatable>(
                 app, actor, request, locale, timezone,
             )
             .await

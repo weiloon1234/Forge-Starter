@@ -1,15 +1,17 @@
-use crate::domain::services::credit_service::{
-    AdminCreditAdjustmentResponse, AdminUserLookupOptionResponse,
-};
+use crate::domain::services::credit_service::AdminCreditAdjustmentResponse;
 use crate::domain::services::editor_asset_service::AdminEditorAssetUploadResponse;
 use crate::domain::services::page_service::AdminPageResponse;
 use crate::domain::services::settings_service::AdminSettingResponse;
+use crate::domain::services::user_service::{
+    AdminUserIntroducerChangeResponse, AdminUserLookupOptionResponse,
+};
 use crate::ids::guards::Guard;
 use crate::ids::permissions::Permission;
 use crate::portals::admin::requests::{
-    AdminLoginRequest, ChangeAdminPasswordRequest, CreateAdminCreditAdjustmentRequest,
-    CreateAdminRequest, CreatePageRequest, UpdateAdminLocaleRequest, UpdateAdminProfileRequest,
-    UpdateAdminRequest, UpdateCountryRequest, UpdatePageRequest, UpdateSettingValueRequest,
+    AdminLoginRequest, ChangeAdminPasswordRequest, ChangeUserIntroducerRequest,
+    CreateAdminCreditAdjustmentRequest, CreateAdminRequest, CreatePageRequest, CreateUserRequest,
+    UpdateAdminLocaleRequest, UpdateAdminProfileRequest, UpdateAdminRequest, UpdateCountryRequest,
+    UpdatePageRequest, UpdateSettingValueRequest,
 };
 use crate::portals::admin::responses::{
     AdminMeResponse, AdminPermissionResponse, AdminResponse, AdminUserResponse, LogEntryResponse,
@@ -170,6 +172,31 @@ pub fn register(r: &mut HttpRegistrar) -> Result<()> {
                 users.get("", "index", user_routes::index, |route| {
                     route.summary("List users (paginated)");
                 });
+
+                users.get("/options", "options", user_routes::user_options, |route| {
+                    route.permission(Permission::IntroducerChangesManage);
+                    route.summary("Search users for introducer change selection");
+                    route.response::<Vec<AdminUserLookupOptionResponse>>(200);
+                });
+
+                users.post("", "store", user_routes::store, |route| {
+                    route.permission(Permission::UsersManage);
+                    route.summary("Create user");
+                    route.request::<CreateUserRequest>();
+                    route.response::<AdminUserResponse>(201);
+                });
+
+                users.post(
+                    "/{id}/introducer-changes",
+                    "introducer_changes_store",
+                    user_routes::store_introducer_change,
+                    |route| {
+                        route.permission(Permission::IntroducerChangesManage);
+                        route.summary("Change a user's introducer and write an admin audit trail");
+                        route.request::<ChangeUserIntroducerRequest>();
+                        route.response::<AdminUserIntroducerChangeResponse>(201);
+                    },
+                );
 
                 users.get("/{id}", "show", user_routes::show, |route| {
                     route.summary("Get user by ID");

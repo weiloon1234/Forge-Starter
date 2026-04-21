@@ -17,6 +17,9 @@
         "users": {
             "label": "Users"
         },
+        "introducer_changes": {
+            "label": "Introducer Changes"
+        },
         "countries": {
             "label": "Countries"
         },

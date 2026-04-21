@@ -3,7 +3,7 @@ use axum::http::StatusCode;
 use forge::prelude::*;
 
 use crate::domain::models::Admin;
-use crate::domain::services::credit_service;
+use crate::domain::services::{credit_service, user_service};
 use crate::portals::admin::requests::CreateAdminCreditAdjustmentRequest;
 use crate::validation::JsonValidated;
 
@@ -26,6 +26,6 @@ pub async fn user_options(
     State(app): State<AppContext>,
     Query(query): Query<CreditUserLookupQuery>,
 ) -> Result<impl IntoResponse> {
-    let rows = credit_service::user_options(&app, query.q.as_deref()).await?;
+    let rows = user_service::user_options(&app, query.q.as_deref()).await?;
     Ok(Json(rows))
 }

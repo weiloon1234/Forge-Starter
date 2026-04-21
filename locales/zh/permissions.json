@@ -17,6 +17,9 @@
         "users": {
             "label": "用户"
         },
+        "introducer_changes": {
+            "label": "推荐人变更"
+        },
         "countries": {
             "label": "国家"
         },

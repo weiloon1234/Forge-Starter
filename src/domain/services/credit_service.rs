@@ -9,12 +9,12 @@ use crate::domain::enums::{CreditAdjustmentOperation, CreditTransactionType, Cre
 use crate::domain::models::{
     Admin, AdminCreditAdjustment, CreditRelatedKey, CreditTransaction, User,
 };
+use crate::domain::services::user_service;
 use crate::portals::admin::requests::CreateAdminCreditAdjustmentRequest;
 
 const CREDIT_SCALE: u32 = 8;
 const CREDIT_INTEGER_DIGITS: usize = 12;
 const DEFAULT_RELATED_TYPE: &str = "admin_credit_adjustment";
-const USER_OPTION_LIMIT: u64 = 20;
 
 #[derive(Clone, Debug, Serialize, TS, forge::ApiSchema)]
 #[ts(export)]
@@ -45,20 +45,6 @@ pub struct AdminCreditAdjustmentResponse {
     pub remark: Option<String>,
     pub created_at: String,
     pub updated_at: Option<String>,
-}
-
-#[derive(Clone, Debug, Serialize, TS, forge::ApiSchema)]
-#[ts(export)]
-pub struct AdminUserLookupOptionResponse {
-    pub id: String,
-    pub label: String,
-    pub subtitle: Option<String>,
-    pub credit_1: String,
-    pub credit_2: String,
-    pub credit_3: String,
-    pub credit_4: String,
-    pub credit_5: String,
-    pub credit_6: String,
 }
 
 pub async fn admin_adjust(
@@ -180,7 +166,7 @@ pub async fn admin_adjust(
         id: adjustment.id.to_string(),
         credit_transaction_id: credit_transaction.id.to_string(),
         user_id: updated_user.id.to_string(),
-        user_label: user_label(&updated_user),
+        user_label: user_service::user_label(&updated_user),
         credit_type: req.credit_type,
         transaction_type,
         amount: signed_delta.to_string(),
@@ -207,38 +193,6 @@ pub async fn admin_adjust(
     })
 }
 
-pub async fn user_options(
-    app: &AppContext,
-    query: Option<&str>,
-) -> Result<Vec<AdminUserLookupOptionResponse>> {
-    let db = app.database()?;
-    let mut users = User::model_query().order_by(User::CREATED_AT.desc());
-    let query = query.and_then(|value| trimmed_option(Some(value)));
-
-    if let Some(query) = query.as_deref() {
-        users = users.where_(Condition::or([
-            Condition::and([
-                User::NAME.is_not_null(),
-                User::NAME.like(format!("%{query}%")),
-            ]),
-            Condition::and([
-                User::USERNAME.is_not_null(),
-                User::USERNAME.like(format!("%{query}%")),
-            ]),
-            Condition::and([
-                User::EMAIL.is_not_null(),
-                User::EMAIL.like(format!("%{query}%")),
-            ]),
-        ]));
-    }
-
-    users.limit(USER_OPTION_LIMIT).get(&*db).await.map(|rows| {
-        rows.into_iter()
-            .map(|user| AdminUserLookupOptionResponse::from(&user))
-            .collect()
-    })
-}
-
 pub fn render_explanation(
     app: &AppContext,
     locale: &str,
@@ -261,13 +215,6 @@ pub fn render_explanation(
         .collect::<Vec<_>>();
 
     i18n.translate(locale, explanation_key, &borrowed)
-}
-
-pub fn user_label(user: &User) -> String {
-    trimmed_option(user.name.as_deref())
-        .or_else(|| trimmed_option(user.username.as_deref()))
-        .or_else(|| trimmed_option(user.email.as_deref()))
-        .unwrap_or_else(|| user.id.to_string())
 }
 
 pub fn admin_label(admin: &Admin) -> String {
@@ -512,30 +459,6 @@ impl std::fmt::Display for FixedCreditAmount {
         }
 
         write!(formatter, "{sign}{integer}.{fraction_text}")
-    }
-}
-
-impl From<&User> for AdminUserLookupOptionResponse {
-    fn from(user: &User) -> Self {
-        let label = user_label(user);
-        let subtitle = user
-            .username
-            .as_ref()
-            .filter(|value| Some(value.as_str()) != user.name.as_deref())
-            .cloned()
-            .or_else(|| user.email.clone());
-
-        Self {
-            id: user.id.to_string(),
-            label,
-            subtitle,
-            credit_1: user.credit_1.to_string(),
-            credit_2: user.credit_2.to_string(),
-            credit_3: user.credit_3.to_string(),
-            credit_4: user.credit_4.to_string(),
-            credit_5: user.credit_5.to_string(),
-            credit_6: user.credit_6.to_string(),
-        }
     }
 }
 

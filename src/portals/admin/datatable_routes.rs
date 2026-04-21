@@ -61,12 +61,14 @@ fn resolve_timezone(app: &AppContext, headers: &HeaderMap) -> Timezone {
 fn minimum_read_permission(id: &str) -> Option<Permission> {
     match id {
         "admin.users" => Some(Permission::UsersRead),
+        "admin.introducer_changes" => Some(Permission::IntroducerChangesRead),
         "admin.countries" => Some(Permission::CountriesRead),
         "admin.admins" => Some(Permission::AdminsRead),
         "admin.settings" => Some(Permission::SettingsRead),
         "admin.pages" => Some(Permission::PagesRead),
         "admin.credit_adjustments" => Some(Permission::CreditsRead),
         "admin.credit_transactions" => Some(Permission::CreditTransactionsRead),
+        "admin.user_credit_transactions" => Some(Permission::CreditTransactionsRead),
         _ => None,
     }
 }

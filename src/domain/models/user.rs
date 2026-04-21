@@ -40,6 +40,8 @@ pub struct User {
 }
 
 impl User {
+    pub const ORIGIN_USERNAME: &'static str = "origin";
+
     async fn hash_secret(ctx: &ModelHookContext<'_>, value: String) -> Result<String> {
         ctx.app().hash()?.hash(&value)
     }

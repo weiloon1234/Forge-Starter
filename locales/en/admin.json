@@ -9,7 +9,47 @@
         },
         "users": {
             "title": "Users",
-            "subtitle": "Browse and search user accounts."
+            "subtitle": "Browse and search user accounts.",
+            "search_placeholder": "Search username, email, name, or introducer...",
+            "credit_transactions_modal_title": "{{user}} · {{credit_type}} Transactions",
+            "credit_transactions_modal_subtitle": "Review the append-only ledger for {{user}} in {{credit_type}}.",
+            "credit_balance_action": "View {{credit_type}} transactions for {{user}}",
+            "columns": {
+                "introducer": "Introducer"
+            }
+        },
+        "introducer_changes": {
+            "title": "Introducer Changes",
+            "subtitle": "Review the admin audit trail for user introducer reassignments.",
+            "change_title": "Change Introducer",
+            "change_help": "Move this user to a different existing introducer and keep an append-only admin audit record.",
+            "changed": "Introducer changed",
+            "change_action": "Change introducer",
+            "search_placeholder": "Search user, introducer, or admin...",
+            "user_placeholder": "Search a new introducer by username, name, or email...",
+            "fields": {
+                "user": "User",
+                "current_introducer": "Current introducer",
+                "introducer": "New introducer"
+            },
+            "columns": {
+                "created": "Created",
+                "user": "User",
+                "from_introducer": "From introducer",
+                "to_introducer": "To introducer",
+                "admin": "Admin"
+            },
+            "filters": {
+                "created_from": "Created from",
+                "created_to": "Created to",
+                "from_introducer": "From introducer username",
+                "to_introducer": "To introducer username"
+            },
+            "errors": {
+                "current_introducer_required": "Only users with an existing introducer can be reassigned.",
+                "same_introducer": "Select a different introducer.",
+                "self_introducer": "A user cannot introduce themselves."
+            }
         },
         "admins": {
             "title": "Admins",

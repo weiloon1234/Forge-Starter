@@ -44,6 +44,12 @@ export const sideMenu: MenuItem[] = [
         permission: "users.read",
       },
       {
+        key: "users.introducer_changes",
+        label: "admin.introducer_changes.title",
+        path: "/users/introducer-changes",
+        permission: "introducer_changes.read",
+      },
+      {
         key: "users.credit_transactions",
         label: "Credit Transactions",
         path: "/credits/transactions",

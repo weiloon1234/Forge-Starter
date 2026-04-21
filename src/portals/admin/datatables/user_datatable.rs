@@ -1,62 +1,186 @@
-use crate::domain::models::User;
 use async_trait::async_trait;
+use forge::datatable::column::DatatableFieldRef;
 use forge::prelude::*;
+use serde::Serialize;
+
+const USERS_TABLE: &str = "users";
+const INTRODUCERS_TABLE: &str = "introducer_users";
+
+#[derive(Clone, Debug, Serialize, forge::Projection)]
+pub struct UserDatatableRow {
+    id: String,
+    introducer_user_id: Option<String>,
+    introducer_label: Option<String>,
+    username: Option<String>,
+    email: Option<String>,
+    name: Option<String>,
+    credit_1: Numeric,
+    credit_2: Numeric,
+    credit_3: Numeric,
+    credit_4: Numeric,
+    credit_5: Numeric,
+    credit_6: Numeric,
+    country_iso2: Option<String>,
+    contact_country_iso2: Option<String>,
+    contact_number: Option<String>,
+    created_at: DateTime,
+}
+
+fn introducer_label_expr() -> Expr {
+    Sql::coalesce([
+        Expr::column(ColumnRef::new(INTRODUCERS_TABLE, "name")),
+        Expr::column(ColumnRef::new(INTRODUCERS_TABLE, "username")),
+        Expr::column(ColumnRef::new(INTRODUCERS_TABLE, "email")),
+        Expr::raw(r#""users"."introducer_user_id"::text"#),
+    ])
+}
 
 pub struct UserDatatable;
 
 #[async_trait]
 impl Datatable for UserDatatable {
-    type Row = User;
-    type Query = ModelQuery<User>;
+    type Row = UserDatatableRow;
+    type Query = ProjectionQuery<UserDatatableRow>;
     const ID: &'static str = "admin.users";
 
     fn query(_ctx: &DatatableContext) -> Self::Query {
-        User::model_query()
+        UserDatatableRow::source(USERS_TABLE)
+            .left_join(
+                TableRef::new(USERS_TABLE).aliased(INTRODUCERS_TABLE),
+                Condition::compare(
+                    Expr::column(ColumnRef::new(USERS_TABLE, "introducer_user_id")),
+                    ComparisonOp::Eq,
+                    Expr::column(ColumnRef::new(INTRODUCERS_TABLE, "id")),
+                ),
+            )
+            .select_field(UserDatatableRow::ID, Expr::raw(r#""users"."id"::text"#))
+            .select_field(
+                UserDatatableRow::INTRODUCER_USER_ID,
+                Expr::raw(r#""users"."introducer_user_id"::text"#),
+            )
+            .select_field(UserDatatableRow::INTRODUCER_LABEL, introducer_label_expr())
+            .select_field(
+                UserDatatableRow::USERNAME,
+                ColumnRef::new(USERS_TABLE, "username"),
+            )
+            .select_field(
+                UserDatatableRow::EMAIL,
+                ColumnRef::new(USERS_TABLE, "email"),
+            )
+            .select_field(UserDatatableRow::NAME, ColumnRef::new(USERS_TABLE, "name"))
+            .select_field(
+                UserDatatableRow::CREDIT_1,
+                ColumnRef::new(USERS_TABLE, "credit_1"),
+            )
+            .select_field(
+                UserDatatableRow::CREDIT_2,
+                ColumnRef::new(USERS_TABLE, "credit_2"),
+            )
+            .select_field(
+                UserDatatableRow::CREDIT_3,
+                ColumnRef::new(USERS_TABLE, "credit_3"),
+            )
+            .select_field(
+                UserDatatableRow::CREDIT_4,
+                ColumnRef::new(USERS_TABLE, "credit_4"),
+            )
+            .select_field(
+                UserDatatableRow::CREDIT_5,
+                ColumnRef::new(USERS_TABLE, "credit_5"),
+            )
+            .select_field(
+                UserDatatableRow::CREDIT_6,
+                ColumnRef::new(USERS_TABLE, "credit_6"),
+            )
+            .select_field(
+                UserDatatableRow::COUNTRY_ISO2,
+                ColumnRef::new(USERS_TABLE, "country_iso2"),
+            )
+            .select_field(
+                UserDatatableRow::CONTACT_COUNTRY_ISO2,
+                ColumnRef::new(USERS_TABLE, "contact_country_iso2"),
+            )
+            .select_field(
+                UserDatatableRow::CONTACT_NUMBER,
+                ColumnRef::new(USERS_TABLE, "contact_number"),
+            )
+            .select_field(
+                UserDatatableRow::CREATED_AT,
+                ColumnRef::new(USERS_TABLE, "created_at"),
+            )
     }
 
     fn columns() -> Vec<DatatableColumn<Self::Row>> {
         vec![
-            DatatableColumn::field(User::ID).label("ID").sortable(),
-            DatatableColumn::field(User::USERNAME)
+            DatatableColumn::field(UserDatatableRow::USERNAME)
                 .label("Username")
-                .sortable()
-                .filterable()
+                .sort_by(ColumnRef::new(USERS_TABLE, "username"))
+                .filter_by(ColumnRef::new(USERS_TABLE, "username"))
                 .exportable(),
-            DatatableColumn::field(User::EMAIL)
+            DatatableColumn::field(UserDatatableRow::EMAIL)
                 .label("Email")
-                .sortable()
-                .filterable()
+                .sort_by(ColumnRef::new(USERS_TABLE, "email"))
+                .filter_by(ColumnRef::new(USERS_TABLE, "email"))
                 .exportable(),
-            DatatableColumn::field(User::NAME)
+            DatatableColumn::field(UserDatatableRow::NAME)
                 .label("Name")
-                .sortable()
-                .filterable()
+                .sort_by(ColumnRef::new(USERS_TABLE, "name"))
+                .filter_by(ColumnRef::new(USERS_TABLE, "name"))
                 .exportable(),
-            DatatableColumn::field(User::COUNTRY_ISO2)
+            DatatableColumn::field(UserDatatableRow::INTRODUCER_LABEL)
+                .label("admin.users.columns.introducer")
+                .sort_by(introducer_label_expr())
+                .filter_by(introducer_label_expr())
+                .exportable(),
+            DatatableColumn::field(UserDatatableRow::CREDIT_1)
+                .label("enum.credit_type.credit_1")
+                .sort_by(ColumnRef::new(USERS_TABLE, "credit_1"))
+                .exportable(),
+            DatatableColumn::field(UserDatatableRow::CREDIT_2)
+                .label("enum.credit_type.credit_2")
+                .sort_by(ColumnRef::new(USERS_TABLE, "credit_2"))
+                .exportable(),
+            DatatableColumn::field(UserDatatableRow::CREDIT_3)
+                .label("enum.credit_type.credit_3")
+                .sort_by(ColumnRef::new(USERS_TABLE, "credit_3"))
+                .exportable(),
+            DatatableColumn::field(UserDatatableRow::CREDIT_4)
+                .label("enum.credit_type.credit_4")
+                .sort_by(ColumnRef::new(USERS_TABLE, "credit_4"))
+                .exportable(),
+            DatatableColumn::field(UserDatatableRow::CREDIT_5)
+                .label("enum.credit_type.credit_5")
+                .sort_by(ColumnRef::new(USERS_TABLE, "credit_5"))
+                .exportable(),
+            DatatableColumn::field(UserDatatableRow::CREDIT_6)
+                .label("enum.credit_type.credit_6")
+                .sort_by(ColumnRef::new(USERS_TABLE, "credit_6"))
+                .exportable(),
+            DatatableColumn::field(UserDatatableRow::COUNTRY_ISO2)
                 .label("Country")
-                .sortable()
-                .filterable()
+                .sort_by(ColumnRef::new(USERS_TABLE, "country_iso2"))
+                .filter_by(ColumnRef::new(USERS_TABLE, "country_iso2"))
                 .exportable(),
-            DatatableColumn::field(User::CONTACT_COUNTRY_ISO2)
+            DatatableColumn::field(UserDatatableRow::CONTACT_COUNTRY_ISO2)
                 .label("Contact Country")
-                .sortable()
-                .filterable()
+                .sort_by(ColumnRef::new(USERS_TABLE, "contact_country_iso2"))
+                .filter_by(ColumnRef::new(USERS_TABLE, "contact_country_iso2"))
                 .exportable(),
-            DatatableColumn::field(User::CONTACT_NUMBER)
+            DatatableColumn::field(UserDatatableRow::CONTACT_NUMBER)
                 .label("Contact Number")
-                .sortable()
-                .filterable()
+                .sort_by(ColumnRef::new(USERS_TABLE, "contact_number"))
+                .filter_by(ColumnRef::new(USERS_TABLE, "contact_number"))
                 .exportable(),
-            DatatableColumn::field(User::CREATED_AT)
+            DatatableColumn::field(UserDatatableRow::CREATED_AT)
                 .label("Created")
-                .sortable()
-                .filterable()
+                .sort_by(ColumnRef::new(USERS_TABLE, "created_at"))
                 .exportable(),
+            DatatableColumn::field(UserDatatableRow::INTRODUCER_USER_ID),
         ]
     }
 
     fn default_sort() -> Vec<DatatableSort<Self::Row>> {
-        vec![DatatableSort::desc(User::CREATED_AT)]
+        vec![DatatableSort::desc(UserDatatableRow::CREATED_AT)]
     }
 
     async fn available_filters(_ctx: &DatatableContext) -> Result<Vec<DatatableFilterRow>> {
@@ -65,9 +189,14 @@ impl Datatable for UserDatatable {
                 DatatableFilterField::text_search_fields(
                     "search",
                     "Search",
-                    [User::USERNAME, User::EMAIL, User::NAME],
+                    [
+                        DatatableFieldRef::<Self::Row>::from(UserDatatableRow::USERNAME),
+                        DatatableFieldRef::<Self::Row>::from(UserDatatableRow::EMAIL),
+                        DatatableFieldRef::<Self::Row>::from(UserDatatableRow::NAME),
+                        DatatableFieldRef::<Self::Row>::from(UserDatatableRow::INTRODUCER_LABEL),
+                    ],
                 )
-                .placeholder("Search username, email, or name..."),
+                .placeholder("admin.users.search_placeholder"),
                 DatatableFilterField::text_like("contact_number", "Contact number")
                     .placeholder("Search contact number..."),
             ),

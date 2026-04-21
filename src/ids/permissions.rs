@@ -14,6 +14,10 @@ pub enum Permission {
     UsersRead,
     #[forge(key = "users.manage")]
     UsersManage,
+    #[forge(key = "introducer_changes.read")]
+    IntroducerChangesRead,
+    #[forge(key = "introducer_changes.manage")]
+    IntroducerChangesManage,
     #[forge(key = "countries.read")]
     CountriesRead,
     #[forge(key = "countries.manage")]
@@ -47,6 +51,8 @@ impl Permission {
             Self::AdminsManage => "admins.manage",
             Self::UsersRead => "users.read",
             Self::UsersManage => "users.manage",
+            Self::IntroducerChangesRead => "introducer_changes.read",
+            Self::IntroducerChangesManage => "introducer_changes.manage",
             Self::CountriesRead => "countries.read",
             Self::CountriesManage => "countries.manage",
             Self::SettingsRead => "settings.read",
@@ -67,6 +73,7 @@ impl Permission {
             Self::ObservabilityView => "observability",
             Self::AdminsRead | Self::AdminsManage => "admins",
             Self::UsersRead | Self::UsersManage => "users",
+            Self::IntroducerChangesRead | Self::IntroducerChangesManage => "introducer_changes",
             Self::CountriesRead | Self::CountriesManage => "countries",
             Self::SettingsRead | Self::SettingsManage => "settings",
             Self::PagesRead | Self::PagesManage => "pages",
@@ -82,6 +89,7 @@ impl Permission {
             | Self::ObservabilityView
             | Self::AdminsRead
             | Self::UsersRead
+            | Self::IntroducerChangesRead
             | Self::CountriesRead
             | Self::SettingsRead
             | Self::PagesRead
@@ -90,6 +98,7 @@ impl Permission {
             | Self::LogsRead => "read",
             Self::AdminsManage
             | Self::UsersManage
+            | Self::IntroducerChangesManage
             | Self::CountriesManage
             | Self::SettingsManage
             | Self::PagesManage
@@ -102,6 +111,7 @@ impl Permission {
         match self {
             Self::AdminsManage => Some(Self::AdminsRead),
             Self::UsersManage => Some(Self::UsersRead),
+            Self::IntroducerChangesManage => Some(Self::IntroducerChangesRead),
             Self::CountriesManage => Some(Self::CountriesRead),
             Self::SettingsManage => Some(Self::SettingsRead),
             Self::PagesManage => Some(Self::PagesRead),
@@ -141,5 +151,21 @@ mod tests {
     fn variants_include_observability_view() {
         assert!(crate::domain::enums::enum_variants::<Permission>()
             .contains(&Permission::ObservabilityView));
+    }
+
+    #[test]
+    fn manage_implies_read_for_introducer_changes() {
+        assert_eq!(
+            Permission::IntroducerChangesManage.implied_permission(),
+            Some(Permission::IntroducerChangesRead)
+        );
+    }
+
+    #[test]
+    fn parse_recognizes_introducer_changes_manage() {
+        assert_eq!(
+            Permission::parse_key("introducer_changes.manage"),
+            Some(Permission::IntroducerChangesManage)
+        );
     }
 }

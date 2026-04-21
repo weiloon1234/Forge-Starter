@@ -17,6 +17,15 @@ import type { TFunction } from "i18next";
 
 const SCALE = 100_000_000n;
 
+export interface CreditBalanceFields {
+  credit_1: string;
+  credit_2: string;
+  credit_3: string;
+  credit_4: string;
+  credit_5: string;
+  credit_6: string;
+}
+
 export interface CreditAdjustmentFormValues extends Record<string, unknown> {
   user_id: string;
   credit_type: CreditType;
@@ -99,12 +108,8 @@ export function resolveExplanationPreview(
   return t(explanationKeyForOperation(operationValue(values)));
 }
 
-export function userOptionLabel(user: AdminUserLookupOptionResponse): string {
-  return user.subtitle ? `${user.label} · ${user.subtitle}` : user.label;
-}
-
 export function balanceForCreditType(
-  user: AdminUserLookupOptionResponse | null,
+  user: CreditBalanceFields | AdminUserLookupOptionResponse | null,
   creditType: CreditType,
 ): string {
   if (!user) {

@@ -133,6 +133,7 @@ export function DataTable<T>({
   title,
   subtitle,
   columns,
+  baseFilters = [],
   downloadUrl,
   refreshInterval,
   defaultPerPage = 20,
@@ -156,7 +157,7 @@ export function DataTable<T>({
     toggleSort,
     setFilters,
     refresh,
-  } = useDataTable<T>({ api, url, defaultPerPage });
+  } = useDataTable<T>({ api, url, baseFilters, defaultPerPage });
 
   useEffect(() => {
     if (refreshRef) refreshRef.current = refresh;
@@ -217,11 +218,12 @@ export function DataTable<T>({
   const handleDownload = useCallback(async () => {
     if (!downloadUrl) return;
     const params: Record<string, string> = {};
+    const combinedFilters = [...baseFilters, ...filters];
     if (sorts.length > 0) {
       params.sort = JSON.stringify(serializeSorts(sorts));
     }
-    if (filters.length > 0) {
-      params.filters = JSON.stringify(filters);
+    if (combinedFilters.length > 0) {
+      params.filters = JSON.stringify(combinedFilters);
     }
     const { data } = await api.get(downloadUrl, {
       params,
@@ -233,7 +235,7 @@ export function DataTable<T>({
     a.download = "export.xlsx";
     a.click();
     URL.revokeObjectURL(blobUrl);
-  }, [api, downloadUrl, sorts, filters]);
+  }, [api, downloadUrl, sorts, filters, baseFilters]);
 
   // ── Pagination helpers ──────────────────────────────────
 

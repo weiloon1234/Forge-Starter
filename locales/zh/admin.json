@@ -9,7 +9,47 @@
         },
         "users": {
             "title": "用户",
-            "subtitle": "浏览和搜索用户账户。"
+            "subtitle": "浏览和搜索用户账户。",
+            "search_placeholder": "搜索用户名、邮箱、姓名或推荐人...",
+            "credit_transactions_modal_title": "{{user}} · {{credit_type}} 流水",
+            "credit_transactions_modal_subtitle": "查看 {{user}} 在 {{credit_type}} 的只追加账本记录。",
+            "credit_balance_action": "查看 {{user}} 的 {{credit_type}} 流水",
+            "columns": {
+                "introducer": "推荐人"
+            }
+        },
+        "introducer_changes": {
+            "title": "推荐人变更",
+            "subtitle": "查看管理员修改用户推荐人的审计记录。",
+            "change_title": "修改推荐人",
+            "change_help": "把这个用户改挂到另一个现有推荐人名下，并保留只追加的管理员审计记录。",
+            "changed": "推荐人已修改",
+            "change_action": "修改推荐人",
+            "search_placeholder": "搜索用户、推荐人或管理员...",
+            "user_placeholder": "按用户名、姓名或邮箱搜索新的推荐人...",
+            "fields": {
+                "user": "用户",
+                "current_introducer": "当前推荐人",
+                "introducer": "新的推荐人"
+            },
+            "columns": {
+                "created": "创建时间",
+                "user": "用户",
+                "from_introducer": "原推荐人",
+                "to_introducer": "新推荐人",
+                "admin": "管理员"
+            },
+            "filters": {
+                "created_from": "创建开始日期",
+                "created_to": "创建结束日期",
+                "from_introducer": "原推荐人用户名",
+                "to_introducer": "新推荐人用户名"
+            },
+            "errors": {
+                "current_introducer_required": "只有已经有推荐人的用户才可以改挂。",
+                "same_introducer": "请选择不同的推荐人。",
+                "self_introducer": "用户不能把自己设为推荐人。"
+            }
         },
         "admins": {
             "title": "管理员",

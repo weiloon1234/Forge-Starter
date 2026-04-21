@@ -1,5 +1,6 @@
 pub mod admin;
 pub mod admin_credit_adjustment;
+pub mod admin_user_introducer_change;
 pub mod country;
 pub mod credit_transaction;
 pub mod page;
@@ -8,6 +9,7 @@ pub mod setting;
 pub mod user;
 pub use admin::Admin;
 pub use admin_credit_adjustment::AdminCreditAdjustment;
+pub use admin_user_introducer_change::AdminUserIntroducerChange;
 pub use country::Country;
 pub use credit_transaction::{CreditRelatedKey, CreditTransaction};
 pub use page::Page;

@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 interface UseDataTableConfig {
   api: AxiosInstance;
   url: string;
+  baseFilters?: DataTableFilter[];
   defaultPerPage?: number;
 }
 
@@ -40,7 +41,7 @@ export function serializeSorts(sorts: DataTableSort[]): DataTableSort[] {
 export function useDataTable<T>(
   config: UseDataTableConfig,
 ): UseDataTableReturn<T> {
-  const { api, url, defaultPerPage = 20 } = config;
+  const { api, url, baseFilters = [], defaultPerPage = 20 } = config;
 
   const [rows, setRows] = useState<T[]>([]);
   const [meta, setMeta] = useState<DataTableMeta | null>(null);
@@ -67,8 +68,9 @@ export function useDataTable<T>(
       if (sorts.length > 0) {
         params.sort = JSON.stringify(serializeSorts(sorts));
       }
-      if (filters.length > 0) {
-        params.filters = JSON.stringify(filters);
+      const combinedFilters = [...baseFilters, ...filters];
+      if (combinedFilters.length > 0) {
+        params.filters = JSON.stringify(combinedFilters);
       }
 
       const { data } = await api.get(url, { params });
@@ -94,7 +96,7 @@ export function useDataTable<T>(
     } finally {
       if (id === fetchRef.current) setLoading(false);
     }
-  }, [api, url, page, perPage, sorts, filters]);
+  }, [api, url, page, perPage, sorts, filters, baseFilters]);
 
   useEffect(() => {
     fetch();

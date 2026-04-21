@@ -74,6 +74,7 @@
             "password": "Password",
             "current_password": "Current password",
             "password_confirmation": "Password confirmation",
+            "introducer_user_id": "Introducer",
             "country_iso2": "Country",
             "contact_country_iso2": "Contact country",
             "contact_number": "Contact number",

@@ -8,6 +8,7 @@ import { CreditAdjustmentsPage } from "@/pages/CreditAdjustmentsPage";
 import { CreditTransactionsPage } from "@/pages/CreditTransactionsPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { ErrorPage } from "@/pages/ErrorPage";
+import { IntroducerChangesPage } from "@/pages/IntroducerChangesPage";
 import { JobsDashboardPage } from "@/pages/JobsDashboardPage";
 import { LogsPage } from "@/pages/LogsPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
@@ -25,6 +26,10 @@ export const router = createBrowserRouter(
       children: [
         { index: true, element: <DashboardPage /> },
         { path: "users", element: <UsersPage /> },
+        {
+          path: "users/introducer-changes",
+          element: <IntroducerChangesPage />,
+        },
         { path: "credits/transactions", element: <CreditTransactionsPage /> },
         { path: "credits/adjustments", element: <CreditAdjustmentsPage /> },
         { path: "admins", element: <AdminsPage /> },
