@@ -75,17 +75,17 @@ impl Datatable for AdminDatatable {
     async fn available_filters(_ctx: &DatatableContext) -> Result<Vec<DatatableFilterRow>> {
         Ok(vec![
             DatatableFilterRow::pair(
-                DatatableFilterField::text_like("username", "Username")
-                    .placeholder("Search username..."),
+                DatatableFilterField::text_like("username", "admin.datatable.filters.username")
+                    .placeholder("admin.datatable.placeholders.search_username"),
                 DatatableFilterField::text_search_fields(
                     "search",
-                    "Search",
+                    "admin.datatable.filters.search",
                     [Admin::NAME, Admin::EMAIL],
                 )
-                .placeholder("Name or email..."),
+                .placeholder("admin.datatable.placeholders.search_name_or_email"),
             ),
             DatatableFilterRow::single(
-                DatatableFilterField::select("admin_type", "Admin Type")
+                DatatableFilterField::select("admin_type", "admin.datatable.filters.admin_type")
                     .options(crate::domain::enums::AdminType::options()),
             ),
         ])

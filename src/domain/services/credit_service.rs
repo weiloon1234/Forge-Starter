@@ -230,26 +230,12 @@ fn parse_user_id(i18n: &I18n, user_id: &str) -> Result<ModelId<User>> {
         .map_err(|_| Error::http(422, forge::t!(i18n, "admin.credits.errors.invalid_user")))
 }
 
-fn credit_balance(user: &User, credit_type: CreditType) -> &Numeric {
-    match credit_type {
-        CreditType::Credit1 => &user.credit_1,
-        CreditType::Credit2 => &user.credit_2,
-        CreditType::Credit3 => &user.credit_3,
-        CreditType::Credit4 => &user.credit_4,
-        CreditType::Credit5 => &user.credit_5,
-        CreditType::Credit6 => &user.credit_6,
-    }
+fn credit_balance(user: &User, _credit_type: CreditType) -> &Numeric {
+    &user.credit_1
 }
 
-pub fn credit_balance_column(credit_type: CreditType) -> Column<User, Numeric> {
-    match credit_type {
-        CreditType::Credit1 => User::CREDIT_1,
-        CreditType::Credit2 => User::CREDIT_2,
-        CreditType::Credit3 => User::CREDIT_3,
-        CreditType::Credit4 => User::CREDIT_4,
-        CreditType::Credit5 => User::CREDIT_5,
-        CreditType::Credit6 => User::CREDIT_6,
-    }
+pub fn credit_balance_column(_credit_type: CreditType) -> Column<User, Numeric> {
+    User::CREDIT_1
 }
 
 fn normalized_string_map(value: &Option<Value>) -> Result<BTreeMap<String, String>> {

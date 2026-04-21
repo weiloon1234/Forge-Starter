@@ -145,7 +145,7 @@ impl Datatable for IntroducerChangeDatatable {
             DatatableFilterRow::single(
                 DatatableFilterField::text_search_fields(
                     "search",
-                    "Search",
+                    "admin.datatable.filters.search",
                     [
                         DatatableFieldRef::<Self::Row>::from(
                             IntroducerChangeDatatableRow::USER_LABEL,
@@ -166,23 +166,31 @@ impl Datatable for IntroducerChangeDatatable {
             DatatableFilterRow::pair(
                 DatatableFilterField::text_like(
                     "from_introducer_username",
-                    "From introducer username",
+                    "admin.datatable.filters.from_introducer_username",
                 )
-                .placeholder("From introducer username"),
-                DatatableFilterField::text_like("to_introducer_username", "To introducer username")
-                    .placeholder("To introducer username"),
+                .placeholder("admin.datatable.placeholders.from_introducer_username"),
+                DatatableFilterField::text_like(
+                    "to_introducer_username",
+                    "admin.datatable.filters.to_introducer_username",
+                )
+                .placeholder("admin.datatable.placeholders.to_introducer_username"),
             ),
             DatatableFilterRow::pair(
-                DatatableFilterField::date_from("created_from", "Created from").bind(
+                DatatableFilterField::date_from(
+                    "created_from",
+                    "admin.datatable.filters.created_from",
+                )
+                .bind(
                     IntroducerChangeDatatableRow::CREATED_AT.alias(),
                     DatatableFilterOp::DateFrom,
                     DatatableFilterValueKind::Date,
                 ),
-                DatatableFilterField::date_to("created_to", "Created to").bind(
-                    IntroducerChangeDatatableRow::CREATED_AT.alias(),
-                    DatatableFilterOp::DateTo,
-                    DatatableFilterValueKind::Date,
-                ),
+                DatatableFilterField::date_to("created_to", "admin.datatable.filters.created_to")
+                    .bind(
+                        IntroducerChangeDatatableRow::CREATED_AT.alias(),
+                        DatatableFilterOp::DateTo,
+                        DatatableFilterValueKind::Date,
+                    ),
             ),
         ])
     }

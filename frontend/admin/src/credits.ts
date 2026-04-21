@@ -19,11 +19,6 @@ const SCALE = 100_000_000n;
 
 export interface CreditBalanceFields {
   credit_1: string;
-  credit_2: string;
-  credit_3: string;
-  credit_4: string;
-  credit_5: string;
-  credit_6: string;
 }
 
 export interface CreditAdjustmentFormValues extends Record<string, unknown> {
@@ -104,26 +99,13 @@ export function resolveExplanationPreview(
 
 export function balanceForCreditType(
   user: CreditBalanceFields | AdminUserLookupOptionResponse | null,
-  creditType: CreditType,
+  _creditType: CreditType,
 ): string {
   if (!user) {
     return "0";
   }
 
-  switch (creditType) {
-    case "credit_1":
-      return user.credit_1;
-    case "credit_2":
-      return user.credit_2;
-    case "credit_3":
-      return user.credit_3;
-    case "credit_4":
-      return user.credit_4;
-    case "credit_5":
-      return user.credit_5;
-    case "credit_6":
-      return user.credit_6;
-  }
+  return user.credit_1;
 }
 
 export function projectedBalance(

@@ -7,6 +7,38 @@
             "cannot_grant_permission": "You cannot grant a permission you do not hold: {{permission}}",
             "invalid_admin_type": "You cannot assign this admin type."
         },
+        "datatable": {
+            "filters": {
+                "search": "Search",
+                "username": "Username",
+                "admin_type": "Admin type",
+                "status": "Status",
+                "default_only": "Default only",
+                "system_only": "System only",
+                "public_only": "Public only",
+                "contact_number": "Contact number",
+                "country": "Country",
+                "contact_country": "Contact country",
+                "from_introducer_username": "From introducer username",
+                "to_introducer_username": "To introducer username",
+                "credit_type": "Credit type",
+                "transaction_type": "Transaction type",
+                "amount_min": "Amount min",
+                "amount_max": "Amount max",
+                "created_from": "Created from",
+                "created_to": "Created to"
+            },
+            "placeholders": {
+                "search_username": "Search username...",
+                "search_name_or_email": "Name or email...",
+                "search_country_name_iso2_currency": "Name, ISO2, or currency...",
+                "search_contact_number": "Search contact number...",
+                "search_country_iso2": "Search country ISO2...",
+                "search_contact_country_iso2": "Search contact country ISO2...",
+                "from_introducer_username": "From introducer username",
+                "to_introducer_username": "To introducer username"
+            }
+        },
         "users": {
             "title": "Users",
             "subtitle": "Browse and search user accounts.",
@@ -137,7 +169,7 @@
             "system_slug_hint": "System page slugs are locked and cannot be changed.",
             "slug_hint": "Use lowercase letters, numbers, and hyphens only.",
             "system_delete_disabled": "System pages cannot be deleted.",
-            "search_placeholder": "Search slug...",
+            "search_placeholder": "Search page slug...",
             "locale_panel_title": "Content for {{locale}}",
             "sections": {
                 "page": "Page",

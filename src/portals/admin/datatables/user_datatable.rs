@@ -15,11 +15,6 @@ pub struct UserDatatableRow {
     email: Option<String>,
     name: Option<String>,
     credit_1: Numeric,
-    credit_2: Numeric,
-    credit_3: Numeric,
-    credit_4: Numeric,
-    credit_5: Numeric,
-    credit_6: Numeric,
     country_iso2: Option<String>,
     contact_country_iso2: Option<String>,
     contact_number: Option<String>,
@@ -73,26 +68,6 @@ impl Datatable for UserDatatable {
                 ColumnRef::new(USERS_TABLE, "credit_1"),
             )
             .select_field(
-                UserDatatableRow::CREDIT_2,
-                ColumnRef::new(USERS_TABLE, "credit_2"),
-            )
-            .select_field(
-                UserDatatableRow::CREDIT_3,
-                ColumnRef::new(USERS_TABLE, "credit_3"),
-            )
-            .select_field(
-                UserDatatableRow::CREDIT_4,
-                ColumnRef::new(USERS_TABLE, "credit_4"),
-            )
-            .select_field(
-                UserDatatableRow::CREDIT_5,
-                ColumnRef::new(USERS_TABLE, "credit_5"),
-            )
-            .select_field(
-                UserDatatableRow::CREDIT_6,
-                ColumnRef::new(USERS_TABLE, "credit_6"),
-            )
-            .select_field(
                 UserDatatableRow::COUNTRY_ISO2,
                 ColumnRef::new(USERS_TABLE, "country_iso2"),
             )
@@ -112,6 +87,7 @@ impl Datatable for UserDatatable {
 
     fn columns() -> Vec<DatatableColumn<Self::Row>> {
         vec![
+            DatatableColumn::field(UserDatatableRow::ID),
             DatatableColumn::field(UserDatatableRow::USERNAME)
                 .label("Username")
                 .sort_by(ColumnRef::new(USERS_TABLE, "username"))
@@ -136,38 +112,18 @@ impl Datatable for UserDatatable {
                 .label("enum.credit_type.credit_1")
                 .sort_by(ColumnRef::new(USERS_TABLE, "credit_1"))
                 .exportable(),
-            DatatableColumn::field(UserDatatableRow::CREDIT_2)
-                .label("enum.credit_type.credit_2")
-                .sort_by(ColumnRef::new(USERS_TABLE, "credit_2"))
-                .exportable(),
-            DatatableColumn::field(UserDatatableRow::CREDIT_3)
-                .label("enum.credit_type.credit_3")
-                .sort_by(ColumnRef::new(USERS_TABLE, "credit_3"))
-                .exportable(),
-            DatatableColumn::field(UserDatatableRow::CREDIT_4)
-                .label("enum.credit_type.credit_4")
-                .sort_by(ColumnRef::new(USERS_TABLE, "credit_4"))
-                .exportable(),
-            DatatableColumn::field(UserDatatableRow::CREDIT_5)
-                .label("enum.credit_type.credit_5")
-                .sort_by(ColumnRef::new(USERS_TABLE, "credit_5"))
-                .exportable(),
-            DatatableColumn::field(UserDatatableRow::CREDIT_6)
-                .label("enum.credit_type.credit_6")
-                .sort_by(ColumnRef::new(USERS_TABLE, "credit_6"))
-                .exportable(),
             DatatableColumn::field(UserDatatableRow::COUNTRY_ISO2)
                 .label("Country")
                 .sort_by(ColumnRef::new(USERS_TABLE, "country_iso2"))
                 .filter_by(ColumnRef::new(USERS_TABLE, "country_iso2"))
                 .exportable(),
             DatatableColumn::field(UserDatatableRow::CONTACT_COUNTRY_ISO2)
-                .label("Contact Country")
+                .label("Contact country")
                 .sort_by(ColumnRef::new(USERS_TABLE, "contact_country_iso2"))
                 .filter_by(ColumnRef::new(USERS_TABLE, "contact_country_iso2"))
                 .exportable(),
             DatatableColumn::field(UserDatatableRow::CONTACT_NUMBER)
-                .label("Contact Number")
+                .label("Contact number")
                 .sort_by(ColumnRef::new(USERS_TABLE, "contact_number"))
                 .filter_by(ColumnRef::new(USERS_TABLE, "contact_number"))
                 .exportable(),
@@ -188,7 +144,7 @@ impl Datatable for UserDatatable {
             DatatableFilterRow::pair(
                 DatatableFilterField::text_search_fields(
                     "search",
-                    "Search",
+                    "admin.datatable.filters.search",
                     [
                         DatatableFieldRef::<Self::Row>::from(UserDatatableRow::USERNAME),
                         DatatableFieldRef::<Self::Row>::from(UserDatatableRow::EMAIL),
@@ -197,14 +153,20 @@ impl Datatable for UserDatatable {
                     ],
                 )
                 .placeholder("admin.users.search_placeholder"),
-                DatatableFilterField::text_like("contact_number", "Contact number")
-                    .placeholder("Search contact number..."),
+                DatatableFilterField::text_like(
+                    "contact_number",
+                    "admin.datatable.filters.contact_number",
+                )
+                .placeholder("admin.datatable.placeholders.search_contact_number"),
             ),
             DatatableFilterRow::pair(
-                DatatableFilterField::text_like("country_iso2", "Country")
-                    .placeholder("Search country ISO2..."),
-                DatatableFilterField::text_like("contact_country_iso2", "Contact country")
-                    .placeholder("Search contact country ISO2..."),
+                DatatableFilterField::text_like("country_iso2", "admin.datatable.filters.country")
+                    .placeholder("admin.datatable.placeholders.search_country_iso2"),
+                DatatableFilterField::text_like(
+                    "contact_country_iso2",
+                    "admin.datatable.filters.contact_country",
+                )
+                .placeholder("admin.datatable.placeholders.search_contact_country_iso2"),
             ),
         ])
     }

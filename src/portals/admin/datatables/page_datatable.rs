@@ -113,11 +113,11 @@ impl Datatable for PageDatatable {
         Ok(vec![DatatableFilterRow::pair(
             DatatableFilterField::text_search_fields(
                 "search",
-                "Search",
+                "admin.datatable.filters.search",
                 [PageDatatableRow::SLUG, PageDatatableRow::TITLE],
             )
             .placeholder("admin.pages.search_placeholder"),
-            DatatableFilterField::checkbox("is_system", "System only"),
+            DatatableFilterField::checkbox("is_system", "admin.datatable.filters.system_only"),
         )])
     }
 }

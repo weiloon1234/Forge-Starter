@@ -28,11 +28,6 @@ interface UserRow {
   email: string | null;
   name: string | null;
   credit_1: string;
-  credit_2: string;
-  credit_3: string;
-  credit_4: string;
-  credit_5: string;
-  credit_6: string;
   country_iso2: string | null;
   contact_country_iso2: string | null;
   contact_number: string | null;

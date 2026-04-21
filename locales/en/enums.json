@@ -28,12 +28,7 @@
             "disabled": "Disabled"
         },
         "credit_type": {
-            "credit_1": "Credit 1",
-            "credit_2": "Credit 2",
-            "credit_3": "Credit 3",
-            "credit_4": "Credit 4",
-            "credit_5": "Credit 5",
-            "credit_6": "Credit 6"
+            "credit_1": "Cash Point"
         },
         "credit_transaction_type": {
             "admin_add": "Admin Add",

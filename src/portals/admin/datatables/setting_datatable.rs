@@ -72,7 +72,7 @@ impl Datatable for SettingDatatable {
             DatatableFilterRow::pair(
                 DatatableFilterField::text_search_fields(
                     "search",
-                    "Search",
+                    "admin.datatable.filters.search",
                     [
                         DatatableFieldRef::<Self::Row>::from(AppSetting::KEY),
                         DatatableFieldRef::<Self::Row>::from(AppSetting::LABEL),
@@ -80,12 +80,13 @@ impl Datatable for SettingDatatable {
                     ],
                 )
                 .placeholder("admin.settings.search_placeholder"),
-                DatatableFilterField::select("setting_type", "Type")
+                DatatableFilterField::select("setting_type", "admin.settings.columns.type")
                     .options(SettingType::options()),
             ),
             DatatableFilterRow::pair(
-                DatatableFilterField::select("group_name", "Group").options(group_options),
-                DatatableFilterField::checkbox("is_public", "Public only"),
+                DatatableFilterField::select("group_name", "admin.settings.columns.group")
+                    .options(group_options),
+                DatatableFilterField::checkbox("is_public", "admin.datatable.filters.public_only"),
             ),
         ])
     }
