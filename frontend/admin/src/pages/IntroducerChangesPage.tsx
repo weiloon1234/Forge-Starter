@@ -36,28 +36,28 @@ export function IntroducerChangesPage() {
   const columns: DataTableColumn<IntroducerChangeRow>[] = [
     {
       key: "created_at",
-      label: t("admin.introducer_changes.columns.created"),
+      label: t("Created"),
       sortable: true,
       format: "datetime",
     },
     {
       key: "user_label",
-      label: t("admin.introducer_changes.columns.user"),
+      label: t("User"),
       sortable: true,
     },
     {
       key: "from_introducer_label",
-      label: t("admin.introducer_changes.columns.from_introducer"),
+      label: t("From introducer"),
       sortable: true,
     },
     {
       key: "to_introducer_label",
-      label: t("admin.introducer_changes.columns.to_introducer"),
+      label: t("To introducer"),
       sortable: true,
     },
     {
       key: "admin_label",
-      label: t("admin.introducer_changes.columns.admin"),
+      label: t("Admin"),
       sortable: true,
     },
   ];

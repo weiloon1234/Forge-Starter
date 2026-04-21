@@ -104,7 +104,7 @@ impl Datatable for UserDatatable {
                 .filter_by(ColumnRef::new(USERS_TABLE, "name"))
                 .exportable(),
             DatatableColumn::field(UserDatatableRow::INTRODUCER_LABEL)
-                .label("admin.users.columns.introducer")
+                .label("Introducer")
                 .sort_by(introducer_label_expr())
                 .filter_by(introducer_label_expr())
                 .exportable(),
@@ -144,7 +144,7 @@ impl Datatable for UserDatatable {
             DatatableFilterRow::pair(
                 DatatableFilterField::text_search_fields(
                     "search",
-                    "admin.datatable.filters.search",
+                    "Search",
                     [
                         DatatableFieldRef::<Self::Row>::from(UserDatatableRow::USERNAME),
                         DatatableFieldRef::<Self::Row>::from(UserDatatableRow::EMAIL),
@@ -152,21 +152,15 @@ impl Datatable for UserDatatable {
                         DatatableFieldRef::<Self::Row>::from(UserDatatableRow::INTRODUCER_LABEL),
                     ],
                 )
-                .placeholder("admin.users.search_placeholder"),
-                DatatableFilterField::text_like(
-                    "contact_number",
-                    "admin.datatable.filters.contact_number",
-                )
-                .placeholder("admin.datatable.placeholders.search_contact_number"),
+                .placeholder("Search username, email, name, or introducer..."),
+                DatatableFilterField::text_like("contact_number", "Contact number")
+                    .placeholder("Search contact number..."),
             ),
             DatatableFilterRow::pair(
-                DatatableFilterField::text_like("country_iso2", "admin.datatable.filters.country")
-                    .placeholder("admin.datatable.placeholders.search_country_iso2"),
-                DatatableFilterField::text_like(
-                    "contact_country_iso2",
-                    "admin.datatable.filters.contact_country",
-                )
-                .placeholder("admin.datatable.placeholders.search_contact_country_iso2"),
+                DatatableFilterField::text_like("country_iso2", "Country")
+                    .placeholder("Search country ISO2..."),
+                DatatableFilterField::text_like("contact_country_iso2", "Contact country")
+                    .placeholder("Search contact country ISO2..."),
             ),
         ])
     }

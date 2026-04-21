@@ -175,7 +175,7 @@ export function UsersPage() {
     },
     {
       key: "introducer_label",
-      label: t("admin.users.columns.introducer"),
+      label: t("Introducer"),
       sortable: true,
       render: (row) => displayValue(row.introducer_label),
     },

@@ -84,22 +84,22 @@ impl Datatable for PageDatatable {
                 .sortable()
                 .exportable(),
             DatatableColumn::field(PageDatatableRow::SLUG)
-                .label("admin.pages.columns.slug")
+                .label("Slug")
                 .sortable()
                 .filter_by(ColumnRef::new(PAGES_TABLE, "slug"))
                 .exportable(),
             DatatableColumn::field(PageDatatableRow::TITLE)
-                .label("admin.pages.columns.title")
+                .label("Title")
                 .sortable()
                 .filter_by(page_title_expr())
                 .exportable(),
             DatatableColumn::field(PageDatatableRow::IS_SYSTEM)
-                .label("admin.pages.columns.system")
+                .label("System")
                 .sortable()
                 .filter_by(ColumnRef::new(PAGES_TABLE, "is_system"))
                 .exportable(),
             DatatableColumn::field(PageDatatableRow::UPDATED_AT)
-                .label("admin.pages.columns.updated")
+                .label("Updated")
                 .sortable()
                 .exportable(),
         ]
@@ -113,11 +113,11 @@ impl Datatable for PageDatatable {
         Ok(vec![DatatableFilterRow::pair(
             DatatableFilterField::text_search_fields(
                 "search",
-                "admin.datatable.filters.search",
+                "Search",
                 [PageDatatableRow::SLUG, PageDatatableRow::TITLE],
             )
-            .placeholder("admin.pages.search_placeholder"),
-            DatatableFilterField::checkbox("is_system", "admin.datatable.filters.system_only"),
+            .placeholder("Search page slug..."),
+            DatatableFilterField::checkbox("is_system", "System only"),
         )])
     }
 }

@@ -46,20 +46,20 @@ export function CreditTransactionsPage() {
     },
     {
       key: "transaction_type",
-      label: t("admin.credit_transactions.columns.transaction_type"),
+      label: t("Transaction type"),
       sortable: true,
       render: (row) =>
         enumLabel(CreditTransactionTypeOptions, row.transaction_type, t),
     },
     {
       key: "amount",
-      label: t("admin.credit_transactions.columns.amount"),
+      label: t("Amount"),
       sortable: true,
       render: (row) => row.amount,
     },
     {
       key: "created_at",
-      label: t("admin.credit_transactions.columns.created"),
+      label: t("Created"),
       sortable: true,
       format: "datetime",
     },

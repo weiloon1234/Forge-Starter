@@ -236,7 +236,7 @@ export function CreateCreditAdjustmentModal({
                   onChange={amountField.onChange}
                   onBlur={amountField.onBlur}
                   errors={amountField.errors}
-                  placeholder={t("admin.credits.amount_placeholder")}
+                  placeholder={t("100.00")}
                   hints={[t("admin.credits.amount_hint")]}
                 />
               </div>

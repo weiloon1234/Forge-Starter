@@ -137,35 +137,35 @@ impl Datatable for CreditAdjustmentDatatable {
     fn columns() -> Vec<DatatableColumn<Self::Row>> {
         vec![
             DatatableColumn::field(CreditAdjustmentDatatableRow::USER_LABEL)
-                .label("admin.credits.columns.user")
+                .label("User")
                 .sortable()
                 .filter_by(user_label_expr())
                 .exportable(),
             DatatableColumn::field(CreditAdjustmentDatatableRow::CREDIT_TYPE)
-                .label("admin.credits.columns.credit_type")
+                .label("Credit type")
                 .sortable()
                 .filter_by(ColumnRef::new(TRANSACTIONS_TABLE, "credit_type"))
                 .exportable(),
             DatatableColumn::field(CreditAdjustmentDatatableRow::AMOUNT)
-                .label("admin.credits.columns.amount")
+                .label("Amount")
                 .sortable()
                 .exportable(),
             DatatableColumn::field(CreditAdjustmentDatatableRow::ADMIN_LABEL)
-                .label("admin.credits.columns.admin")
+                .label("Admin")
                 .sortable()
                 .filter_by(admin_label_expr())
                 .exportable(),
             DatatableColumn::field(CreditAdjustmentDatatableRow::TRANSACTION_TYPE)
-                .label("admin.credits.columns.transaction_type")
+                .label("Transaction type")
                 .sortable()
                 .filter_by(ColumnRef::new(TRANSACTIONS_TABLE, "transaction_type"))
                 .exportable(),
             DatatableColumn::field(CreditAdjustmentDatatableRow::REMARK)
-                .label("admin.credits.columns.remark")
+                .label("Remark")
                 .filter_by(ColumnRef::new(ADJUSTMENTS_TABLE, "remark"))
                 .exportable(),
             DatatableColumn::field(CreditAdjustmentDatatableRow::CREATED_AT)
-                .label("admin.credits.columns.created")
+                .label("Created")
                 .sortable()
                 .filter_by(ColumnRef::new(ADJUSTMENTS_TABLE, "created_at"))
                 .exportable(),
@@ -187,7 +187,7 @@ impl Datatable for CreditAdjustmentDatatable {
             DatatableFilterRow::pair(
                 DatatableFilterField::text_search_fields(
                     "search",
-                    "admin.datatable.filters.search",
+                    "Search",
                     [
                         DatatableFieldRef::<Self::Row>::from(
                             CreditAdjustmentDatatableRow::USER_LABEL,
@@ -207,33 +207,25 @@ impl Datatable for CreditAdjustmentDatatable {
                         ),
                     ],
                 )
-                .placeholder("admin.credits.search_placeholder"),
-                DatatableFilterField::select("credit_type", "admin.datatable.filters.credit_type")
+                .placeholder("User, admin, type, remark, or trace..."),
+                DatatableFilterField::select("credit_type", "Credit type")
                     .options(CreditType::options()),
             ),
             DatatableFilterRow::single(
-                DatatableFilterField::select(
-                    "transaction_type",
-                    "admin.datatable.filters.transaction_type",
-                )
-                .options(CreditTransactionType::options()),
+                DatatableFilterField::select("transaction_type", "Transaction type")
+                    .options(CreditTransactionType::options()),
             ),
             DatatableFilterRow::pair(
-                DatatableFilterField::date_from(
-                    "created_from",
-                    "admin.datatable.filters.created_from",
-                )
-                .bind(
+                DatatableFilterField::date_from("created_from", "Created at (From)").bind(
                     CreditAdjustmentDatatableRow::CREATED_AT.alias(),
                     DatatableFilterOp::DateFrom,
                     DatatableFilterValueKind::Date,
                 ),
-                DatatableFilterField::date_to("created_to", "admin.datatable.filters.created_to")
-                    .bind(
-                        CreditAdjustmentDatatableRow::CREATED_AT.alias(),
-                        DatatableFilterOp::DateTo,
-                        DatatableFilterValueKind::Date,
-                    ),
+                DatatableFilterField::date_to("created_to", "Created at (To)").bind(
+                    CreditAdjustmentDatatableRow::CREATED_AT.alias(),
+                    DatatableFilterOp::DateTo,
+                    DatatableFilterValueKind::Date,
+                ),
             ),
         ])
     }

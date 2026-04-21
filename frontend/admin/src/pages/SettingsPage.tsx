@@ -75,28 +75,28 @@ export function SettingsPage() {
       : []),
     {
       key: "key",
-      label: t("admin.settings.columns.key"),
+      label: t("Key"),
       sortable: true,
     },
     {
       key: "label",
-      label: t("admin.settings.columns.label"),
+      label: t("Label"),
       sortable: true,
     },
     {
       key: "setting_type",
-      label: t("admin.settings.columns.type"),
+      label: t("Type"),
       sortable: true,
       render: (row) => settingTypeLabel(row.setting_type, t),
     },
     {
       key: "group_name",
-      label: t("admin.settings.columns.group"),
+      label: t("Group"),
       sortable: true,
     },
     {
       key: "is_public",
-      label: t("admin.settings.columns.public"),
+      label: t("Public"),
       sortable: true,
       render: (row) => (
         <span
@@ -110,12 +110,12 @@ export function SettingsPage() {
     },
     {
       key: "value",
-      label: t("admin.settings.columns.value"),
+      label: t("Value"),
       render: (row) => summarizeSettingValue(row.setting_type, row.value, t),
     },
     {
       key: "updated_at",
-      label: t("admin.settings.columns.updated"),
+      label: t("Updated"),
       sortable: true,
       render: (row) => (row.updated_at ? formatDateTime(row.updated_at) : "—"),
     },

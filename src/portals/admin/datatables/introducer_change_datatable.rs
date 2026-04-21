@@ -84,16 +84,16 @@ impl Datatable for IntroducerChangeDatatable {
     fn columns() -> Vec<DatatableColumn<Self::Row>> {
         vec![
             DatatableColumn::field(IntroducerChangeDatatableRow::CREATED_AT)
-                .label("admin.introducer_changes.columns.created")
+                .label("Created")
                 .sort_by(ColumnRef::new(INTRODUCER_CHANGES_TABLE, "created_at"))
                 .exportable(),
             DatatableColumn::field(IntroducerChangeDatatableRow::USER_LABEL)
-                .label("admin.introducer_changes.columns.user")
+                .label("User")
                 .sort_by(snapshot_label_expr("user_username", "user_id"))
                 .filter_by(snapshot_label_expr("user_username", "user_id"))
                 .exportable(),
             DatatableColumn::field(IntroducerChangeDatatableRow::FROM_INTRODUCER_LABEL)
-                .label("admin.introducer_changes.columns.from_introducer")
+                .label("From introducer")
                 .sort_by(snapshot_label_expr(
                     "from_introducer_username",
                     "from_introducer_user_id",
@@ -104,7 +104,7 @@ impl Datatable for IntroducerChangeDatatable {
                 ))
                 .exportable(),
             DatatableColumn::field(IntroducerChangeDatatableRow::TO_INTRODUCER_LABEL)
-                .label("admin.introducer_changes.columns.to_introducer")
+                .label("To introducer")
                 .sort_by(snapshot_label_expr(
                     "to_introducer_username",
                     "to_introducer_user_id",
@@ -115,7 +115,7 @@ impl Datatable for IntroducerChangeDatatable {
                 ))
                 .exportable(),
             DatatableColumn::field(IntroducerChangeDatatableRow::ADMIN_LABEL)
-                .label("admin.introducer_changes.columns.admin")
+                .label("Admin")
                 .sort_by(snapshot_label_expr("admin_username", "admin_id"))
                 .filter_by(snapshot_label_expr("admin_username", "admin_id"))
                 .exportable(),
@@ -145,7 +145,7 @@ impl Datatable for IntroducerChangeDatatable {
             DatatableFilterRow::single(
                 DatatableFilterField::text_search_fields(
                     "search",
-                    "admin.datatable.filters.search",
+                    "Search",
                     [
                         DatatableFieldRef::<Self::Row>::from(
                             IntroducerChangeDatatableRow::USER_LABEL,
@@ -161,36 +161,28 @@ impl Datatable for IntroducerChangeDatatable {
                         ),
                     ],
                 )
-                .placeholder("admin.introducer_changes.search_placeholder"),
+                .placeholder("Search user, introducer, or admin..."),
             ),
             DatatableFilterRow::pair(
                 DatatableFilterField::text_like(
                     "from_introducer_username",
-                    "admin.datatable.filters.from_introducer_username",
+                    "From introducer username",
                 )
-                .placeholder("admin.datatable.placeholders.from_introducer_username"),
-                DatatableFilterField::text_like(
-                    "to_introducer_username",
-                    "admin.datatable.filters.to_introducer_username",
-                )
-                .placeholder("admin.datatable.placeholders.to_introducer_username"),
+                .placeholder("From introducer username"),
+                DatatableFilterField::text_like("to_introducer_username", "To introducer username")
+                    .placeholder("To introducer username"),
             ),
             DatatableFilterRow::pair(
-                DatatableFilterField::date_from(
-                    "created_from",
-                    "admin.datatable.filters.created_from",
-                )
-                .bind(
+                DatatableFilterField::date_from("created_from", "Created at (From)").bind(
                     IntroducerChangeDatatableRow::CREATED_AT.alias(),
                     DatatableFilterOp::DateFrom,
                     DatatableFilterValueKind::Date,
                 ),
-                DatatableFilterField::date_to("created_to", "admin.datatable.filters.created_to")
-                    .bind(
-                        IntroducerChangeDatatableRow::CREATED_AT.alias(),
-                        DatatableFilterOp::DateTo,
-                        DatatableFilterValueKind::Date,
-                    ),
+                DatatableFilterField::date_to("created_to", "Created at (To)").bind(
+                    IntroducerChangeDatatableRow::CREATED_AT.alias(),
+                    DatatableFilterOp::DateTo,
+                    DatatableFilterValueKind::Date,
+                ),
             ),
         ])
     }

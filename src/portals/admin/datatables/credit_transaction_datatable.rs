@@ -143,16 +143,16 @@ fn credit_transaction_columns() -> Vec<DatatableColumn<CreditTransactionDatatabl
             .filter_by(ColumnRef::new(USERS_TABLE, "username"))
             .exportable(),
         DatatableColumn::field(CreditTransactionDatatableRow::TRANSACTION_TYPE)
-            .label("admin.credit_transactions.columns.transaction_type")
+            .label("Transaction type")
             .sort_by(ColumnRef::new(TRANSACTIONS_TABLE, "transaction_type"))
             .filter_by(ColumnRef::new(TRANSACTIONS_TABLE, "transaction_type"))
             .exportable(),
         DatatableColumn::field(CreditTransactionDatatableRow::AMOUNT)
-            .label("admin.credit_transactions.columns.amount")
+            .label("Amount")
             .sort_by(ColumnRef::new(TRANSACTIONS_TABLE, "amount"))
             .exportable(),
         DatatableColumn::field(CreditTransactionDatatableRow::CREATED_AT)
-            .label("admin.credit_transactions.columns.created")
+            .label("Created")
             .sort_by(ColumnRef::new(TRANSACTIONS_TABLE, "created_at"))
             .filter_by(ColumnRef::new(TRANSACTIONS_TABLE, "created_at"))
             .exportable(),
@@ -177,16 +177,16 @@ fn credit_transaction_columns() -> Vec<DatatableColumn<CreditTransactionDatatabl
 fn user_credit_transaction_columns() -> Vec<DatatableColumn<CreditTransactionDatatableRow>> {
     vec![
         DatatableColumn::field(CreditTransactionDatatableRow::TRANSACTION_TYPE)
-            .label("admin.credit_transactions.columns.transaction_type")
+            .label("Transaction type")
             .sort_by(ColumnRef::new(TRANSACTIONS_TABLE, "transaction_type"))
             .filter_by(ColumnRef::new(TRANSACTIONS_TABLE, "transaction_type"))
             .exportable(),
         DatatableColumn::field(CreditTransactionDatatableRow::AMOUNT)
-            .label("admin.credit_transactions.columns.amount")
+            .label("Amount")
             .sort_by(ColumnRef::new(TRANSACTIONS_TABLE, "amount"))
             .exportable(),
         DatatableColumn::field(CreditTransactionDatatableRow::CREATED_AT)
-            .label("admin.credit_transactions.columns.created")
+            .label("Created")
             .sort_by(ColumnRef::new(TRANSACTIONS_TABLE, "created_at"))
             .filter_by(ColumnRef::new(TRANSACTIONS_TABLE, "created_at"))
             .exportable(),
@@ -229,7 +229,7 @@ impl Datatable for CreditTransactionDatatable {
             DatatableFilterRow::pair(
                 DatatableFilterField::text_search_fields(
                     "search",
-                    "admin.datatable.filters.search",
+                    "Search",
                     [
                         DatatableFieldRef::<Self::Row>::from(
                             CreditTransactionDatatableRow::USER_LABEL,
@@ -254,55 +254,41 @@ impl Datatable for CreditTransactionDatatable {
                         ),
                     ],
                 )
-                .placeholder("admin.credit_transactions.search_placeholder"),
-                DatatableFilterField::select("credit_type", "admin.datatable.filters.credit_type")
+                .placeholder("User, email, user ID, related type, or related key..."),
+                DatatableFilterField::select("credit_type", "Credit type")
                     .options(CreditType::options()),
             ),
             DatatableFilterRow::single(
-                DatatableFilterField::select(
-                    "transaction_type",
-                    "admin.datatable.filters.transaction_type",
-                )
-                .options(CreditTransactionType::options()),
+                DatatableFilterField::select("transaction_type", "Transaction type")
+                    .options(CreditTransactionType::options()),
             ),
             DatatableFilterRow::pair(
-                DatatableFilterField::decimal_min(
-                    "amount_min",
-                    "admin.datatable.filters.amount_min",
-                )
-                .bind(
-                    CreditTransactionDatatableRow::AMOUNT.alias(),
-                    DatatableFilterOp::Gte,
-                    DatatableFilterValueKind::Decimal,
-                )
-                .placeholder("admin.credit_transactions.amount_placeholder"),
-                DatatableFilterField::decimal_max(
-                    "amount_max",
-                    "admin.datatable.filters.amount_max",
-                )
-                .bind(
-                    CreditTransactionDatatableRow::AMOUNT.alias(),
-                    DatatableFilterOp::Lte,
-                    DatatableFilterValueKind::Decimal,
-                )
-                .placeholder("admin.credit_transactions.amount_placeholder"),
+                DatatableFilterField::decimal_min("amount_min", "Amount min")
+                    .bind(
+                        CreditTransactionDatatableRow::AMOUNT.alias(),
+                        DatatableFilterOp::Gte,
+                        DatatableFilterValueKind::Decimal,
+                    )
+                    .placeholder("100.00"),
+                DatatableFilterField::decimal_max("amount_max", "Amount max")
+                    .bind(
+                        CreditTransactionDatatableRow::AMOUNT.alias(),
+                        DatatableFilterOp::Lte,
+                        DatatableFilterValueKind::Decimal,
+                    )
+                    .placeholder("100.00"),
             ),
             DatatableFilterRow::pair(
-                DatatableFilterField::date_from(
-                    "created_from",
-                    "admin.datatable.filters.created_from",
-                )
-                .bind(
+                DatatableFilterField::date_from("created_from", "Created at (From)").bind(
                     CreditTransactionDatatableRow::CREATED_AT.alias(),
                     DatatableFilterOp::DateFrom,
                     DatatableFilterValueKind::Date,
                 ),
-                DatatableFilterField::date_to("created_to", "admin.datatable.filters.created_to")
-                    .bind(
-                        CreditTransactionDatatableRow::CREATED_AT.alias(),
-                        DatatableFilterOp::DateTo,
-                        DatatableFilterValueKind::Date,
-                    ),
+                DatatableFilterField::date_to("created_to", "Created at (To)").bind(
+                    CreditTransactionDatatableRow::CREATED_AT.alias(),
+                    DatatableFilterOp::DateTo,
+                    DatatableFilterValueKind::Date,
+                ),
             ),
         ])
     }
@@ -338,7 +324,7 @@ impl Datatable for UserCreditTransactionDatatable {
             DatatableFilterRow::pair(
                 DatatableFilterField::text_search_fields(
                     "search",
-                    "admin.datatable.filters.search",
+                    "Search",
                     [
                         DatatableFieldRef::<Self::Row>::from(
                             CreditTransactionDatatableRow::RELATED_TYPE,
@@ -348,51 +334,37 @@ impl Datatable for UserCreditTransactionDatatable {
                         ),
                     ],
                 )
-                .placeholder("admin.credits.trace_search_placeholder"),
-                DatatableFilterField::select(
-                    "transaction_type",
-                    "admin.datatable.filters.transaction_type",
-                )
-                .options(CreditTransactionType::options()),
+                .placeholder("Related type or key..."),
+                DatatableFilterField::select("transaction_type", "Transaction type")
+                    .options(CreditTransactionType::options()),
             ),
             DatatableFilterRow::pair(
-                DatatableFilterField::decimal_min(
-                    "amount_min",
-                    "admin.datatable.filters.amount_min",
-                )
-                .bind(
-                    CreditTransactionDatatableRow::AMOUNT.alias(),
-                    DatatableFilterOp::Gte,
-                    DatatableFilterValueKind::Decimal,
-                )
-                .placeholder("admin.credit_transactions.amount_placeholder"),
-                DatatableFilterField::decimal_max(
-                    "amount_max",
-                    "admin.datatable.filters.amount_max",
-                )
-                .bind(
-                    CreditTransactionDatatableRow::AMOUNT.alias(),
-                    DatatableFilterOp::Lte,
-                    DatatableFilterValueKind::Decimal,
-                )
-                .placeholder("admin.credit_transactions.amount_placeholder"),
+                DatatableFilterField::decimal_min("amount_min", "Amount min")
+                    .bind(
+                        CreditTransactionDatatableRow::AMOUNT.alias(),
+                        DatatableFilterOp::Gte,
+                        DatatableFilterValueKind::Decimal,
+                    )
+                    .placeholder("100.00"),
+                DatatableFilterField::decimal_max("amount_max", "Amount max")
+                    .bind(
+                        CreditTransactionDatatableRow::AMOUNT.alias(),
+                        DatatableFilterOp::Lte,
+                        DatatableFilterValueKind::Decimal,
+                    )
+                    .placeholder("100.00"),
             ),
             DatatableFilterRow::pair(
-                DatatableFilterField::date_from(
-                    "created_from",
-                    "admin.datatable.filters.created_from",
-                )
-                .bind(
+                DatatableFilterField::date_from("created_from", "Created at (From)").bind(
                     CreditTransactionDatatableRow::CREATED_AT.alias(),
                     DatatableFilterOp::DateFrom,
                     DatatableFilterValueKind::Date,
                 ),
-                DatatableFilterField::date_to("created_to", "admin.datatable.filters.created_to")
-                    .bind(
-                        CreditTransactionDatatableRow::CREATED_AT.alias(),
-                        DatatableFilterOp::DateTo,
-                        DatatableFilterValueKind::Date,
-                    ),
+                DatatableFilterField::date_to("created_to", "Created at (To)").bind(
+                    CreditTransactionDatatableRow::CREATED_AT.alias(),
+                    DatatableFilterOp::DateTo,
+                    DatatableFilterValueKind::Date,
+                ),
             ),
         ])
     }

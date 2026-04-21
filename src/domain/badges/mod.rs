@@ -57,9 +57,6 @@
 //!     → 250 ms debounce → flush → count() → publish { key, count }
 //!     → frontend store update → sidebar re-renders
 //! ```
-//!
-//! Full design and non-goals:
-//! `docs/superpowers/specs/2026-04-21-admin-badge-system-design.md`.
 
 pub mod dev_dummy;
 

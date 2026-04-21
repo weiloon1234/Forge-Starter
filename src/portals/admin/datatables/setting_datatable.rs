@@ -20,35 +20,35 @@ impl Datatable for SettingDatatable {
     fn columns() -> Vec<DatatableColumn<Self::Row>> {
         vec![
             DatatableColumn::field(AppSetting::KEY)
-                .label("admin.settings.columns.key")
+                .label("Key")
                 .sortable()
                 .filterable()
                 .exportable(),
             DatatableColumn::field(AppSetting::LABEL)
-                .label("admin.settings.columns.label")
+                .label("Label")
                 .sortable()
                 .filterable()
                 .exportable(),
             DatatableColumn::field(AppSetting::SETTING_TYPE)
-                .label("admin.settings.columns.type")
+                .label("Type")
                 .sortable()
                 .filterable()
                 .exportable(),
             DatatableColumn::field(AppSetting::GROUP_NAME)
-                .label("admin.settings.columns.group")
+                .label("Group")
                 .sortable()
                 .filterable()
                 .exportable(),
             DatatableColumn::field(AppSetting::IS_PUBLIC)
-                .label("admin.settings.columns.public")
+                .label("Public")
                 .sortable()
                 .filterable()
                 .exportable(),
             DatatableColumn::field(AppSetting::VALUE)
-                .label("admin.settings.columns.value")
+                .label("Value")
                 .exportable(),
             DatatableColumn::field(AppSetting::UPDATED_AT)
-                .label("admin.settings.columns.updated")
+                .label("Updated")
                 .sortable()
                 .exportable(),
         ]
@@ -72,21 +72,20 @@ impl Datatable for SettingDatatable {
             DatatableFilterRow::pair(
                 DatatableFilterField::text_search_fields(
                     "search",
-                    "admin.datatable.filters.search",
+                    "Search",
                     [
                         DatatableFieldRef::<Self::Row>::from(AppSetting::KEY),
                         DatatableFieldRef::<Self::Row>::from(AppSetting::LABEL),
                         DatatableFieldRef::<Self::Row>::from(AppSetting::DESCRIPTION),
                     ],
                 )
-                .placeholder("admin.settings.search_placeholder"),
-                DatatableFilterField::select("setting_type", "admin.settings.columns.type")
+                .placeholder("Key, label, or description..."),
+                DatatableFilterField::select("setting_type", "Type")
                     .options(SettingType::options()),
             ),
             DatatableFilterRow::pair(
-                DatatableFilterField::select("group_name", "admin.settings.columns.group")
-                    .options(group_options),
-                DatatableFilterField::checkbox("is_public", "admin.datatable.filters.public_only"),
+                DatatableFilterField::select("group_name", "Group").options(group_options),
+                DatatableFilterField::checkbox("is_public", "Public only"),
             ),
         ])
     }

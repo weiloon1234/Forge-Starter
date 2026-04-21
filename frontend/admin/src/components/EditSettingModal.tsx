@@ -452,31 +452,23 @@ export function EditSettingModal({
           <div className="sf-admin-form space-y-4">
             <div className="sf-setting-meta-grid">
               <div>
-                <div className="sf-setting-meta-label">
-                  {t("admin.settings.columns.key")}
-                </div>
+                <div className="sf-setting-meta-label">{t("Key")}</div>
                 <div className="sf-setting-meta-value">{setting.key}</div>
               </div>
               <div>
-                <div className="sf-setting-meta-label">
-                  {t("admin.settings.columns.type")}
-                </div>
+                <div className="sf-setting-meta-label">{t("Type")}</div>
                 <div className="sf-setting-meta-value">
                   {settingTypeLabel(setting.setting_type, t)}
                 </div>
               </div>
               <div>
-                <div className="sf-setting-meta-label">
-                  {t("admin.settings.columns.group")}
-                </div>
+                <div className="sf-setting-meta-label">{t("Group")}</div>
                 <div className="sf-setting-meta-value">
                   {setting.group_name}
                 </div>
               </div>
               <div>
-                <div className="sf-setting-meta-label">
-                  {t("admin.settings.columns.public")}
-                </div>
+                <div className="sf-setting-meta-label">{t("Public")}</div>
                 <div className="sf-setting-meta-value">
                   {setting.is_public
                     ? t("admin.settings.public_state.public")

@@ -7,48 +7,12 @@
             "cannot_grant_permission": "You cannot grant a permission you do not hold: {{permission}}",
             "invalid_admin_type": "You cannot assign this admin type."
         },
-        "datatable": {
-            "filters": {
-                "search": "Search",
-                "username": "Username",
-                "admin_type": "Admin type",
-                "status": "Status",
-                "default_only": "Default only",
-                "system_only": "System only",
-                "public_only": "Public only",
-                "contact_number": "Contact number",
-                "country": "Country",
-                "contact_country": "Contact country",
-                "from_introducer_username": "From introducer username",
-                "to_introducer_username": "To introducer username",
-                "credit_type": "Credit type",
-                "transaction_type": "Transaction type",
-                "amount_min": "Amount min",
-                "amount_max": "Amount max",
-                "created_from": "Created from",
-                "created_to": "Created to"
-            },
-            "placeholders": {
-                "search_username": "Search username...",
-                "search_name_or_email": "Name or email...",
-                "search_country_name_iso2_currency": "Name, ISO2, or currency...",
-                "search_contact_number": "Search contact number...",
-                "search_country_iso2": "Search country ISO2...",
-                "search_contact_country_iso2": "Search contact country ISO2...",
-                "from_introducer_username": "From introducer username",
-                "to_introducer_username": "To introducer username"
-            }
-        },
         "users": {
             "title": "Users",
             "subtitle": "Browse and search user accounts.",
-            "search_placeholder": "Search username, email, name, or introducer...",
             "credit_transactions_modal_title": "{{user}} · {{credit_type}} Transactions",
             "credit_transactions_modal_subtitle": "Review the append-only ledger for {{user}} in {{credit_type}}.",
-            "credit_balance_action": "View {{credit_type}} transactions for {{user}}",
-            "columns": {
-                "introducer": "Introducer"
-            }
+            "credit_balance_action": "View {{credit_type}} transactions for {{user}}"
         },
         "introducer_changes": {
             "title": "Introducer Changes",
@@ -57,19 +21,11 @@
             "change_help": "Move this user to a different existing introducer and keep an append-only admin audit record.",
             "changed": "Introducer changed",
             "change_action": "Change introducer",
-            "search_placeholder": "Search user, introducer, or admin...",
             "user_placeholder": "Search a new introducer by username, name, or email...",
             "fields": {
                 "user": "User",
                 "current_introducer": "Current introducer",
                 "introducer": "New introducer"
-            },
-            "columns": {
-                "created": "Created",
-                "user": "User",
-                "from_introducer": "From introducer",
-                "to_introducer": "To introducer",
-                "admin": "Admin"
             },
             "errors": {
                 "current_introducer_required": "Only users with an existing introducer can be reassigned.",
@@ -112,7 +68,6 @@
             "edit_title": "Edit {{label}}",
             "edit_action": "Edit setting",
             "updated": "Setting updated",
-            "search_placeholder": "Key, label, or description...",
             "replace_asset": "Replace file",
             "upload_replace_hint": "Upload a new file to replace the saved value.",
             "no_asset": "No file uploaded yet.",
@@ -124,15 +79,6 @@
             "public_state": {
                 "public": "Public",
                 "private": "Private"
-            },
-            "columns": {
-                "key": "Key",
-                "label": "Label",
-                "type": "Type",
-                "group": "Group",
-                "public": "Public",
-                "value": "Value",
-                "updated": "Updated"
             },
             "errors": {
                 "invalid_number": "Enter a valid number before saving.",
@@ -169,7 +115,6 @@
             "system_slug_hint": "System page slugs are locked and cannot be changed.",
             "slug_hint": "Use lowercase letters, numbers, and hyphens only.",
             "system_delete_disabled": "System pages cannot be deleted.",
-            "search_placeholder": "Search page slug...",
             "locale_panel_title": "Content for {{locale}}",
             "sections": {
                 "page": "Page",
@@ -184,12 +129,6 @@
                 "title": "Title",
                 "content": "Content",
                 "cover": "Cover image"
-            },
-            "columns": {
-                "slug": "Slug",
-                "title": "Title",
-                "system": "System",
-                "updated": "Updated"
             },
             "system_state": {
                 "system": "System",
@@ -208,10 +147,7 @@
             "create_title": "Create Credit Adjustment",
             "create_help": "Adjust a user's balance in one credit bucket and leave a traceable ledger entry behind.",
             "created": "Credit adjustment created",
-            "search_placeholder": "User, admin, type, remark, or trace...",
-            "trace_search_placeholder": "Related type or key...",
             "user_placeholder": "Search a user by name, username, or email...",
-            "amount_placeholder": "100.00",
             "amount_hint": "Enter a positive amount. Deduction is controlled by the operation field.",
             "override_hint": "Leave blank to use the generic translated explanation.",
             "preview_label": "Preview",
@@ -241,20 +177,6 @@
                 "related_key": "Related key",
                 "context": "Context JSON"
             },
-            "columns": {
-                "created": "Created",
-                "user": "User",
-                "credit_type": "Credit type",
-                "amount": "Amount",
-                "balance_after": "Balance after",
-                "explanation": "Explanation",
-                "transaction_type": "Transaction type",
-                "admin": "Admin",
-                "trace": "Trace",
-                "related_type": "Related type",
-                "related_key": "Related key",
-                "remark": "Remark"
-            },
             "errors": {
                 "invalid_amount": "Enter a valid positive credit amount.",
                 "invalid_user": "Select a valid user.",
@@ -267,18 +189,7 @@
         },
         "credit_transactions": {
             "title": "Credit Transactions",
-            "subtitle": "Review the full append-only credit ledger across manual adjustments and future automated flows.",
-            "search_placeholder": "User, email, user ID, related type, or related key...",
-            "amount_placeholder": "100.00",
-            "columns": {
-                "created": "Created",
-                "user": "User",
-                "credit_type": "Credit type",
-                "amount": "Amount",
-                "explanation": "Explanation",
-                "transaction_type": "Transaction type",
-                "balance_after": "Balance after"
-            }
+            "subtitle": "Review the full append-only credit ledger across manual adjustments and future automated flows."
         },
         "editor_assets": {
             "errors": {

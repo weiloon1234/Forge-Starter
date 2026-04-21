@@ -7,48 +7,12 @@
             "cannot_grant_permission": "你不能授予自己没有的权限：{{permission}}",
             "invalid_admin_type": "你不能分配此管理员类型。"
         },
-        "datatable": {
-            "filters": {
-                "search": "搜索",
-                "username": "用户名",
-                "admin_type": "管理员类型",
-                "status": "状态",
-                "default_only": "仅默认",
-                "system_only": "仅系统页面",
-                "public_only": "仅公开",
-                "contact_number": "联系电话",
-                "country": "国家",
-                "contact_country": "联系国家",
-                "from_introducer_username": "原推荐人用户名",
-                "to_introducer_username": "新推荐人用户名",
-                "credit_type": "信用类型",
-                "transaction_type": "交易类型",
-                "amount_min": "最小金额",
-                "amount_max": "最大金额",
-                "created_from": "创建时间起",
-                "created_to": "创建时间止"
-            },
-            "placeholders": {
-                "search_username": "搜索用户名...",
-                "search_name_or_email": "姓名或邮箱...",
-                "search_country_name_iso2_currency": "搜索国家、ISO2 或币种...",
-                "search_contact_number": "搜索联系电话...",
-                "search_country_iso2": "搜索国家 ISO2...",
-                "search_contact_country_iso2": "搜索联系国家 ISO2...",
-                "from_introducer_username": "原推荐人用户名",
-                "to_introducer_username": "新推荐人用户名"
-            }
-        },
         "users": {
             "title": "用户",
             "subtitle": "浏览和搜索用户账户。",
-            "search_placeholder": "搜索用户名、邮箱、姓名或推荐人...",
             "credit_transactions_modal_title": "{{user}} · {{credit_type}} 流水",
             "credit_transactions_modal_subtitle": "查看 {{user}} 在 {{credit_type}} 的只追加账本记录。",
-            "credit_balance_action": "查看 {{user}} 的 {{credit_type}} 流水",
-            "columns": {
-                "introducer": "推荐人"
-            }
+            "credit_balance_action": "查看 {{user}} 的 {{credit_type}} 流水"
         },
         "introducer_changes": {
             "title": "推荐人变更",
@@ -57,19 +21,11 @@
             "change_help": "把这个用户改挂到另一个现有推荐人名下，并保留只追加的管理员审计记录。",
             "changed": "推荐人已修改",
             "change_action": "修改推荐人",
-            "search_placeholder": "搜索用户、推荐人或管理员...",
             "user_placeholder": "按用户名、姓名或邮箱搜索新的推荐人...",
             "fields": {
                 "user": "用户",
                 "current_introducer": "当前推荐人",
                 "introducer": "新的推荐人"
-            },
-            "columns": {
-                "created": "创建时间",
-                "user": "用户",
-                "from_introducer": "原推荐人",
-                "to_introducer": "新推荐人",
-                "admin": "管理员"
             },
             "errors": {
                 "current_introducer_required": "只有已经有推荐人的用户才可以改挂。",
@@ -112,7 +68,6 @@
             "edit_title": "编辑 {{label}}",
             "edit_action": "编辑设置",
             "updated": "设置已更新",
-            "search_placeholder": "键名、标签或说明...",
             "replace_asset": "替换文件",
             "upload_replace_hint": "上传新文件以替换当前保存的值。",
             "no_asset": "尚未上传文件。",
@@ -124,15 +79,6 @@
             "public_state": {
                 "public": "公开",
                 "private": "私有"
-            },
-            "columns": {
-                "key": "键名",
-                "label": "标签",
-                "type": "类型",
-                "group": "分组",
-                "public": "公开",
-                "value": "值",
-                "updated": "更新时间"
             },
             "errors": {
                 "invalid_number": "请先输入有效的数字再保存。",
@@ -169,7 +115,6 @@
             "system_slug_hint": "系统页面的 slug 已锁定，不能修改。",
             "slug_hint": "只允许使用小写字母、数字和连字符。",
             "system_delete_disabled": "系统页面不能被删除。",
-            "search_placeholder": "搜索页面标识...",
             "locale_panel_title": "{{locale}} 内容",
             "sections": {
                 "page": "页面",
@@ -184,12 +129,6 @@
                 "title": "标题",
                 "content": "内容",
                 "cover": "封面图"
-            },
-            "columns": {
-                "slug": "Slug",
-                "title": "标题",
-                "system": "系统",
-                "updated": "更新时间"
             },
             "system_state": {
                 "system": "系统",
@@ -208,10 +147,7 @@
             "create_title": "创建信用调整",
             "create_help": "调整用户某个信用栏位的余额，并留下可追踪的流水记录。",
             "created": "信用调整已创建",
-            "search_placeholder": "搜索用户、管理员、类型、备注或追踪信息...",
-            "trace_search_placeholder": "搜索关联类型或关联键...",
             "user_placeholder": "按姓名、用户名或邮箱搜索用户...",
-            "amount_placeholder": "100.00",
             "amount_hint": "请输入正数金额，扣减由操作类型决定。",
             "override_hint": "留空则使用系统默认的多语言说明。",
             "preview_label": "预览",
@@ -241,20 +177,6 @@
                 "related_key": "关联键",
                 "context": "上下文 JSON"
             },
-            "columns": {
-                "created": "创建时间",
-                "user": "用户",
-                "credit_type": "信用类型",
-                "amount": "金额",
-                "balance_after": "调整后余额",
-                "explanation": "说明",
-                "transaction_type": "交易类型",
-                "admin": "管理员",
-                "trace": "追踪",
-                "related_type": "关联类型",
-                "related_key": "关联键",
-                "remark": "备注"
-            },
             "errors": {
                 "invalid_amount": "请输入有效且大于 0 的信用金额。",
                 "invalid_user": "请选择有效的用户。",
@@ -267,18 +189,7 @@
         },
         "credit_transactions": {
             "title": "信用流水",
-            "subtitle": "查看完整的只追加信用账本，覆盖手动调整以及未来的自动业务流程。",
-            "search_placeholder": "搜索用户、邮箱、用户 ID、关联类型或关联键...",
-            "amount_placeholder": "100.00",
-            "columns": {
-                "created": "创建时间",
-                "user": "用户",
-                "credit_type": "信用类型",
-                "amount": "金额",
-                "explanation": "说明",
-                "transaction_type": "交易类型",
-                "balance_after": "流水后余额"
-            }
+            "subtitle": "查看完整的只追加信用账本，覆盖手动调整以及未来的自动业务流程。"
         },
         "editor_assets": {
             "errors": {

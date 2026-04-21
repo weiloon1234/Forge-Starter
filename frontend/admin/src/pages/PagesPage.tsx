@@ -67,18 +67,18 @@ export function PagesPage() {
     },
     {
       key: "slug",
-      label: t("admin.pages.columns.slug"),
+      label: t("Slug"),
       sortable: true,
     },
     {
       key: "title",
-      label: t("admin.pages.columns.title"),
+      label: t("Title"),
       sortable: true,
       render: (row) => row.title || "—",
     },
     {
       key: "is_system",
-      label: t("admin.pages.columns.system"),
+      label: t("System"),
       sortable: true,
       render: (row) => (
         <span
@@ -92,7 +92,7 @@ export function PagesPage() {
     },
     {
       key: "updated_at",
-      label: t("admin.pages.columns.updated"),
+      label: t("Updated"),
       sortable: true,
       render: (row) => (row.updated_at ? formatDateTime(row.updated_at) : "—"),
     },

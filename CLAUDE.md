@@ -2,15 +2,61 @@
 
 A Forge framework multi-portal Rust backend with React frontends. Single binary, 4 runtime processes (HTTP, Worker, Scheduler, WebSocket). Forge handles infrastructure; app code stays in `src/domain/` and `src/portals/`.
 
-## Baseline
+## Skills
 
-Read `STARTER-BASELINE.md` first before making structural changes.
+Project-level skills under `.claude/skills/` codify recurring development patterns with strongly-typed discipline and a consistent shape. Each skill is a `SKILL.md` with a frontmatter `description` that triggers on relevant user phrasings — future LLM sessions discover and apply them automatically. Conventions for writing / reading / extending skills live in `.claude/skills/SKILL-CONVENTIONS.md` (tier model + shared section layout + naming + strongly-typed rules).
+
+**Orchestrator (Tier 3):**
+
+| Skill | Use when |
+|---|---|
+| [`new-module`](.claude/skills/new-module/SKILL.md) | Adding a whole new feature module that spans model + permissions + admin UI + routes + optional badge/events/jobs/notifications — sequences invocations of the smaller skills in dependency order |
+| [`new-portal`](.claude/skills/new-portal/SKILL.md) | Adding a full new authenticated portal (routes + SPA + guards + permissions) |
+
+**Backend skills:**
+
+| Skill | Use when |
+|---|---|
+| [`new-model`](.claude/skills/new-model/SKILL.md) | Adding a new `forge::Model` — struct, migration, seeder, relations, authenticatable wiring |
+| [`new-enum`](.claude/skills/new-enum/SKILL.md) | Adding a `#[derive(forge::AppEnum)]` enum — shared under `src/domain/enums/` or file-private helper |
+| [`new-permission`](.claude/skills/new-permission/SKILL.md) | Adding a `Permission` enum variant for a new RBAC scope |
+| [`new-route`](.claude/skills/new-route/SKILL.md) | Adding a single REST route OR frontend SPA route that isn't covered by a broader feature skill (custom actions, webhooks, health, bulk, export) |
+| [`new-event-listener`](.claude/skills/new-event-listener/SKILL.md) | Reacting to a domain event or `ModelCreated/Updated/Deleted` bus event |
+| [`new-schedule`](.claude/skills/new-schedule/SKILL.md) | Adding a recurring / cron-driven task in `src/schedules/` (hourly cleanup, daily reports, etc.) |
+| [`new-validation-rule`](.claude/skills/new-validation-rule/SKILL.md) | Adding a custom `ValidationRule` — field-level server-side checks beyond built-ins |
+| [`new-channel`](.claude/skills/new-channel/SKILL.md) | Adding a custom WebSocket channel beyond `admin:presence` / `admin:badges` |
+| [`new-cli-command`](.claude/skills/new-cli-command/SKILL.md) | Adding a custom CLI command (`PROCESS=cli cargo run -- <your:command>`) — import / backfill / cleanup / ops scripts |
+| [`new-integration`](.claude/skills/new-integration/SKILL.md) | Wrapping a third-party API (Stripe / Twilio / KYC / etc.) under `src/domain/integrations/` |
+
+**Frontend skills:**
+
+| Skill | Use when |
+|---|---|
+| [`shared-components`](.claude/skills/shared-components/SKILL.md) | Picking the right `@shared/components` primitive, composing a control / modal / store — the anti-raw-HTML catalog |
+| [`frontend-form`](.claude/skills/frontend-form/SKILL.md) | Building a form — modal, page, wizard, settings — using `useForm` + `@shared/components` |
+| [`new-store`](.claude/skills/new-store/SKILL.md) | Adding a frontend shared-state store via `createStore` — imperative API + selector hooks |
+| [`admin-page`](.claude/skills/admin-page/SKILL.md) | Admin-portal page that is NOT a CRUD list (dashboard, detail, workflow, settings, report, viewer) |
+| [`admin-datatable`](.claude/skills/admin-datatable/SKILL.md) | Admin list / CRUD page backed by the datatable system |
+| [`admin-badge`](.claude/skills/admin-badge/SKILL.md) | Work-queue count indicator on the admin sidebar |
+
+**Cross-cutting skills:**
+
+| Skill | Use when |
+|---|---|
+| [`middleware`](.claude/skills/middleware/SKILL.md) | Choosing / configuring HTTP middleware (CORS, CSRF, RateLimit, Compression, MaxBodySize, RequestTimeout, ETag, SecurityHeaders) — global, named groups, per-scope, per-route overrides |
+| [`jobs-and-notifications`](.claude/skills/jobs-and-notifications/SKILL.md) | Async background work (Forge Jobs with retry/backoff/rate-limit) OR multi-channel user-facing delivery (Forge Notifications — email / database inbox / WebSocket broadcast) |
+| [`typescript`](.claude/skills/typescript/SKILL.md) | Understanding / extending the Rust → TypeScript generation pipeline |
+
+**Skill composition** — bigger skills delegate to smaller ones. `new-module` is the Tier-3 orchestrator that sequences the others for a whole-feature slice. `new-portal` invokes `new-model` (for the auth actor) and `new-permission` (per RBAC variant). `admin-datatable` assumes the model exists via `new-model`, and delegates its form-modal template to `frontend-form`. `admin-page` and `admin-datatable` both consult `shared-components` for primitive picks. `admin-badge` assumes the model + its lifecycle events exist. `new-route` picks up the gap when a single REST / SPA route doesn't fit a broader feature skill. Skills stack rather than overlap — the canonical shape for each layer lives in exactly one skill.
+
+## Baseline
 
 - Admin and user portals both use token auth.
 - Required verification commands: `make check`, `make lint`, `make types`.
 - Simple JSON DTOs should prefer `#[derive(Validate)]` + `forge::ApiSchema`; runtime-driven or conditional rules can stay manual.
 - JSON-only handlers should use `JsonValidated<T>`.
-- Feature/module frontend code must use shared primitives. If a portal-specific button style already exists, use `Button unstyled` rather than raw `<button>`.
+- Feature/module frontend code must use shared primitives. If a portal-specific button style already exists, use `Button unstyled` rather than raw `<button>`. Full catalog + rules: `frontend/CLAUDE.md` ("Rules" + "Component Map"), or the `shared-components` skill for the triggering-aware reference.
+- Two directory-scoped `CLAUDE.md` files sit below the root — Claude Code auto-loads each when an agent operates in that directory. Keep them consistent with the root: `frontend/CLAUDE.md` (frontend-specific rules + SSOT Rust→TS + i18n) and `src/portals/CLAUDE.md` (portal-local route scope DSL + naming conventions + thin-handler rule). Each points back at skills for procedures.
 - Observability is enabled by default, but `/_forge/*` is intentionally locked to authenticated developer admins only in `src/bootstrap/http.rs`.
 - WebSocket observability payloads stay redacted by default via `config/observability.toml`.
 - If a project wants broader observability access, it must intentionally relax the bootstrap authorizer.
@@ -34,6 +80,18 @@ make seed         # cargo run -- db:seed
 make routes       # cargo run -- routes:list
 make deploy       # bash scripts/build.sh (Docker build + R2 upload)
 ```
+
+**CLI scaffolders — always use these; never hand-create the files they generate:**
+
+```bash
+PROCESS=cli cargo run -- make:model     --name <PascalName>    # src/domain/models/<snake>.rs
+PROCESS=cli cargo run -- make:migration --name <slug>          # database/migrations/{timestamp}_<slug>.rs
+PROCESS=cli cargo run -- make:seeder    --name <Name>          # database/seeders/{prefix}_<snake>.rs
+PROCESS=cli cargo run -- make:job       --name <PascalName>    # src/domain/jobs/<snake>.rs
+PROCESS=cli cargo run -- make:command   --name <PascalName>    # src/commands/<snake>.rs
+```
+
+Files under `database/migrations/` and `database/seeders/` whose prefix is `000000000001_` through `000000000011_` are **Forge-published baselines** (schema foundation: personal_access_tokens, notifications, metadata, attachments, model_translations, countries, settings, users, admins) written into the project by `migrate:publish` / `seed:publish`. Don't hand-edit them, don't mimic their numeric-prefix naming — your app migrations / seeders always come from the scaffolders above.
 
 ## Config + .env Override
 
@@ -89,28 +147,17 @@ src/
 
 ## Key Patterns
 
-**Adding a new portal** (e.g., merchant):
-1. `src/portals/merchant/` — mod.rs, routes, requests.rs, resources.rs
-2. `src/ids/guards.rs` — add `Guard::Merchant`
-3. `src/ids/permissions.rs` — add merchant permissions
-4. `config/auth.toml` — add `[auth.guards.merchant]`
-5. `src/domain/models/merchant.rs` — Model + Authenticatable
-6. `frontend/merchant/` — Vite React SPA
+For every recurring task, the authoritative procedure is the matching skill in `.claude/skills/`. The Skills table above indexes all 21; the five summaries below preview the shape of the biggest cross-cutting patterns without leaving CLAUDE.md. Narrower tasks — event listener, permission, schedule, channel, validation rule, CLI command, integration, enum, store, route, form, admin page, middleware, TypeScript pipeline, shared-component selection — each have their own skill; consult the table.
 
-**Adding a new model:**
-1. `src/domain/models/` — `#[derive(Serialize, forge::Model)]` with `#[forge(model = "table_name")]`
-2. `database/migrations/` — create migration file
-3. Register in `providers/app_service_provider.rs` if authenticatable
+**Adding a whole feature module** (Tier-3 orchestration) — sequenced invocation of `new-permission` + `new-model` + `admin-datatable` + optional `admin-badge` + optional `new-event-listener` + optional `jobs-and-notifications`, in dependency order. → skill `new-module`.
 
-**Adding a new job:**
-1. `src/domain/jobs/` — impl `Job` trait
-2. `src/ids/jobs.rs` — add `JobId` constant
-3. Register: `registrar.register_job::<MyJob>()` in provider
+**Adding a new portal** — auth actor + route scope + `src/portals/<name>/` + `src/portals/spa.rs` handler + `frontend/<name>/` SPA + Makefile + Dockerfile. → skill `new-portal`.
 
-**Adding a new event:**
-1. `src/domain/events/` — impl `Event` trait
-2. `src/domain/events/listeners/` — impl `EventListener`
-3. Register: `registrar.listen_event::<E, _>(Listener)` in event provider
+**Adding a new model** — `#[derive(Serialize, forge::Model)]` + `#[forge(model = "<table>")]` + CLI-scaffolded migration + `mod.rs` export. Authenticatable actors additionally need `impl HasToken + Authenticatable` + `Guard::<Name>` + `config/auth.toml` block + `register_authenticatable::<M>()?` call. → skill `new-model`.
+
+**Adding an admin CRUD page** — Datatable trait + routes + request/response DTOs + service + form modal + delete modal + menu + i18n. Form-modal shape delegates to `frontend-form`. → skill `admin-datatable`.
+
+**Adding a sidebar count badge** — `impl AdminBadge` with `KEY` / `PERMISSION` / `type Watches` / `count()` + one-line provider registration + `badge: "work.<key>"` on the menu item. → skill `admin-badge`.
 
 ## Runtime Config (SPA Bootstrap)
 
@@ -157,44 +204,26 @@ ws.on("admin:presence", "presence:join", (payload) => { ... });
 ws.useStatus(); // "connected" | "connecting" | "disconnected"
 ```
 
-**Adding a new channel:**
-1. `src/ids/channels.rs` — add `ChannelId` constant
-2. `src/realtime/mod.rs` — register with `registrar.channel_with_options(...)`
-3. Frontend — `ws.subscribe("channel-name")` + `ws.on(...)` listeners
+**Adding a new channel** → skill `new-channel` (covers decisions: public vs guarded, presence tracking, broadcast-only vs bidirectional, per-user rooms).
 
 ## Admin Badge System
 
-Work-queue count indicators on the admin sidebar. Each badge answers "how many items need admin action?" — e.g. pending top-ups, pending KYC. Distinct from `forge::Notification` (which is outbound message delivery); see `docs/superpowers/specs/2026-04-21-admin-badge-system-design.md` for the full design.
+Work-queue count indicators on the admin sidebar — each badge answers "how many items need admin action?" (pending top-ups, pending KYC, etc.). Distinct from `forge::Notification` (outbound message delivery).
 
-**Architecture:** `impl AdminBadge` structs registered in `BadgeServiceProvider` declare a `PERMISSION`, a `type Watches: forge::Model`, and an async `count()` query. Forge's `ModelCreated/Updated/Deleted` events auto-trigger debounced (250 ms) recomputes. Counts publish to a shared `admin:badges` WebSocket channel via Redis-backed `app.websocket()?.publish(...)`. Admin frontend hydrates once from `GET /api/v1/admin/badges`, subscribes to the channel, and filters incoming deltas by the keys returned in the snapshot (its permission allowlist).
+**Architecture in one sentence:** Forge's `ModelCreated/Updated/DeletedEvent` bus → `BadgeLifecycleListener` → debounced `BadgeDispatcher` → `app.websocket()?.publish("admin:badges", ...)` → admin frontend filters deltas by the REST snapshot allowlist returned from `GET /api/v1/admin/badges`.
 
-**Adding a new badge:**
-1. `src/domain/badges/<name>.rs` — `impl AdminBadge for YourBadge` with `KEY`, `PERMISSION`, `type Watches`, and `count()`
-2. `src/domain/badges/mod.rs` — `pub mod <name>;`
-3. `src/providers/badge_service_provider.rs` — one line in `register_all_badges`: `registry.register::<YourBadge>()?;`
-4. `frontend/admin/src/config/side-menu.ts` — one field on the relevant menu item: `badge: "work.your_key"`
-
-That's it. No manual dispatch calls, no REST/WS duplication. Mutating a row in the watched model's table (save/update/delete via `forge::Model`) automatically triggers recompute + push.
+**Adding a badge** → skill `admin-badge` (full checklist + strongly-typed templates + do-nots).
 
 **Key conventions:**
-- Keys are namespaced: `work.*` for pending-action queues. Reserved for future `inbox.*` / `alert.*`.
+- Keys are namespaced `work.*` for pending-action queues. Reserved for future `inbox.*` / `alert.*`.
 - Parents auto-sum visible children's counts (sidebar helper `getBadgeCount`).
-- Frontend store `adminBadges` in `frontend/admin/src/stores/badgeStore.ts`; component badge in `frontend/admin/src/components/sidebar/Badge.tsx`.
-- Dev-only smoke badge `DevDummyBadge` is gated behind `APP__BADGES__DEV_DUMMY=true` — leave off in production.
+- Dev-only smoke badge `DevDummyBadge` gated behind `APP__BADGES__DEV_DUMMY=true` — leave off in production.
 
 ## Custom Validation Rules
 
-Custom rules are registered in `src/bootstrap/app.rs`. Rule IDs in `src/ids/validation.rs`. Rules in `src/validation/rules.rs`.
+Custom rules (impls in `src/validation/rules.rs`, IDs in `src/ids/validation.rs`, registered in `src/bootstrap/app.rs`) extend Forge's built-in validators for field-level checks the built-ins don't cover — e.g. `MobileRule`, `UsernameRule`, `PasswordRule`, `ActiveCountryRule` already ship with the starter. Error codes map to `validation.{code}` keys in `locales/*/validation.json` (same convention as built-in rules). Request DTOs invoke custom rules via `.rule(ids::validation::MY_RULE)` on the field chain.
 
-**Adding a new rule:**
-1. `src/validation/rules.rs` — struct implementing `ValidationRule` trait
-2. `src/ids/validation.rs` — add `ValidationRuleId` constant
-3. `src/validation/mod.rs` — export the struct
-4. `src/bootstrap/app.rs` — `.register_validation_rule(id, Rule)`
-5. `locales/*/validation.json` — add `validation.{code}` translation keys
-6. Usage: `.rule(ids::validation::MY_RULE)` in request validators
-
-Error codes from custom rules are translated via `validation.{code}` in locale files (same as built-in rules).
+**Adding a new rule** → skill `new-validation-rule`.
 
 ## Forge Framework API
 
@@ -260,10 +289,27 @@ Translation files in `locales/` are shared between Rust backend and React fronte
 - Do not install new dependencies without asking
 - Do not modify `scripts/systemd/` static files — setup.sh generates services dynamically
 - Do not write raw user-facing strings — always use `t("key")` for any text the user sees
+- Do not render raw native HTML form controls (`<button>`, `<input>`, `<select>`, `<textarea>`, `<form>` as event-target) in feature / page / module code — always use `@shared/components` primitives (`<Input>`, `<Select>`, `<Button>`, etc.). `<Button unstyled>` is the escape hatch for clickable-but-custom-styled cases. Only `frontend/shared/` infrastructure internals may touch native controls.
 - Do not concatenate translations — use parameterized keys instead
 - Do not return raw string error messages from backend — use `t!(i18n, "key")` for any API response text the user will see
+- Do not hand-create model / migration / seeder / job / command files — use the CLI scaffolders (`make:model`, `make:migration`, `make:seeder`, `make:job`, `make:command`) from the Commands section above
+- Do not hand-edit or mimic the `000000000001_*` baseline files in `database/migrations/` or `database/seeders/` — those are Forge-published foundations, not your template
 
 ## Important discipline of codebase
 
-- DRY (Don't Repeat Yourself) is very important
-- SSOT (Single Source Of Truth) is very important
+**DRY (Don't Repeat Yourself)** — if the same logic appears in two places, extract. Duplicate code drifts; drift produces bugs.
+
+**SSOT (Single Source of Truth)** — every piece of knowledge has exactly one authoritative location. This is the non-negotiable backbone of the starter. Concrete applications:
+
+- **Translations (i18n)** — `locales/<lang>/*.json` is the single source for BOTH Rust backend (`t!(i18n, "key")`) and React frontend (`t("key")`). Same files, same `{{variable}}` syntax, no separate frontend i18n copy. Non-English locales MUST contain every key the code references. See "Translation Rules" section for the full discipline.
+- **Enums** — `src/domain/enums/<name>.rs` with `#[derive(forge::AppEnum)]` is the single source. The TypeScript union type + `Options` (with `labelKey`) + `Values` + `Meta` exports are generated by `make types` — never hand-written in TS. File-private helper enums stay inline in their model's file; enums referenced across modules live in `src/domain/enums/`.
+- **Permissions** — `src/ids/permissions.rs` is the single source. Route `.permission(...)` guards, datatable `minimum_read_permission` mappings, admin badge `PERMISSION` consts, and frontend `usePermission` / `PermissionValues` all resolve back to the same enum variants with the same `#[forge(key = "...")]` wire keys.
+- **Typed IDs** — `src/ids/` holds one file per concept (guards, permissions, jobs, schedules, channels, validation). Every inline string ID in app code is a bug; use the typed const.
+- **Model columns** — `#[derive(forge::Model)]` generates compile-time column constants (`User::EMAIL`, `TopUp::STATUS`). Queries, seeders, `.set(...)` / `.where_eq(...)` always use these constants, never raw string names.
+- **DTOs — one struct, four roles.** Each Rust DTO in `src/portals/<portal>/{requests,responses}.rs` serves four purposes from a single declaration: (1) **validation surface** — `#[derive(Validate)]` or `impl RequestValidator` runs server-side; (2) **wire contract** — `serde::Deserialize/Serialize` + `forge::ApiSchema` for the HTTP payload + OpenAPI schema; (3) **TypeScript type** — `ts_rs::TS` + `#[ts(export)]` → `frontend/shared/types/generated/`; (4) **React form's value type** — `useForm<CreateFooRequest>` binds directly to the generated type, so `values` IS a `CreateFooRequest`. Never hand-write a parallel TS Request type; never reimplement validation client-side; never define a local `FormValues` interface when the Request type already matches 1:1. Deviations (local `FormValues` type) are justified only when the form carries UI-only state the DTO can't represent: password + confirmation, search queries feeding async Select options, unified create-or-edit modals where Create/Update DTOs have different shapes.
+- **Scoped queries** — if the same `.where_eq(Self::FIELD, value)` filter appears in more than one call site, promote it to a method on the model (`impl <Model> { pub fn <scope>() -> ModelQuery<Self> { ... } }`). The filter's definition lives on the model, not duplicated across services.
+- **Routes** — each route is declared once in its portal's `src/portals/<portal>/mod.rs` scope. Frontend consumers use the typed response/request DTOs; no hand-coded URL strings with hand-coded payload shapes.
+- **Badge count logic** — one `AdminBadge::count()` implementation drives both the REST snapshot (`GET /admin/badges`) and the WebSocket push path. No parallel "count for the API" vs "count for the WS" forks.
+- **Skills** — the canonical procedure for each recurring task lives in exactly one `.claude/skills/<name>/SKILL.md`. Quick references in this file point at skills; they never duplicate the full procedure.
+
+Violating SSOT produces drift. Drift produces bugs and onboarding friction. The skills in `.claude/skills/` exist to enforce SSOT at the procedural level — pinning each recurring task to one canonical shape so that adding a badge, a model, or a portal never re-invents the file structure.

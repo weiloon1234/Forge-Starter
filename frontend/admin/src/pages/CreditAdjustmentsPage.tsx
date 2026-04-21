@@ -54,41 +54,41 @@ export function CreditAdjustmentsPage() {
   const columns: DataTableColumn<CreditAdjustmentRow>[] = [
     {
       key: "user_label",
-      label: t("admin.credits.columns.user"),
+      label: t("User"),
       sortable: true,
     },
     {
       key: "credit_type",
-      label: t("admin.credits.columns.credit_type"),
+      label: t("Credit type"),
       sortable: true,
       render: (row) => enumLabel(CreditTypeOptions, row.credit_type, t),
     },
     {
       key: "amount",
-      label: t("admin.credits.columns.amount"),
+      label: t("Amount"),
       sortable: true,
       render: (row) => row.amount,
     },
     {
       key: "admin_label",
-      label: t("admin.credits.columns.admin"),
+      label: t("Admin"),
       sortable: true,
     },
     {
       key: "transaction_type",
-      label: t("admin.credits.columns.transaction_type"),
+      label: t("Transaction type"),
       sortable: true,
       render: (row) =>
         enumLabel(CreditTransactionTypeOptions, row.transaction_type, t),
     },
     {
       key: "remark",
-      label: t("admin.credits.columns.remark"),
+      label: t("Remark"),
       render: (row) => row.remark ?? "—",
     },
     {
       key: "created_at",
-      label: t("admin.credits.columns.created"),
+      label: t("Created"),
       sortable: true,
       format: "datetime",
     },

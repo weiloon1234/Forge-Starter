@@ -70,20 +70,19 @@ impl Datatable for CountryDatatable {
             DatatableFilterRow::pair(
                 DatatableFilterField::text_search_fields(
                     "search",
-                    "admin.datatable.filters.search",
+                    "Search",
                     [
                         DatatableFieldRef::<Self::Row>::from(Country::NAME),
                         DatatableFieldRef::<Self::Row>::from(Country::ISO2),
                         DatatableFieldRef::<Self::Row>::from(Country::PRIMARY_CURRENCY_CODE),
                     ],
                 )
-                .placeholder("admin.datatable.placeholders.search_country_name_iso2_currency"),
-                DatatableFilterField::select("status", "admin.datatable.filters.status")
-                    .options(CountryStatus::options()),
+                .placeholder("Name, ISO2, or currency..."),
+                DatatableFilterField::select("status", "Status").options(CountryStatus::options()),
             ),
             DatatableFilterRow::single(DatatableFilterField::checkbox(
                 "is_default",
-                "admin.datatable.filters.default_only",
+                "Default only",
             )),
         ])
     }
