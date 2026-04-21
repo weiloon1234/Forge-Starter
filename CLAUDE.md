@@ -162,6 +162,26 @@ ws.useStatus(); // "connected" | "connecting" | "disconnected"
 2. `src/realtime/mod.rs` — register with `registrar.channel_with_options(...)`
 3. Frontend — `ws.subscribe("channel-name")` + `ws.on(...)` listeners
 
+## Admin Badge System
+
+Work-queue count indicators on the admin sidebar. Each badge answers "how many items need admin action?" — e.g. pending top-ups, pending KYC. Distinct from `forge::Notification` (which is outbound message delivery); see `docs/superpowers/specs/2026-04-21-admin-badge-system-design.md` for the full design.
+
+**Architecture:** `impl AdminBadge` structs registered in `BadgeServiceProvider` declare a `PERMISSION`, a `type Watches: forge::Model`, and an async `count()` query. Forge's `ModelCreated/Updated/Deleted` events auto-trigger debounced (250 ms) recomputes. Counts publish to a shared `admin:badges` WebSocket channel via Redis-backed `app.websocket()?.publish(...)`. Admin frontend hydrates once from `GET /api/v1/admin/badges`, subscribes to the channel, and filters incoming deltas by the keys returned in the snapshot (its permission allowlist).
+
+**Adding a new badge:**
+1. `src/domain/badges/<name>.rs` — `impl AdminBadge for YourBadge` with `KEY`, `PERMISSION`, `type Watches`, and `count()`
+2. `src/domain/badges/mod.rs` — `pub mod <name>;`
+3. `src/providers/badge_service_provider.rs` — one line in `register_all_badges`: `registry.register::<YourBadge>()?;`
+4. `frontend/admin/src/config/side-menu.ts` — one field on the relevant menu item: `badge: "work.your_key"`
+
+That's it. No manual dispatch calls, no REST/WS duplication. Mutating a row in the watched model's table (save/update/delete via `forge::Model`) automatically triggers recompute + push.
+
+**Key conventions:**
+- Keys are namespaced: `work.*` for pending-action queues. Reserved for future `inbox.*` / `alert.*`.
+- Parents auto-sum visible children's counts (sidebar helper `getBadgeCount`).
+- Frontend store `adminBadges` in `frontend/admin/src/stores/badgeStore.ts`; component badge in `frontend/admin/src/components/sidebar/Badge.tsx`.
+- Dev-only smoke badge `DevDummyBadge` is gated behind `APP__BADGES__DEV_DUMMY=true` — leave off in production.
+
 ## Custom Validation Rules
 
 Custom rules are registered in `src/bootstrap/app.rs`. Rule IDs in `src/ids/validation.rs`. Rules in `src/validation/rules.rs`.

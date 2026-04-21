@@ -6,9 +6,12 @@ import { useTranslation } from "react-i18next";
 import { NavLink, useLocation } from "react-router-dom";
 import { hasAdminTypeAccess } from "@/adminAccess";
 import { auth } from "@/auth";
+import { Badge } from "@/components/sidebar/Badge";
+import { getBadgeCount } from "@/components/sidebar/getBadgeCount";
 import type { MenuItem } from "@/config/side-menu";
 import { sideMenu } from "@/config/side-menu";
 import { hasPermission } from "@/hooks/usePermission";
+import { useBadgeCounts } from "@/stores/badgeStore";
 
 type LinkMenuItem = MenuItem & { path: string };
 type ParentMenuItem = MenuItem & { children: MenuItem[] };
@@ -134,6 +137,8 @@ function filterMenu(
 
 function LeafItem({ item }: { item: LinkMenuItem }) {
   const { t } = useTranslation();
+  const counts = useBadgeCounts();
+  const count = getBadgeCount(item, counts, () => true);
 
   return (
     <NavLink
@@ -145,6 +150,7 @@ function LeafItem({ item }: { item: LinkMenuItem }) {
     >
       {item.icon && <item.icon className="sf-sidebar-item-icon" />}
       <span>{t(item.label)}</span>
+      <Badge count={count} className="ml-auto" />
     </NavLink>
   );
 }
@@ -161,6 +167,8 @@ function ParentItem({
   pathname: string;
 }) {
   const { t } = useTranslation();
+  const counts = useBadgeCounts();
+  const parentCount = getBadgeCount(item, counts, () => true);
   const children = item.children.filter(hasPath);
   const hasActiveChild = children.some((child) =>
     pathname.startsWith(child.path),
@@ -176,6 +184,7 @@ function ParentItem({
       >
         {item.icon && <item.icon className="sf-sidebar-item-icon" />}
         <span>{t(item.label)}</span>
+        <Badge count={parentCount} className="ml-auto" />
         <ChevronDown
           className={`sf-sidebar-chevron ${expanded ? "sf-sidebar-chevron--open" : ""}`}
         />
@@ -183,17 +192,21 @@ function ParentItem({
 
       {expanded && (
         <div className="sf-sidebar-children">
-          {children.map((child) => (
-            <NavLink
-              key={child.key}
-              to={child.path}
-              className={({ isActive }) =>
-                `sf-sidebar-child ${isActive ? "sf-sidebar-child--active" : ""}`
-              }
-            >
-              <span>{t(child.label)}</span>
-            </NavLink>
-          ))}
+          {children.map((child) => {
+            const childCount = getBadgeCount(child, counts, () => true);
+            return (
+              <NavLink
+                key={child.key}
+                to={child.path}
+                className={({ isActive }) =>
+                  `sf-sidebar-child ${isActive ? "sf-sidebar-child--active" : ""}`
+                }
+              >
+                <span>{t(child.label)}</span>
+                <Badge count={childCount} className="ml-auto" />
+              </NavLink>
+            );
+          })}
         </div>
       )}
     </div>

@@ -21,6 +21,9 @@ export type MenuItem = {
   path?: string;
   permission?: Permission;
   adminTypes?: readonly AdminType[];
+  // e.g. "work.pending_topups" — must match an `AdminBadge::KEY` registered
+  // in `src/providers/badge_service_provider.rs`. See CLAUDE.md "Admin Badge
+  // System" for the full add-a-badge flow. Parents auto-sum visible children.
   badge?: string;
   children?: MenuItem[];
 };

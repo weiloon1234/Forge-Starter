@@ -1,6 +1,65 @@
 //! Admin badge system — work-queue count indicators for the sidebar.
 //!
-//! See `docs/superpowers/specs/2026-04-21-admin-badge-system-design.md`.
+//! Each badge answers "how many items need admin action?" (e.g. pending
+//! top-ups, pending KYC). Not to be confused with `forge::Notification`, which
+//! is outbound message delivery.
+//!
+//! # Adding a new badge
+//!
+//! 1. Create `src/domain/badges/<name>.rs` with `impl AdminBadge for YourBadge`
+//!    — declare `KEY` (namespaced, e.g. `"work.pending_topups"`), `PERMISSION`,
+//!    `type Watches: forge::Model`, and an async `count()` query.
+//! 2. Add `pub mod <name>;` here in `src/domain/badges/mod.rs`.
+//! 3. Register in `src/providers/badge_service_provider.rs` inside
+//!    `register_all_badges`: `registry.register::<YourBadge>()?;`.
+//! 4. Reference the key on a `MenuItem` in
+//!    `frontend/admin/src/config/side-menu.ts`: `badge: "work.your_key"`.
+//!
+//! No manual publish calls are needed. Forge's `ModelCreated/Updated/Deleted`
+//! events auto-trigger debounced (250 ms) recomputes via
+//! [`BadgeLifecycleListener`], and the [`BadgeDispatcher`] publishes to the
+//! shared `admin:badges` channel.
+//!
+//! # Example — strongly-typed `count()`
+//!
+//! Use macro-generated column constants (e.g. `TopUp::STATUS`) and app-owned
+//! enums (in `src/domain/enums/`) — never stringly-typed `.where_eq("status",
+//! "pending")`. The `#[derive(forge::Model)]` and `#[derive(forge::AppEnum)]`
+//! macros exist to keep column/value references compile-checked.
+//!
+//! ```ignore
+//! use crate::domain::enums::TopUpStatus;
+//! use crate::domain::models::TopUp;
+//!
+//! impl AdminBadge for PendingTopups {
+//!     const KEY: &'static str = "work.pending_topups";
+//!     const PERMISSION: Permission = Permission::TopupsManage;
+//!     type Watches = TopUp;
+//!
+//!     fn count(ctx: &AppContext) -> Pin<Box<dyn Future<Output = Result<u64>> + Send + '_>> {
+//!         Box::pin(async move {
+//!             let db = ctx.database()?;
+//!             let n = TopUp::model_query()
+//!                 .where_eq(TopUp::STATUS, TopUpStatus::Pending)
+//!                 .count(&*db)
+//!                 .await?;
+//!             Ok(n)
+//!         })
+//!     }
+//! }
+//! ```
+//!
+//! # Flow at a glance
+//!
+//! ```text
+//! TopUp::save → ModelCreatedEvent (snapshot.table = "top_ups")
+//!     → BadgeLifecycleListener → dispatcher.queue_recompute(key)
+//!     → 250 ms debounce → flush → count() → publish { key, count }
+//!     → frontend store update → sidebar re-renders
+//! ```
+//!
+//! Full design and non-goals:
+//! `docs/superpowers/specs/2026-04-21-admin-badge-system-design.md`.
 
 pub mod dev_dummy;
 
@@ -32,14 +91,17 @@ pub trait AdminBadge: Send + Sync + 'static {
     fn count(ctx: &AppContext) -> Pin<Box<dyn Future<Output = Result<u64>> + Send + '_>>;
 }
 
+/// Erased async count function — takes an `AppContext` and returns the current count.
+pub type BadgeCountFn =
+    Arc<dyn Fn(AppContext) -> Pin<Box<dyn Future<Output = Result<u64>> + Send>> + Send + Sync>;
+
 /// Type-erased descriptor stored in the registry.
 #[derive(Clone)]
 pub struct BadgeDescriptor {
     pub key: &'static str,
     pub permission: Permission,
     pub watches_table: String,
-    pub count:
-        Arc<dyn Fn(AppContext) -> Pin<Box<dyn Future<Output = Result<u64>> + Send>> + Send + Sync>,
+    pub count: BadgeCountFn,
 }
 
 impl BadgeDescriptor {
