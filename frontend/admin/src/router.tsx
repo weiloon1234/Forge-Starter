@@ -8,6 +8,7 @@ import { CreditAdjustmentsPage } from "@/pages/CreditAdjustmentsPage";
 import { CreditTransactionsPage } from "@/pages/CreditTransactionsPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { ErrorPage } from "@/pages/ErrorPage";
+import { HttpDashboardPage } from "@/pages/HttpDashboardPage";
 import { IntroducerChangesPage } from "@/pages/IntroducerChangesPage";
 import { JobsDashboardPage } from "@/pages/JobsDashboardPage";
 import { LogsPage } from "@/pages/LogsPage";
@@ -45,6 +46,14 @@ export const router = createBrowserRouter(
           element: (
             <DeveloperOnlyRoute>
               <LogsPage />
+            </DeveloperOnlyRoute>
+          ),
+        },
+        {
+          path: "developer/http",
+          element: (
+            <DeveloperOnlyRoute>
+              <HttpDashboardPage />
             </DeveloperOnlyRoute>
           ),
         },

@@ -5,6 +5,7 @@ import {
   Cable,
   Code2,
   FileText,
+  Gauge,
   LayoutDashboard,
   MoreHorizontal,
   ScrollText,
@@ -113,6 +114,13 @@ export const sideMenu: MenuItem[] = [
         path: "/developer/logs",
         icon: FileText,
         permission: "logs.read",
+      },
+      {
+        key: "developer.http",
+        label: "HTTP",
+        path: "/developer/http",
+        icon: Gauge,
+        permission: "observability.view",
       },
       {
         key: "developer.jobs",

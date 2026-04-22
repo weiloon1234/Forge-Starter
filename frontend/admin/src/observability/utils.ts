@@ -5,6 +5,8 @@ import {
 import axios from "axios";
 import type {
   FailedJobEntry,
+  HttpDurationBucketSnapshot,
+  HttpDurationHistogramSnapshot,
   MergedWebSocketChannel,
   WebSocketChannelConfig,
   WebSocketChannelStats,
@@ -27,6 +29,93 @@ export function formatDurationMs(value: number | null | undefined) {
   if (value < 1000) return `${value} ms`;
   if (value < 60_000) return `${(value / 1000).toFixed(1)} s`;
   return `${(value / 60_000).toFixed(1)} min`;
+}
+
+export function formatLatencyMs(value: number | null | undefined) {
+  if (value == null) return "—";
+  if (!Number.isFinite(value)) return "> 30 s";
+  if (value < 1) return "< 1 ms";
+  if (value < 1000) return `${Math.round(value)} ms`;
+  return `${(value / 1000).toFixed(2)} s`;
+}
+
+// Prometheus-style histogram_quantile over cumulative buckets.
+// Returns null when the histogram has no samples OR the target quantile lands
+// in the implicit +Inf bucket (i.e., beyond the highest finite upper bound).
+export function computeHistogramQuantile(
+  histogram: HttpDurationHistogramSnapshot | undefined,
+  quantile: number,
+): number | null {
+  if (!histogram || histogram.count === 0) return null;
+
+  const target = histogram.count * quantile;
+  let prevLe = 0;
+  let prevCum = 0;
+
+  for (const bucket of histogram.buckets) {
+    if (bucket.cumulative_count >= target) {
+      const bucketCount = bucket.cumulative_count - prevCum;
+      if (bucketCount === 0) return bucket.le_ms;
+      const fraction = (target - prevCum) / bucketCount;
+      return prevLe + fraction * (bucket.le_ms - prevLe);
+    }
+    prevLe = bucket.le_ms;
+    prevCum = bucket.cumulative_count;
+  }
+
+  // Target beyond all finite buckets — the implicit +Inf bucket has samples
+  // but no upper bound. Callers render this as "> {last_le_ms} ms".
+  return null;
+}
+
+export interface HttpLatencyBucketRow {
+  le_ms: number;
+  // non-cumulative count within this bucket
+  count: number;
+  // 0..1, share of total samples (including the +Inf overflow)
+  share: number;
+  // e.g., "≤ 25 ms", "250–500 ms", "> 30 s"
+  label: string;
+  overflow: boolean;
+}
+
+export function bucketRowsFromCumulative(
+  buckets: HttpDurationBucketSnapshot[],
+  total: number,
+): HttpLatencyBucketRow[] {
+  if (total === 0) return [];
+
+  const rows: HttpLatencyBucketRow[] = [];
+  let prevLe = 0;
+  let prevCum = 0;
+
+  for (const bucket of buckets) {
+    const count = bucket.cumulative_count - prevCum;
+    const label =
+      prevLe === 0 ? `≤ ${bucket.le_ms} ms` : `${prevLe}–${bucket.le_ms} ms`;
+    rows.push({
+      le_ms: bucket.le_ms,
+      count,
+      share: total > 0 ? count / total : 0,
+      label,
+      overflow: false,
+    });
+    prevLe = bucket.le_ms;
+    prevCum = bucket.cumulative_count;
+  }
+
+  const overflowCount = total - prevCum;
+  if (overflowCount > 0) {
+    rows.push({
+      le_ms: Number.POSITIVE_INFINITY,
+      count: overflowCount,
+      share: total > 0 ? overflowCount / total : 0,
+      label: `> ${prevLe} ms`,
+      overflow: true,
+    });
+  }
+
+  return rows;
 }
 
 export function formatDateTime(value: string | number | null | undefined) {

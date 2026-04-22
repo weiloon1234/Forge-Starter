@@ -15,9 +15,31 @@ export interface ReadinessResponse {
   probes: ReadinessProbe[];
 }
 
+export interface HttpDurationBucketSnapshot {
+  le_ms: number;
+  cumulative_count: number;
+}
+
+export interface HttpDurationHistogramSnapshot {
+  count: number;
+  sum_ms: number;
+  buckets: HttpDurationBucketSnapshot[];
+}
+
+export interface HttpRuntimeSnapshot {
+  requests_total: number;
+  informational_total: number;
+  success_total: number;
+  redirection_total: number;
+  client_error_total: number;
+  server_error_total: number;
+  duration_ms: HttpDurationHistogramSnapshot;
+}
+
 export interface RuntimeResponse {
   backend: string;
   bootstrap_complete: boolean;
+  http?: HttpRuntimeSnapshot;
   scheduler: {
     ticks_total: number;
     executed_schedules_total: number;
