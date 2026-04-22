@@ -1,4 +1,10 @@
-import { Button, Input, Select } from "@shared/components";
+import {
+  Button,
+  ContactInput,
+  CountrySelect,
+  Input,
+  Select,
+} from "@shared/components";
 import { useForm } from "@shared/hooks";
 import { ModalBody, ModalFooter, modal } from "@shared/modal";
 import type {
@@ -365,31 +371,30 @@ export function UserFormModal({
                 errors={passwordField.errors}
               />
 
-              <Input
+              <CountrySelect
                 name={countryField.name}
                 label={t("Country")}
                 value={countryField.value}
                 onChange={countryField.onChange}
-                onBlur={countryField.onBlur}
                 errors={countryField.errors}
               />
 
-              <Input
-                name={contactCountryField.name}
-                label={t("Contact country")}
-                value={contactCountryField.value}
-                onChange={contactCountryField.onChange}
-                onBlur={contactCountryField.onBlur}
-                errors={contactCountryField.errors}
-              />
-
-              <Input
-                name={contactNumberField.name}
-                label={t("Contact number")}
-                value={contactNumberField.value}
-                onChange={contactNumberField.onChange}
-                onBlur={contactNumberField.onBlur}
-                errors={contactNumberField.errors}
+              <ContactInput
+                label={t("Contact")}
+                countryField={{
+                  name: contactCountryField.name,
+                  value: contactCountryField.value,
+                  onChange: contactCountryField.onChange,
+                  onBlur: contactCountryField.onBlur,
+                  errors: contactCountryField.errors,
+                }}
+                numberField={{
+                  name: contactNumberField.name,
+                  value: contactNumberField.value,
+                  onChange: contactNumberField.onChange,
+                  onBlur: contactNumberField.onBlur,
+                  errors: contactNumberField.errors,
+                }}
               />
             </div>
           </form>

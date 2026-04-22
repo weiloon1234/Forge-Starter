@@ -66,6 +66,32 @@ impl ValidationRule for PasswordRule {
     }
 }
 
+/// Cross-field check: phone number is valid for the given ISO2 country.
+///
+/// Returns `true` if either value is missing or empty — pair with an explicit
+/// required-pair check if both must be present. Empty/missing iso2 or phone
+/// signals "nothing to validate" rather than "invalid".
+pub fn is_phone_valid_for_country(iso2: Option<&str>, phone: Option<&str>) -> bool {
+    let (Some(iso2), Some(phone)) = (iso2, phone) else {
+        return true;
+    };
+    let iso2 = iso2.trim().to_ascii_uppercase();
+    let phone = phone.trim();
+    if iso2.is_empty() || phone.is_empty() {
+        return true;
+    }
+    if iso2.len() != 2 {
+        return false;
+    }
+    let Ok(region) = iso2.parse::<phonenumber::country::Id>() else {
+        return false;
+    };
+    match phonenumber::parse(Some(region), phone) {
+        Ok(parsed) => phonenumber::is_valid(&parsed),
+        Err(_) => false,
+    }
+}
+
 pub struct ActiveCountryRule;
 
 #[async_trait]

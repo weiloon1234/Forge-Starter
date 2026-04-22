@@ -109,6 +109,13 @@ impl RequestValidator for UpdateProfileRequest {
                 .await?;
         }
 
+        if !crate::validation::is_phone_valid_for_country(
+            self.contact_country_iso2.as_deref(),
+            self.contact_number.as_deref(),
+        ) {
+            validator.add_error("contact_number", "phone_invalid_for_country", &[]);
+        }
+
         Ok(())
     }
 }

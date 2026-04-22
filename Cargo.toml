@@ -13,6 +13,7 @@ async-trait = "0.1"
 axum = "0.8"
 forge = { git = "https://github.com/weiloon1234/Forge.git", branch = "main" }
 percent-encoding = "2"
+phonenumber = "0.3"
 rust_xlsxwriter = "0.94.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

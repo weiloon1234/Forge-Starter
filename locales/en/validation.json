@@ -62,6 +62,7 @@
         "setting_step": "The {{attribute}} must match the allowed step",
 
         "mobile": "Invalid mobile number",
+        "phone_invalid_for_country": "The {{attribute}} is not valid for the selected country",
         "username_min": "Username must be at least 5 characters",
         "username_alpha_numeric": "Username must contain only letters and numbers",
         "password_min": "Password must be at least 8 characters",

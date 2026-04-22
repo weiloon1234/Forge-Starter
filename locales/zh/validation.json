@@ -62,6 +62,7 @@
         "setting_step": "{{attribute}} 必须符合允许的步进值",
 
         "mobile": "无效的手机号码",
+        "phone_invalid_for_country": "{{attribute}} 与所选国家不匹配",
         "username_min": "用户名至少需要 5 个字符",
         "username_alpha_numeric": "用户名只能包含字母和数字",
         "password_min": "密码至少需要 8 个字符",

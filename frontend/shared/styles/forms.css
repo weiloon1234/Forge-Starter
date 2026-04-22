@@ -1056,4 +1056,29 @@
   .sf-richtext-shell .fr-placeholder {
     color: var(--color-text-hint);
   }
+
+  /* ── Contact (country calling-code + phone number) ──────── */
+  .sf-contact {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+  }
+  .sf-contact > :first-child {
+    flex: 0 0 9rem;
+  }
+  .sf-contact > :first-child .sf-select-trigger {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  .sf-contact > :last-child {
+    flex: 1 1 auto;
+  }
+  .sf-contact > :last-child .sf-input-wrapper {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left-width: 0;
+  }
+  .sf-field--error .sf-contact > :last-child .sf-input-wrapper {
+    border-left-width: 1px;
+  }
 }

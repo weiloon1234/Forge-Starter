@@ -1,6 +1,8 @@
 export { Button } from "./Button";
 export { Checkbox } from "./Checkbox";
 export { CheckboxGroup } from "./CheckboxGroup";
+export { ContactInput } from "./ContactInput";
+export { CountrySelect } from "./CountrySelect";
 export { DataTable } from "./DataTable";
 export { DatePicker } from "./DatePicker";
 export { DateTimePicker } from "./DateTimePicker";
