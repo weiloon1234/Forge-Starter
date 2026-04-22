@@ -4,17 +4,19 @@ import type { DataTableColumn } from "@shared/types/form";
 import type { CreditType, Permission } from "@shared/types/generated";
 import { CreditTypeOptions, CreditTypeValues } from "@shared/types/generated";
 import { enumLabel } from "@shared/utils";
-import { Pencil } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "@/api";
 import { auth } from "@/auth";
 import { ChangeUserIntroducerModal } from "@/components/ChangeUserIntroducerModal";
 import { UserCreditTransactionsModal } from "@/components/UserCreditTransactionsModal";
+import { UserFormModal } from "@/components/UserFormModal";
 import { balanceForCreditType } from "@/credits";
 import { hasAllPermissions, usePermission } from "@/hooks/usePermission";
 
 const USERS_READ: Permission = "users.read";
+const USERS_MANAGE: Permission = "users.manage";
 const CREDIT_TRANSACTIONS_READ: Permission = "credit_transactions.read";
 const INTRODUCER_CHANGES_MANAGE: Permission = "introducer_changes.manage";
 const EXPORTS_READ: Permission = "exports.read";
@@ -44,6 +46,7 @@ export function UsersPage() {
   const { user } = auth.useAuth();
   const canReadCreditTransactions = usePermission(CREDIT_TRANSACTIONS_READ);
   const canManageIntroducerChanges = usePermission(INTRODUCER_CHANGES_MANAGE);
+  const canManageUsers = usePermission(USERS_MANAGE);
   const canExport = hasAllPermissions(
     user?.abilities,
     [USERS_READ, EXPORTS_READ],
@@ -101,6 +104,32 @@ export function UsersPage() {
     );
   };
 
+  const openCreateUserModal = () => {
+    modal.open(
+      UserFormModal,
+      { onSaved: () => tableRefresh.current?.() },
+      {
+        title: t("Create User"),
+        containerClassName: "sf-modal-container--wide",
+      },
+    );
+  };
+
+  const openEditUserModal = (row: UserRow) => {
+    modal.open(
+      UserFormModal,
+      {
+        userId: row.id,
+        initialIntroducerLabel: row.introducer_label,
+        onSaved: () => tableRefresh.current?.(),
+      },
+      {
+        title: t("Edit User"),
+        containerClassName: "sf-modal-container--wide",
+      },
+    );
+  };
+
   const creditColumns: DataTableColumn<UserRow>[] = CREDIT_TYPES.map(
     (creditType) => ({
       key: creditType,
@@ -133,25 +162,45 @@ export function UsersPage() {
     }),
   );
 
+  const showActionsColumn = canManageUsers || canManageIntroducerChanges;
+
   const columns: DataTableColumn<UserRow>[] = [
-    ...(canManageIntroducerChanges
+    ...(showActionsColumn
       ? [
           {
             key: "__actions",
             label: "",
-            render: (row: UserRow) =>
-              row.introducer_user_id ? (
-                <Button
-                  type="button"
-                  unstyled
-                  className="sf-datatable-action"
-                  ariaLabel={t("admin.introducer_changes.change_action")}
-                  title={t("admin.introducer_changes.change_action")}
-                  onClick={() => openChangeIntroducerModal(row)}
-                >
-                  <Pencil size={16} />
-                </Button>
-              ) : null,
+            render: (row: UserRow) => {
+              if (canManageUsers) {
+                return (
+                  <Button
+                    type="button"
+                    unstyled
+                    className="sf-datatable-action"
+                    ariaLabel={t("Edit user")}
+                    title={t("Edit user")}
+                    onClick={() => openEditUserModal(row)}
+                  >
+                    <Pencil size={16} />
+                  </Button>
+                );
+              }
+              if (canManageIntroducerChanges && row.introducer_user_id) {
+                return (
+                  <Button
+                    type="button"
+                    unstyled
+                    className="sf-datatable-action"
+                    ariaLabel={t("admin.introducer_changes.change_action")}
+                    title={t("admin.introducer_changes.change_action")}
+                    onClick={() => openChangeIntroducerModal(row)}
+                  >
+                    <Pencil size={16} />
+                  </Button>
+                );
+              }
+              return null;
+            },
           },
         ]
       : []),
@@ -208,8 +257,23 @@ export function UsersPage() {
 
   return (
     <div>
-      <h1 className="sf-page-title">{t("admin.users.title")}</h1>
-      <p className="sf-page-subtitle">{t("admin.users.subtitle")}</p>
+      <div className="sf-page-header">
+        <div>
+          <h1 className="sf-page-title">{t("admin.users.title")}</h1>
+          <p className="sf-page-subtitle">{t("admin.users.subtitle")}</p>
+        </div>
+
+        {canManageUsers && (
+          <Button
+            type="button"
+            size="sm"
+            prefix={<Plus size={16} />}
+            onClick={openCreateUserModal}
+          >
+            {t("New User")}
+          </Button>
+        )}
+      </div>
 
       <div className="mt-4">
         <DataTable<UserRow>

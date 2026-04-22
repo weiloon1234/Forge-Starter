@@ -3,13 +3,14 @@ use crate::domain::services::admin_service;
 use crate::ids::guards::Guard;
 use crate::ids::permissions::Permission;
 use crate::portals;
-use forge::http::middleware::{Compression, Csrf};
+use forge::http::middleware::{Compression, Csrf, TrustedProxy};
 use forge::prelude::*;
 
 pub fn builder() -> AppBuilder {
     super::app::base()
         .register_routes(portals::register)
         .register_routes(portals::register_spa)
+        .register_middleware(TrustedProxy::new().build())
         .register_middleware(Compression.build())
         .register_middleware(Cors::new().allow_any_origin().build())
         .middleware_group("api", vec![RateLimit::new(1000).per_hour().build()])

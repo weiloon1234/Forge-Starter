@@ -221,7 +221,8 @@
         "subject_id": "对象 ID",
         "request_id": "请求 ID",
         "ip": "IP",
-        "user_agent": "User Agent"
+        "user_agent": "User Agent",
+        "actor_id": "操作者 ID"
       },
       "events": {
         "created": "创建",

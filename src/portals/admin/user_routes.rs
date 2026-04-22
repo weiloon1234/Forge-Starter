@@ -1,6 +1,8 @@
 use crate::domain::models::{Admin, User};
 use crate::domain::services::user_service;
-use crate::portals::admin::requests::{ChangeUserIntroducerRequest, CreateUserRequest};
+use crate::portals::admin::requests::{
+    ChangeUserIntroducerRequest, CreateUserRequest, UpdateUserRequest,
+};
 use crate::portals::admin::resources::AdminUserResource;
 use crate::validation::JsonValidated;
 use axum::extract::{Path, Query};
@@ -70,6 +72,17 @@ pub async fn store(
 ) -> Result<impl IntoResponse> {
     let user = user_service::create(&app, &i18n, &req).await?;
     Ok((StatusCode::CREATED, Json(AdminUserResource::make(&user))))
+}
+
+pub async fn update(
+    State(app): State<AppContext>,
+    i18n: I18n,
+    Path(id): Path<String>,
+    JsonValidated(req): JsonValidated<UpdateUserRequest>,
+) -> Result<impl IntoResponse> {
+    let user_id = parse_user_id(&i18n, &id)?;
+    let user = user_service::update(&app, &i18n, user_id, &req).await?;
+    Ok(Json(AdminUserResource::make(&user)))
 }
 
 pub async fn user_options(

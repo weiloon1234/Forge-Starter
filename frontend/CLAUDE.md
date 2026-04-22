@@ -180,9 +180,27 @@ t("greeting", { name })      // → "Hello, Wei!"  (parameterized — MUST have 
 
 Three key styles, chosen per string:
 
-1. **Static user-facing strings** — English text as the key: `t("Save")`, `t("Welcome")`. **Skip the English JSON entry** (key == value — i18next returns the key as fallback). Non-English locales translate to the actual word.
+1. **Static user-facing strings** — English text as the key: `t("Save")`, `t("Welcome")`, `t("New User")`, `t("User created")`. **Skip the English JSON entry** (key == value — i18next returns the key as fallback). Non-English locales translate to the actual word. **This is the default for all buttons, titles, toasts, column headers, placeholders, and aria labels.**
 2. **Parameterized strings** — always have an English entry because the key alone isn't readable: `{"greeting": "Hello, {{name}}!"}`. Every locale needs this entry.
-3. **Coded / namespaced keys** — `admin.users.columns.introducer`, `enum.admin_type.super_admin`. Reserved for programmatic / convention-driven translations (AppEnum `labelKey`, field-name conventions). Not for arbitrary user strings.
+3. **Coded / namespaced keys** — `enum.admin_type.super_admin`, `admin.credits.fields.user`. Reserved for three structural cases ONLY: AppEnum `labelKey` outputs, validator field-name conventions referenced via `validator.custom_attribute(...)`, and domain-coded multi-context strings with no natural English-as-key form. Not for arbitrary user strings.
+
+**Anti-pattern — do NOT feature-namespace static UI text:**
+
+```tsx
+// ❌ Re-invents "New User" / "Create User" / "User created" per feature
+t("admin.users.new")
+t("admin.users.create_title")
+t("admin.users.created")
+
+// ✅ Flat English-as-key, shared across the whole app
+t("New User")
+t("Create User")
+t("User created")
+```
+
+Existing code like `admin.admins.*`, `admin.credits.*`, `admin.pages.*` is LEGACY — do not imitate it for new features. Before adding a new key, grep `locales/zh/messages.json` for the English phrase; if it (or a close equivalent) exists, reuse it. Two features that both need "Create X" / "Edit X" should share the same flat keys, not each define their own nested `admin.<feature>.create_title`.
+
+Don't translate decorative subtitles. If a modal titled "Create User" also needs an explanatory help paragraph, ask whether the paragraph is actually carrying its weight — usually it isn't, and dropping it is cheaper than translating it.
 
 ### Key rules you'll hit regularly
 

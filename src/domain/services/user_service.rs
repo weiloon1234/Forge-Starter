@@ -4,7 +4,9 @@ use serde_json::json;
 use ts_rs::TS;
 
 use crate::domain::models::{Admin, AdminUserIntroducerChange, User};
-use crate::portals::admin::requests::{ChangeUserIntroducerRequest, CreateUserRequest};
+use crate::portals::admin::requests::{
+    ChangeUserIntroducerRequest, CreateUserRequest, UpdateUserRequest,
+};
 use crate::portals::user::requests::UpdateProfileRequest;
 
 const USER_OPTION_LIMIT: u64 = 20;
@@ -251,6 +253,73 @@ pub async fn change_introducer(
     Ok(AdminUserIntroducerChangeResponse::from(&persisted_change))
 }
 
+pub async fn update(
+    app: &AppContext,
+    i18n: &I18n,
+    user_id: ModelId<User>,
+    req: &UpdateUserRequest,
+) -> Result<User> {
+    let db = app.database()?;
+    let user = User::model_query()
+        .where_(User::ID.eq(user_id))
+        .first(db.as_ref())
+        .await?
+        .ok_or_else(|| Error::not_found(forge::t!(i18n, "error.user_not_found")))?;
+
+    let changes = UserUpdateChanges::from_request(req);
+
+    let mut validator = Validator::new(app.clone());
+    validator.set_locale(i18n.locale().to_string());
+
+    ensure_identifier_available(
+        app,
+        &mut validator,
+        Some(user.id),
+        UserIdentifier::Username,
+        changes.username.as_deref(),
+    )
+    .await?;
+    ensure_identifier_available(
+        app,
+        &mut validator,
+        Some(user.id),
+        UserIdentifier::Email,
+        changes.email.as_deref(),
+    )
+    .await?;
+    validator.finish()?;
+
+    let transaction = app.begin_transaction().await?;
+    let UserUpdateChanges {
+        username,
+        name,
+        email,
+        country_iso2,
+        contact_country_iso2,
+        contact_number,
+        password,
+    } = changes;
+
+    let mut builder = user
+        .update()
+        .set(User::USERNAME, username)
+        .set(User::NAME, name)
+        .set(User::EMAIL, email)
+        .set(User::COUNTRY_ISO2, country_iso2)
+        .set(User::CONTACT_COUNTRY_ISO2, contact_country_iso2)
+        .set(User::CONTACT_NUMBER, contact_number);
+
+    if let Some(password) = password {
+        builder = builder
+            .set(User::PASSWORD_HASH, password.as_str())
+            .set(User::PASSWORD2_HASH, password.as_str());
+    }
+
+    let updated = builder.save(&transaction).await?;
+    transaction.commit().await?;
+    Ok(updated)
+}
+
 pub async fn update_profile(
     app: &AppContext,
     i18n: &I18n,
@@ -322,6 +391,31 @@ struct UserProfileChanges {
     country_iso2: Option<String>,
     contact_country_iso2: Option<String>,
     contact_number: Option<String>,
+}
+
+#[derive(Debug)]
+struct UserUpdateChanges {
+    username: Option<String>,
+    name: Option<String>,
+    email: Option<String>,
+    country_iso2: Option<String>,
+    contact_country_iso2: Option<String>,
+    contact_number: Option<String>,
+    password: Option<String>,
+}
+
+impl UserUpdateChanges {
+    fn from_request(req: &UpdateUserRequest) -> Self {
+        Self {
+            username: trimmed_option(req.username.as_deref()),
+            name: trimmed_option(req.name.as_deref()),
+            email: normalized_email(req.email.as_deref()),
+            country_iso2: normalized_iso2(req.country_iso2.as_deref()),
+            contact_country_iso2: normalized_iso2(req.contact_country_iso2.as_deref()),
+            contact_number: trimmed_option(req.contact_number.as_deref()),
+            password: trimmed_option(req.password.as_deref()),
+        }
+    }
 }
 
 #[derive(Debug)]

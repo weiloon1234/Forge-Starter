@@ -11,7 +11,7 @@ use crate::portals::admin::requests::{
     AdminLoginRequest, ChangeAdminPasswordRequest, ChangeUserIntroducerRequest,
     CreateAdminCreditAdjustmentRequest, CreateAdminRequest, CreatePageRequest, CreateUserRequest,
     UpdateAdminLocaleRequest, UpdateAdminProfileRequest, UpdateAdminRequest, UpdateCountryRequest,
-    UpdatePageRequest, UpdateSettingValueRequest,
+    UpdatePageRequest, UpdateSettingValueRequest, UpdateUserRequest,
 };
 use crate::portals::admin::responses::{
     AdminMeResponse, AdminPermissionResponse, AdminResponse, AdminUserResponse,
@@ -216,6 +216,13 @@ pub fn register(r: &mut HttpRegistrar) -> Result<()> {
 
                 users.get("/{id}", "show", user_routes::show, |route| {
                     route.summary("Get user by ID");
+                    route.response::<AdminUserResponse>(200);
+                });
+
+                users.put("/{id}", "update", user_routes::update, |route| {
+                    route.permission(Permission::UsersManage);
+                    route.summary("Update user");
+                    route.request::<UpdateUserRequest>();
                     route.response::<AdminUserResponse>(200);
                 });
 

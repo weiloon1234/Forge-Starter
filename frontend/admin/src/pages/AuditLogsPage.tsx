@@ -27,6 +27,7 @@ interface AuditLogRow {
   area: string | null;
   actor_guard: string | null;
   actor_id: string | null;
+  actor_label: string | null;
   request_id: string | null;
   ip: string | null;
   user_agent: string | null;
@@ -95,22 +96,10 @@ export function AuditLogsPage() {
       ),
     },
     {
-      key: "area",
-      label: t("admin.audit_logs.columns.area"),
-      sortable: true,
-      render: (row) => row.area ?? "-",
-    },
-    {
-      key: "actor_guard",
-      label: t("admin.audit_logs.columns.guard"),
-      sortable: true,
-      render: (row) => row.actor_guard ?? "-",
-    },
-    {
-      key: "actor_id",
+      key: "actor_label",
       label: t("admin.audit_logs.columns.actor"),
       sortable: true,
-      render: (row) => row.actor_id ?? "-",
+      render: (row) => row.actor_label ?? row.actor_id ?? "-",
     },
     {
       key: "subject_table",
@@ -185,13 +174,13 @@ export function AuditLogsPage() {
                   value: selected.area ?? "-",
                 },
                 {
-                  key: "guard",
-                  label: t("admin.audit_logs.columns.guard"),
-                  value: selected.actor_guard ?? "-",
-                },
-                {
                   key: "actor",
                   label: t("admin.audit_logs.columns.actor"),
+                  value: selected.actor_label ?? "-",
+                },
+                {
+                  key: "actor_id",
+                  label: t("admin.audit_logs.columns.actor_id"),
                   value: selected.actor_id ?? "-",
                 },
                 {

@@ -46,6 +46,14 @@
   "Search user, introducer, or admin...": "搜索用户、推荐人或管理员...",
   "Locale...": "语言代码...",
   "Forgot password?": "忘记密码？",
+  "New User": "新增用户",
+  "Edit user": "编辑用户",
+  "Create User": "创建用户",
+  "Edit User": "编辑用户",
+  "User created": "用户已创建",
+  "User updated": "用户已更新",
+  "New password": "新密码",
+  "Leave blank to keep the current password": "留空则保留原密码",
   "auth": {
     "invalid_credentials": "用户名或密码错误",
     "invalid_refresh_token": "刷新令牌无效或已过期",
@@ -329,5 +337,16 @@
     "richtext_load_failed": "编辑器加载失败。",
     "submit": "提交"
   },
-  "HTTP": "HTTP"
+  "HTTP": "HTTP",
+  "Actor ID": "操作者 ID",
+  "Area": "范围",
+  "Guard": "守卫",
+  "From": "起始",
+  "To": "结束",
+  "Event": "事件",
+  "Actor": "操作者",
+  "Subject Table": "对象表",
+  "Subject ID": "对象 ID",
+  "Request ID": "请求 ID",
+  "IP": "IP"
 }

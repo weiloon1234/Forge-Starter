@@ -64,5 +64,6 @@ export type { UpdateCountryRequest } from "./UpdateCountryRequest";
 export type { UpdatePageRequest } from "./UpdatePageRequest";
 export type { UpdateProfileRequest } from "./UpdateProfileRequest";
 export type { UpdateSettingValueRequest } from "./UpdateSettingValueRequest";
+export type { UpdateUserRequest } from "./UpdateUserRequest";
 export type { UserResponse } from "./UserResponse";
 export type { WsTokenResponse } from "./WsTokenResponse";

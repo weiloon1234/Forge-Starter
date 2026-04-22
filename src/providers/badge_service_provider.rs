@@ -20,10 +20,9 @@ impl ServiceProvider for BadgeServiceProvider {
 
         // Dispatcher is built lazily on first resolve so it can capture the
         // fully-booted AppContext (which includes the WebSocketPublisher).
-        registrar.factory::<BadgeDispatcher, _>(|container| {
-            let app = container.resolve::<AppContext>()?;
+        registrar.factory::<BadgeDispatcher, _>(|container, app| {
             let registry = container.resolve::<BadgeRegistry>()?;
-            Ok(BadgeDispatcher::new((*app).clone(), registry))
+            Ok(BadgeDispatcher::new(app.clone(), registry))
         })?;
 
         // Wire model lifecycle events → dispatcher (via the stateless listener).

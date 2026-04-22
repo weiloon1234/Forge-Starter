@@ -221,7 +221,8 @@
         "subject_id": "Subject ID",
         "request_id": "Request ID",
         "ip": "IP",
-        "user_agent": "User Agent"
+        "user_agent": "User Agent",
+        "actor_id": "Actor ID"
       },
       "events": {
         "created": "Created",
