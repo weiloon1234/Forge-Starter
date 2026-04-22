@@ -30,6 +30,9 @@ async fn run_cli(args: &[&str]) -> Result<()> {
 
 async fn reset_database() -> Result<()> {
     let kernel = cli::builder().build_cli_kernel().await?;
+    let db_url = kernel.app().config().database()?.url.clone();
+    forge::testing::assert_safe_to_wipe(&db_url)?;
+
     let db = kernel.app().database()?;
 
     db.raw_execute("DROP SCHEMA IF EXISTS public CASCADE", &[])

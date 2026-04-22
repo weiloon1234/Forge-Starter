@@ -1,6 +1,7 @@
 use forge::prelude::*;
 
 pub mod admin_datatable;
+pub mod audit_log_datatable;
 pub mod country_datatable;
 pub mod credit_adjustment_datatable;
 pub mod credit_transaction_datatable;
@@ -11,6 +12,7 @@ pub mod setting_datatable;
 pub mod user_datatable;
 
 pub use admin_datatable::AdminDatatable;
+pub use audit_log_datatable::AuditLogDatatable;
 pub use country_datatable::CountryDatatable;
 pub use credit_adjustment_datatable::CreditAdjustmentDatatable;
 pub use credit_transaction_datatable::{
@@ -31,6 +33,7 @@ pub fn register_all(registrar: &mut ServiceRegistrar) -> Result<()> {
     registrar.register_datatable::<CreditTransactionDatatable>()?;
     registrar.register_datatable::<UserCreditTransactionDatatable>()?;
     registrar.register_datatable::<IntroducerChangeDatatable>()?;
+    registrar.register_datatable::<AuditLogDatatable>()?;
     Ok(())
 }
 
@@ -86,6 +89,10 @@ pub async fn run_json(
                 app, actor, request, locale, timezone,
             )
             .await
+        }
+        AuditLogDatatable::ID => {
+            runner::build_json_response::<AuditLogDatatable>(app, actor, request, locale, timezone)
+                .await
         }
         _ => return None,
     })
@@ -144,6 +151,12 @@ pub async fn run_download(
         }
         IntroducerChangeDatatable::ID => {
             runner::build_download_response::<IntroducerChangeDatatable>(
+                app, actor, request, locale, timezone,
+            )
+            .await
+        }
+        AuditLogDatatable::ID => {
+            runner::build_download_response::<AuditLogDatatable>(
                 app, actor, request, locale, timezone,
             )
             .await

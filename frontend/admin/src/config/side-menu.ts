@@ -136,6 +136,13 @@ export const sideMenu: MenuItem[] = [
         icon: Cable,
         permission: "observability.view",
       },
+      {
+        key: "developer.audit_logs",
+        label: "admin.audit_logs.title",
+        path: "/developer/audit-logs",
+        icon: ScrollText,
+        permission: "audit_logs.read",
+      },
     ],
   },
 ];

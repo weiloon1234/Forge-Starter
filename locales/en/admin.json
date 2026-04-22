@@ -1,206 +1,235 @@
 {
-    "admin": {
-        "errors": {
-            "cannot_view_tier": "You cannot view an admin of this tier.",
-            "cannot_edit_self": "You cannot edit your own account here. Use Profile instead.",
-            "cannot_manage_tier": "You cannot manage an admin of this tier.",
-            "cannot_grant_permission": "You cannot grant a permission you do not hold: {{permission}}",
-            "invalid_admin_type": "You cannot assign this admin type."
-        },
-        "users": {
-            "title": "Users",
-            "subtitle": "Browse and search user accounts.",
-            "credit_transactions_modal_title": "{{user}} · {{credit_type}} Transactions",
-            "credit_transactions_modal_subtitle": "Review the append-only ledger for {{user}} in {{credit_type}}.",
-            "credit_balance_action": "View {{credit_type}} transactions for {{user}}"
-        },
-        "introducer_changes": {
-            "title": "Introducer Changes",
-            "subtitle": "Review the admin audit trail for user introducer reassignments.",
-            "change_title": "Change Introducer",
-            "change_help": "Move this user to a different existing introducer and keep an append-only admin audit record.",
-            "changed": "Introducer changed",
-            "change_action": "Change introducer",
-            "user_placeholder": "Search a new introducer by username, name, or email...",
-            "fields": {
-                "user": "User",
-                "current_introducer": "Current introducer",
-                "introducer": "New introducer"
-            },
-            "errors": {
-                "current_introducer_required": "Only users with an existing introducer can be reassigned.",
-                "same_introducer": "Select a different introducer.",
-                "self_introducer": "A user cannot introduce themselves."
-            }
-        },
-        "admins": {
-            "title": "Admins",
-            "subtitle": "Manage staff access and portal permissions.",
-            "new": "New Admin",
-            "edit": "Edit admin",
-            "permissions_column": "Permissions",
-            "permissions_count": "{{value}} permissions",
-            "permissions_open": "View permission summary",
-            "view_title": "View Admin",
-            "back": "Back to Admins",
-            "create_title": "Create Admin",
-            "edit_title": "Edit Admin",
-            "create_help": "Create a new admin account and assign its module access.",
-            "edit_help": "Update account details, locale, and per-module permissions.",
-            "view_help": "This admin is visible to you, but it cannot be changed from admin management.",
-            "view_self_help": "Use Profile to update your own account settings.",
-            "created": "Admin created",
-            "updated": "Admin updated",
-            "deleted": "Admin deleted",
-            "new_password": "New password",
-            "password_placeholder": "Leave blank to keep the current password",
-            "permissions_title": "Permissions",
-            "permissions_help": "Choose the highest access level allowed for each module.",
-            "permissions_modal_title": "Permissions for {{name}}",
-            "permissions_modal_help": "Review this admin's current module access in read-only mode.",
-            "implicit_permissions_help": "This admin type receives full access automatically.",
-            "implicit_permissions_note": "Per-module permissions only apply to the Admin tier.",
-            "confirm_delete": "Delete {{name}}? This action cannot be undone."
-        },
-        "settings": {
-            "title": "Settings",
-            "subtitle": "Review runtime settings and edit their current values.",
-            "edit_title": "Edit {{label}}",
-            "edit_action": "Edit setting",
-            "updated": "Setting updated",
-            "replace_asset": "Replace file",
-            "upload_replace_hint": "Upload a new file to replace the saved value.",
-            "no_asset": "No file uploaded yet.",
-            "asset_will_clear": "The current file will be cleared when you save.",
-            "clear_asset": "Clear current file",
-            "preview": "Preview",
-            "download": "Download",
-            "language_hint": "Language: {{language}}",
-            "public_state": {
-                "public": "Public",
-                "private": "Private"
-            },
-            "errors": {
-                "invalid_number": "Enter a valid number before saving.",
-                "invalid_json": "Enter valid JSON before saving.",
-                "upload_not_allowed": "This setting does not accept file uploads."
-            }
-        },
-        "pages": {
-            "title": "Pages",
-            "subtitle": "Manage localized rich-content pages with cover images.",
-            "new": "New Page",
-            "create_title": "Create Page",
-            "edit_title": "Edit Page",
-            "view_title": "View Page",
-            "back": "Back to Pages",
-            "create_help": "Create a localized page with rich content and an optional cover image.",
-            "edit_help": "Update localized content, cover image, and slug for this page.",
-            "view_help": "Review this page in read-only mode.",
-            "created": "Page created",
-            "updated": "Page updated",
-            "deleted": "Page deleted",
-            "delete_title": "Delete {{slug}}",
-            "confirm_delete": "Delete {{slug}}? This action cannot be undone.",
-            "edit_action": "Edit page",
-            "view_action": "View page",
-            "load_failed": "The page could not be loaded.",
-            "cover_save_failed": "The page was saved, but the cover image could not be updated.",
-            "cover_will_remove": "The current cover will be removed when you save.",
-            "no_cover": "No cover image uploaded yet.",
-            "preview_cover": "Preview cover",
-            "remove_cover": "Remove cover",
-            "cover_upload_hint": "Upload a single image to use as this page's cover.",
-            "default_locale_hint": "This locale is required.",
-            "system_slug_hint": "System page slugs are locked and cannot be changed.",
-            "slug_hint": "Use lowercase letters, numbers, and hyphens only.",
-            "system_delete_disabled": "System pages cannot be deleted.",
-            "locale_panel_title": "Content for {{locale}}",
-            "sections": {
-                "page": "Page",
-                "page_help": "Define the page slug and review system-page protections.",
-                "content": "Localized Content",
-                "content_help": "Write each locale's title and rich HTML content.",
-                "cover": "Cover Image",
-                "cover_help": "Add a single cover image attachment for this page."
-            },
-            "fields": {
-                "slug": "Slug",
-                "title": "Title",
-                "content": "Content",
-                "cover": "Cover image"
-            },
-            "system_state": {
-                "system": "System",
-                "custom": "Custom"
-            },
-            "errors": {
-                "system_slug_locked": "System page slugs cannot be changed.",
-                "system_delete_forbidden": "System pages cannot be deleted.",
-                "cover_must_be_image": "Please upload an image for the page cover."
-            }
-        },
-        "credits": {
-            "title": "Credit Adjustments",
-            "subtitle": "Review the credit ledger and create append-only manual balance adjustments.",
-            "new": "New Adjustment",
-            "create_title": "Create Credit Adjustment",
-            "create_help": "Adjust a user's balance in one credit bucket and leave a traceable ledger entry behind.",
-            "created": "Credit adjustment created",
-            "user_placeholder": "Search a user by name, username, or email...",
-            "amount_hint": "Enter a positive amount. Deduction is controlled by the operation field.",
-            "override_hint": "Leave blank to use the generic translated explanation.",
-            "preview_label": "Preview",
-            "remark_hint": "This remark is stored for admins only and is never shown in the generic explanation text.",
-            "related_type_hint": "Optional business-flow label such as order_dispatch. Leave blank to default to admin_credit_adjustment.",
-            "related_key_hint": "Optional shared correlation UUID. Leave blank to auto-generate one for this adjustment.",
-            "context_hint": "Optional JSON object for machine-readable trace context.",
-            "current_balance_label": "Current {{credit_type}} balance",
-            "projected_balance_label": "Projected balance after save",
-            "override_panel_title": "Override for {{locale}}",
-            "sections": {
-                "adjustment": "Adjustment",
-                "adjustment_help": "Choose a user, credit bucket, operation, and amount.",
-                "explanation": "Explanation",
-                "explanation_help": "Optionally override the generic transaction explanation per locale.",
-                "remark": "Remark",
-                "remark_help": "Add an internal admin note for this manual adjustment."
-            },
-            "fields": {
-                "user": "User",
-                "credit_type": "Credit type",
-                "operation": "Operation",
-                "amount": "Amount",
-                "explanation_override": "Explanation override",
-                "remark": "Admin remark",
-                "related_type": "Related type",
-                "related_key": "Related key",
-                "context": "Context JSON"
-            },
-            "errors": {
-                "invalid_amount": "Enter a valid positive credit amount.",
-                "invalid_user": "Select a valid user.",
-                "invalid_overrides": "Explanation overrides must be a locale-to-string object.",
-                "invalid_context": "Context must be a JSON object.",
-                "invalid_context_json": "Enter a valid JSON object for context.",
-                "invalid_related_key": "Related key must be a valid UUID.",
-                "balance_overflow": "The resulting balance exceeds the supported numeric range."
-            }
-        },
-        "credit_transactions": {
-            "title": "Credit Transactions",
-            "subtitle": "Review the full append-only credit ledger across manual adjustments and future automated flows."
-        },
-        "editor_assets": {
-            "errors": {
-                "folder_required": "The folder field is required.",
-                "kind_required": "The kind field is required.",
-                "file_required": "The file field is required.",
-                "forbidden": "You do not have permission to upload files to this folder.",
-                "invalid_folder": "The selected upload folder is invalid.",
-                "kind_not_allowed": "This folder does not accept that upload kind.",
-                "image_required": "Please upload an image file."
-            }
-        }
+  "admin": {
+    "errors": {
+      "cannot_view_tier": "You cannot view an admin of this tier.",
+      "cannot_edit_self": "You cannot edit your own account here. Use Profile instead.",
+      "cannot_manage_tier": "You cannot manage an admin of this tier.",
+      "cannot_grant_permission": "You cannot grant a permission you do not hold: {{permission}}",
+      "invalid_admin_type": "You cannot assign this admin type."
+    },
+    "users": {
+      "title": "Users",
+      "subtitle": "Browse and search user accounts.",
+      "credit_transactions_modal_title": "{{user}} · {{credit_type}} Transactions",
+      "credit_transactions_modal_subtitle": "Review the append-only ledger for {{user}} in {{credit_type}}.",
+      "credit_balance_action": "View {{credit_type}} transactions for {{user}}"
+    },
+    "introducer_changes": {
+      "title": "Introducer Changes",
+      "subtitle": "Review the admin audit trail for user introducer reassignments.",
+      "change_title": "Change Introducer",
+      "change_help": "Move this user to a different existing introducer and keep an append-only admin audit record.",
+      "changed": "Introducer changed",
+      "change_action": "Change introducer",
+      "user_placeholder": "Search a new introducer by username, name, or email...",
+      "fields": {
+        "user": "User",
+        "current_introducer": "Current introducer",
+        "introducer": "New introducer"
+      },
+      "errors": {
+        "current_introducer_required": "Only users with an existing introducer can be reassigned.",
+        "same_introducer": "Select a different introducer.",
+        "self_introducer": "A user cannot introduce themselves."
+      }
+    },
+    "admins": {
+      "title": "Admins",
+      "subtitle": "Manage staff access and portal permissions.",
+      "new": "New Admin",
+      "edit": "Edit admin",
+      "permissions_column": "Permissions",
+      "permissions_count": "{{value}} permissions",
+      "permissions_open": "View permission summary",
+      "view_title": "View Admin",
+      "back": "Back to Admins",
+      "create_title": "Create Admin",
+      "edit_title": "Edit Admin",
+      "create_help": "Create a new admin account and assign its module access.",
+      "edit_help": "Update account details, locale, and per-module permissions.",
+      "view_help": "This admin is visible to you, but it cannot be changed from admin management.",
+      "view_self_help": "Use Profile to update your own account settings.",
+      "created": "Admin created",
+      "updated": "Admin updated",
+      "deleted": "Admin deleted",
+      "new_password": "New password",
+      "password_placeholder": "Leave blank to keep the current password",
+      "permissions_title": "Permissions",
+      "permissions_help": "Choose the highest access level allowed for each module.",
+      "permissions_modal_title": "Permissions for {{name}}",
+      "permissions_modal_help": "Review this admin's current module access in read-only mode.",
+      "implicit_permissions_help": "This admin type receives full access automatically.",
+      "implicit_permissions_note": "Per-module permissions only apply to the Admin tier.",
+      "confirm_delete": "Delete {{name}}? This action cannot be undone."
+    },
+    "settings": {
+      "title": "Settings",
+      "subtitle": "Review runtime settings and edit their current values.",
+      "edit_title": "Edit {{label}}",
+      "edit_action": "Edit setting",
+      "updated": "Setting updated",
+      "replace_asset": "Replace file",
+      "upload_replace_hint": "Upload a new file to replace the saved value.",
+      "no_asset": "No file uploaded yet.",
+      "asset_will_clear": "The current file will be cleared when you save.",
+      "clear_asset": "Clear current file",
+      "preview": "Preview",
+      "download": "Download",
+      "language_hint": "Language: {{language}}",
+      "public_state": {
+        "public": "Public",
+        "private": "Private"
+      },
+      "errors": {
+        "invalid_number": "Enter a valid number before saving.",
+        "invalid_json": "Enter valid JSON before saving.",
+        "upload_not_allowed": "This setting does not accept file uploads."
+      }
+    },
+    "pages": {
+      "title": "Pages",
+      "subtitle": "Manage localized rich-content pages with cover images.",
+      "new": "New Page",
+      "create_title": "Create Page",
+      "edit_title": "Edit Page",
+      "view_title": "View Page",
+      "back": "Back to Pages",
+      "create_help": "Create a localized page with rich content and an optional cover image.",
+      "edit_help": "Update localized content, cover image, and slug for this page.",
+      "view_help": "Review this page in read-only mode.",
+      "created": "Page created",
+      "updated": "Page updated",
+      "deleted": "Page deleted",
+      "delete_title": "Delete {{slug}}",
+      "confirm_delete": "Delete {{slug}}? This action cannot be undone.",
+      "edit_action": "Edit page",
+      "view_action": "View page",
+      "load_failed": "The page could not be loaded.",
+      "cover_save_failed": "The page was saved, but the cover image could not be updated.",
+      "cover_will_remove": "The current cover will be removed when you save.",
+      "no_cover": "No cover image uploaded yet.",
+      "preview_cover": "Preview cover",
+      "remove_cover": "Remove cover",
+      "cover_upload_hint": "Upload a single image to use as this page's cover.",
+      "default_locale_hint": "This locale is required.",
+      "system_slug_hint": "System page slugs are locked and cannot be changed.",
+      "slug_hint": "Use lowercase letters, numbers, and hyphens only.",
+      "system_delete_disabled": "System pages cannot be deleted.",
+      "locale_panel_title": "Content for {{locale}}",
+      "sections": {
+        "page": "Page",
+        "page_help": "Define the page slug and review system-page protections.",
+        "content": "Localized Content",
+        "content_help": "Write each locale's title and rich HTML content.",
+        "cover": "Cover Image",
+        "cover_help": "Add a single cover image attachment for this page."
+      },
+      "fields": {
+        "slug": "Slug",
+        "title": "Title",
+        "content": "Content",
+        "cover": "Cover image"
+      },
+      "system_state": {
+        "system": "System",
+        "custom": "Custom"
+      },
+      "errors": {
+        "system_slug_locked": "System page slugs cannot be changed.",
+        "system_delete_forbidden": "System pages cannot be deleted.",
+        "cover_must_be_image": "Please upload an image for the page cover."
+      }
+    },
+    "credits": {
+      "title": "Credit Adjustments",
+      "subtitle": "Review the credit ledger and create append-only manual balance adjustments.",
+      "new": "New Adjustment",
+      "create_title": "Create Credit Adjustment",
+      "create_help": "Adjust a user's balance in one credit bucket and leave a traceable ledger entry behind.",
+      "created": "Credit adjustment created",
+      "user_placeholder": "Search a user by name, username, or email...",
+      "amount_hint": "Enter a positive amount. Deduction is controlled by the operation field.",
+      "override_hint": "Leave blank to use the generic translated explanation.",
+      "preview_label": "Preview",
+      "remark_hint": "This remark is stored for admins only and is never shown in the generic explanation text.",
+      "related_type_hint": "Optional business-flow label such as order_dispatch. Leave blank to default to admin_credit_adjustment.",
+      "related_key_hint": "Optional shared correlation UUID. Leave blank to auto-generate one for this adjustment.",
+      "context_hint": "Optional JSON object for machine-readable trace context.",
+      "current_balance_label": "Current {{credit_type}} balance",
+      "projected_balance_label": "Projected balance after save",
+      "override_panel_title": "Override for {{locale}}",
+      "sections": {
+        "adjustment": "Adjustment",
+        "adjustment_help": "Choose a user, credit bucket, operation, and amount.",
+        "explanation": "Explanation",
+        "explanation_help": "Optionally override the generic transaction explanation per locale.",
+        "remark": "Remark",
+        "remark_help": "Add an internal admin note for this manual adjustment."
+      },
+      "fields": {
+        "user": "User",
+        "credit_type": "Credit type",
+        "operation": "Operation",
+        "amount": "Amount",
+        "explanation_override": "Explanation override",
+        "remark": "Admin remark",
+        "related_type": "Related type",
+        "related_key": "Related key",
+        "context": "Context JSON"
+      },
+      "errors": {
+        "invalid_amount": "Enter a valid positive credit amount.",
+        "invalid_user": "Select a valid user.",
+        "invalid_overrides": "Explanation overrides must be a locale-to-string object.",
+        "invalid_context": "Context must be a JSON object.",
+        "invalid_context_json": "Enter a valid JSON object for context.",
+        "invalid_related_key": "Related key must be a valid UUID.",
+        "balance_overflow": "The resulting balance exceeds the supported numeric range."
+      }
+    },
+    "credit_transactions": {
+      "title": "Credit Transactions",
+      "subtitle": "Review the full append-only credit ledger across manual adjustments and future automated flows."
+    },
+    "editor_assets": {
+      "errors": {
+        "folder_required": "The folder field is required.",
+        "kind_required": "The kind field is required.",
+        "file_required": "The file field is required.",
+        "forbidden": "You do not have permission to upload files to this folder.",
+        "invalid_folder": "The selected upload folder is invalid.",
+        "kind_not_allowed": "This folder does not accept that upload kind.",
+        "image_required": "Please upload an image file."
+      }
+    },
+    "audit_logs": {
+      "title": "Audit Logs",
+      "subtitle": "Admin mutations captured via audit_area(\"admin\").",
+      "view_payload": "View payload",
+      "before": "Before",
+      "after": "After",
+      "changes": "Changes",
+      "no_before": "No before state (create event).",
+      "no_after": "No after state (delete event).",
+      "columns": {
+        "event": "Event",
+        "area": "Area",
+        "guard": "Guard",
+        "actor": "Actor",
+        "subject_table": "Subject Table",
+        "subject_model": "Subject Model",
+        "subject_id": "Subject ID",
+        "request_id": "Request ID",
+        "ip": "IP",
+        "user_agent": "User Agent"
+      },
+      "events": {
+        "created": "Created",
+        "updated": "Updated",
+        "soft_deleted": "Soft Deleted",
+        "restored": "Restored",
+        "deleted": "Deleted"
+      }
     }
+  }
 }

@@ -40,6 +40,7 @@ pub fn register(r: &mut HttpRegistrar) -> Result<()> {
     r.api_version(1, |r| {
         r.scope("/admin", |admin| {
             admin.name_prefix("admin");
+            admin.audit_area("admin");
 
             admin.scope("/auth", |auth| {
                 auth.name_prefix("auth").tag("admin:auth").public();

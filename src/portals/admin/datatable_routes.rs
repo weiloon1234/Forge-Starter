@@ -69,6 +69,7 @@ fn minimum_read_permission(id: &str) -> Option<Permission> {
         "admin.credit_adjustments" => Some(Permission::CreditsRead),
         "admin.credit_transactions" => Some(Permission::CreditTransactionsRead),
         "admin.user_credit_transactions" => Some(Permission::CreditTransactionsRead),
+        "admin.audit_logs" => Some(Permission::AuditLogsRead),
         _ => None,
     }
 }

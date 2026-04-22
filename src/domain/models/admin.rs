@@ -14,7 +14,7 @@ pub struct Admin {
     pub name: String,
     pub admin_type: AdminType,
     pub permissions: Vec<String>,
-    #[forge(write_mutator = "hash_password")]
+    #[forge(write_mutator = "hash_password", audit_exclude)]
     pub password_hash: String,
     pub locale: String,
     pub created_at: DateTime,

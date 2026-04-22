@@ -39,14 +39,11 @@ export default function App() {
       ws.connect();
       ws.subscribe("admin:presence");
       ws.subscribe("admin:badges");
-      ws.on(
-        "admin:badges",
-        "badge:updated",
-        (payload: { key: string; count: number }) => {
-          if (!adminBadges.knows(payload.key)) return;
-          adminBadges.set(payload.key, payload.count);
-        },
-      );
+      ws.on("admin:badges", "badge:updated", (payload) => {
+        const data = payload as { key: string; count: number };
+        if (!adminBadges.knows(data.key)) return;
+        adminBadges.set(data.key, data.count);
+      });
       // TODO(badges): refetch snapshot on WS reconnect once createWebSocket exposes
       // a reconnect hook. Current behavior: counts may go stale until next login.
     });

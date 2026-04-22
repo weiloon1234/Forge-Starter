@@ -1,42 +1,46 @@
 {
-    "permissions": {
-        "none": "None",
-        "read": "View",
-        "manage": "Manage",
-        "exports": {
-            "label": "Exports",
-            "read": "Export"
-        },
-        "observability": {
-            "label": "Observability",
-            "read": "View"
-        },
-        "admins": {
-            "label": "Admins"
-        },
-        "users": {
-            "label": "Users"
-        },
-        "introducer_changes": {
-            "label": "Introducer Changes"
-        },
-        "countries": {
-            "label": "Countries"
-        },
-        "settings": {
-            "label": "Settings"
-        },
-        "pages": {
-            "label": "Pages"
-        },
-        "credits": {
-            "label": "Credits"
-        },
-        "credit_transactions": {
-            "label": "Credit Transactions"
-        },
-        "logs": {
-            "label": "Logs"
-        }
+  "permissions": {
+    "none": "None",
+    "read": "View",
+    "manage": "Manage",
+    "exports": {
+      "label": "Exports",
+      "read": "Export"
+    },
+    "observability": {
+      "label": "Observability",
+      "read": "View"
+    },
+    "admins": {
+      "label": "Admins"
+    },
+    "users": {
+      "label": "Users"
+    },
+    "introducer_changes": {
+      "label": "Introducer Changes"
+    },
+    "countries": {
+      "label": "Countries"
+    },
+    "settings": {
+      "label": "Settings"
+    },
+    "pages": {
+      "label": "Pages"
+    },
+    "credits": {
+      "label": "Credits"
+    },
+    "credit_transactions": {
+      "label": "Credit Transactions"
+    },
+    "logs": {
+      "label": "Logs"
+    },
+    "audit_logs": {
+      "label": "Audit Logs",
+      "read": "View"
     }
+  }
 }

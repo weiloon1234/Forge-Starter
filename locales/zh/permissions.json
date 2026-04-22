@@ -1,42 +1,46 @@
 {
-    "permissions": {
-        "none": "无",
-        "read": "查看",
-        "manage": "管理",
-        "exports": {
-            "label": "导出",
-            "read": "导出"
-        },
-        "observability": {
-            "label": "可观测性",
-            "read": "查看"
-        },
-        "admins": {
-            "label": "管理员"
-        },
-        "users": {
-            "label": "用户"
-        },
-        "introducer_changes": {
-            "label": "推荐人变更"
-        },
-        "countries": {
-            "label": "国家"
-        },
-        "settings": {
-            "label": "设置"
-        },
-        "pages": {
-            "label": "页面"
-        },
-        "credits": {
-            "label": "信用"
-        },
-        "credit_transactions": {
-            "label": "信用流水"
-        },
-        "logs": {
-            "label": "日志"
-        }
+  "permissions": {
+    "none": "无",
+    "read": "查看",
+    "manage": "管理",
+    "exports": {
+      "label": "导出",
+      "read": "导出"
+    },
+    "observability": {
+      "label": "可观测性",
+      "read": "查看"
+    },
+    "admins": {
+      "label": "管理员"
+    },
+    "users": {
+      "label": "用户"
+    },
+    "introducer_changes": {
+      "label": "推荐人变更"
+    },
+    "countries": {
+      "label": "国家"
+    },
+    "settings": {
+      "label": "设置"
+    },
+    "pages": {
+      "label": "页面"
+    },
+    "credits": {
+      "label": "信用"
+    },
+    "credit_transactions": {
+      "label": "信用流水"
+    },
+    "logs": {
+      "label": "日志"
+    },
+    "audit_logs": {
+      "label": "审计日志",
+      "read": "查看"
     }
+  }
 }

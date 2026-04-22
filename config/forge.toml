@@ -1,0 +1,242 @@
+# =============================================================================
+# Forge Framework Configuration — Forge-Starter
+#
+# Unified config file. Every key is overridable via env vars with double-
+# underscore notation (e.g., DATABASE__URL=postgres://...).
+#
+# Development defaults live here; production values come from .env overrides.
+# Dev-only secrets (app.signing_key, crypt.key) are intentionally in-repo for
+# local development — production MUST override via APP__SIGNING_KEY and
+# CRYPT__KEY envs.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Application
+# -----------------------------------------------------------------------------
+[app]
+name = "forge-starter"
+environment = "development"
+timezone = "UTC"
+signing_key = "wxbNRcFjMvjQG7b8jWY5wYMHqk5nJd3pW5CmAwIFxWk="  # dev-only; APP__SIGNING_KEY in prod
+
+# -----------------------------------------------------------------------------
+# HTTP Server
+# -----------------------------------------------------------------------------
+[server]
+host = "127.0.0.1"
+port = 3000
+
+# -----------------------------------------------------------------------------
+# Redis
+# -----------------------------------------------------------------------------
+[redis]
+url = "redis://127.0.0.1:6379"
+namespace = "forge_starter"
+
+# -----------------------------------------------------------------------------
+# Database (PostgreSQL)
+# -----------------------------------------------------------------------------
+[database]
+url = "postgres://postgres:postgres@127.0.0.1:5432/forge_starter"
+
+[database.models]
+# timestamps_default = true   # inherit Forge default
+# soft_deletes_default = false
+
+# -----------------------------------------------------------------------------
+# Authentication
+# -----------------------------------------------------------------------------
+[auth]
+default_guard = "user"
+
+[auth.guards.user]
+driver = "token"
+
+[auth.guards.admin]
+driver = "token"
+
+[auth.tokens]
+access_token_ttl_minutes = 15
+refresh_token_ttl_days = 30
+token_length = 32
+rotate_refresh_tokens = true
+
+[auth.sessions]
+ttl_minutes = 120
+cookie_name = "forge_session"
+cookie_secure = false  # dev-only (HTTP); override in prod: AUTH__SESSIONS__COOKIE_SECURE=true
+cookie_path = "/"
+sliding_expiry = true
+remember_ttl_days = 30
+
+[auth.lockout]
+enabled = true
+max_failures = 5
+lockout_minutes = 15
+window_minutes = 15
+
+# [auth.mfa]
+# enabled = true
+# issuer = "forge-starter"
+# pending_token_ttl_minutes = 10
+# recovery_codes = 8
+#
+# [auth.mfa.required_roles]
+# admin = ["developer", "super_admin"]
+
+# -----------------------------------------------------------------------------
+# Jobs (Background Queue)
+# -----------------------------------------------------------------------------
+[jobs]
+queue = "default"
+max_retries = 5
+poll_interval_ms = 100
+max_concurrent_jobs = 0
+timeout_seconds = 300
+
+# -----------------------------------------------------------------------------
+# Scheduler (Cron)
+# -----------------------------------------------------------------------------
+[scheduler]
+tick_interval_ms = 1000
+leader_lease_ttl_ms = 5000
+
+# -----------------------------------------------------------------------------
+# WebSocket
+# -----------------------------------------------------------------------------
+[websocket]
+host = "127.0.0.1"
+port = 3010
+path = "/ws"
+heartbeat_interval_seconds = 30
+
+# -----------------------------------------------------------------------------
+# Logging
+# -----------------------------------------------------------------------------
+# Defaults are fine for dev; production can switch to JSON via env:
+# LOGGING__FORMAT=json
+[logging]
+# level = "info"
+# format = "text"
+# log_dir = "logs"
+# retention_days = 30
+
+# -----------------------------------------------------------------------------
+# Observability (Dashboard + Tracing + Metrics)
+# -----------------------------------------------------------------------------
+[observability]
+base_path = "/_forge"
+tracing_enabled = false
+otlp_endpoint = "http://localhost:4317"
+service_name = "forge-starter"
+
+[observability.websocket]
+include_payloads = false  # redact WS payloads in /_forge/ws/history (privacy default)
+
+# -----------------------------------------------------------------------------
+# Cache
+# -----------------------------------------------------------------------------
+# Inherit Forge defaults (Redis-backed when Redis is available, else memory).
+[cache]
+# driver = "redis"
+# prefix = "cache:"
+# ttl_seconds = 3600
+
+# -----------------------------------------------------------------------------
+# Hashing (Passwords)
+# -----------------------------------------------------------------------------
+# Argon2id defaults from Forge are appropriate for most apps.
+[hashing]
+# driver = "argon2"
+# memory_cost = 19456
+# time_cost = 2
+# parallelism = 1
+
+# -----------------------------------------------------------------------------
+# Encryption
+# -----------------------------------------------------------------------------
+[crypt]
+key = "Xqkm5cfkcQj8gLQzkVpTPCFQZGs0hgbdzHcKs3DgpZk="  # dev-only; CRYPT__KEY in prod
+
+# -----------------------------------------------------------------------------
+# Internationalization
+# -----------------------------------------------------------------------------
+[i18n]
+default_locale = "en"
+fallback_locale = "en"
+resource_path = "locales"
+
+# -----------------------------------------------------------------------------
+# TypeScript
+# -----------------------------------------------------------------------------
+[typescript]
+output_dir = "frontend/shared/types/generated"
+
+# -----------------------------------------------------------------------------
+# Email
+# -----------------------------------------------------------------------------
+[email]
+default = "log"
+# queue = "default"
+# template_path = "templates/emails"
+
+[email.from]
+address = "noreply@example.com"
+name = "Forge Starter"
+
+# Development log mailer — writes outbound mail to the tracing subsystem
+# instead of sending. Production: switch default to "smtp" / "ses" / "resend"
+# and fill in the appropriate mailer block below.
+[email.mailers.log]
+driver = "log"
+target = "email.outbound"
+
+# [email.mailers.smtp]
+# host = "smtp.example.com"
+# port = 587
+# username = ""
+# password = ""
+# encryption = "starttls"
+# timeout_secs = 30
+
+# [email.mailers.ses]
+# key = ""
+# secret = ""
+# region = "us-east-1"
+
+# [email.mailers.postmark]
+# server_token = ""
+
+# [email.mailers.resend]
+# api_key = ""
+
+# [email.mailers.mailgun]
+# domain = ""
+# api_key = ""
+# region = "us"
+
+# -----------------------------------------------------------------------------
+# Storage
+# -----------------------------------------------------------------------------
+# Starter deployment uses Cloudflare R2 for both app storage and deployment
+# artifacts (_deployments/{app_name}/{environment}/). Populate credentials via
+# env in production: STORAGE__DISKS__R2__KEY, __SECRET, __BUCKET, __ENDPOINT,
+# __URL. See DEPLOY.md.
+[storage]
+default = "r2"
+
+[storage.disks.r2]
+driver = "s3"
+key = ""
+secret = ""
+region = "auto"
+bucket = ""
+endpoint = ""
+url = ""  # stable CDN prefix for public editor assets (e.g., https://cdn.example.com)
+visibility = "public"
+
+# [storage.disks.local]
+# driver = "local"
+# root = "storage/app"
+# url = "/storage"
+# visibility = "private"

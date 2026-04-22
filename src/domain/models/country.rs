@@ -6,7 +6,8 @@ use serde::Serialize;
 #[forge(
     model = "countries",
     primary_key = "iso2",
-    primary_key_strategy = "manual"
+    primary_key_strategy = "manual",
+    audit = false
 )]
 pub struct Country {
     pub iso2: String,

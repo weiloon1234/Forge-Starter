@@ -3,6 +3,7 @@ import { DeveloperOnlyRoute } from "@/components/DeveloperOnlyRoute";
 import { AdminLayout } from "@/layouts/AdminLayout";
 import { AdminFormPage } from "@/pages/AdminFormPage";
 import { AdminsPage } from "@/pages/AdminsPage";
+import { AuditLogsPage } from "@/pages/AuditLogsPage";
 import { CountryPage } from "@/pages/CountryPage";
 import { CreditAdjustmentsPage } from "@/pages/CreditAdjustmentsPage";
 import { CreditTransactionsPage } from "@/pages/CreditTransactionsPage";
@@ -70,6 +71,14 @@ export const router = createBrowserRouter(
           element: (
             <DeveloperOnlyRoute>
               <WebSocketDashboardPage />
+            </DeveloperOnlyRoute>
+          ),
+        },
+        {
+          path: "developer/audit-logs",
+          element: (
+            <DeveloperOnlyRoute>
+              <AuditLogsPage />
             </DeveloperOnlyRoute>
           ),
         },

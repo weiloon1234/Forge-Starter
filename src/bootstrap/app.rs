@@ -1,3 +1,4 @@
+use crate::domain::reporters::TracingReporter;
 use crate::{ids, providers, validation};
 use forge::prelude::*;
 
@@ -8,6 +9,7 @@ pub fn base() -> AppBuilder {
         .register_provider(providers::AppServiceProvider)
         .register_provider(providers::EventServiceProvider)
         .register_provider(providers::BadgeServiceProvider)
+        .register_error_reporter::<TracingReporter>()
         .register_validation_rule(
             ids::validation::ACTIVE_COUNTRY,
             validation::ActiveCountryRule,

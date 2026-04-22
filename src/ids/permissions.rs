@@ -40,6 +40,8 @@ pub enum Permission {
     LogsRead,
     #[forge(key = "logs.manage")]
     LogsManage,
+    #[forge(key = "audit_logs.read")]
+    AuditLogsRead,
 }
 
 impl Permission {
@@ -64,6 +66,7 @@ impl Permission {
             Self::CreditTransactionsRead => "credit_transactions.read",
             Self::LogsRead => "logs.read",
             Self::LogsManage => "logs.manage",
+            Self::AuditLogsRead => "audit_logs.read",
         }
     }
 
@@ -80,6 +83,7 @@ impl Permission {
             Self::CreditsRead | Self::CreditsManage => "credits",
             Self::CreditTransactionsRead => "credit_transactions",
             Self::LogsRead | Self::LogsManage => "logs",
+            Self::AuditLogsRead => "audit_logs",
         }
     }
 
@@ -95,7 +99,8 @@ impl Permission {
             | Self::PagesRead
             | Self::CreditsRead
             | Self::CreditTransactionsRead
-            | Self::LogsRead => "read",
+            | Self::LogsRead
+            | Self::AuditLogsRead => "read",
             Self::AdminsManage
             | Self::UsersManage
             | Self::IntroducerChangesManage

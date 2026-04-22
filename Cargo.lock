@@ -1161,7 +1161,7 @@ checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
 [[package]]
 name = "forge"
 version = "0.1.0"
-source = "git+https://github.com/weiloon1234/Forge.git?branch=main#21eb9efedfb92c68ae39310f0382fa565dd3bc0c"
+source = "git+https://github.com/weiloon1234/Forge.git?branch=main#db4c6037e1968fc92e1202dddb8379b53b3e94ec"
 dependencies = [
  "aes-gcm",
  "ammonia",
@@ -1211,12 +1211,12 @@ dependencies = [
 [[package]]
 name = "forge-build"
 version = "0.1.0"
-source = "git+https://github.com/weiloon1234/Forge.git?branch=main#21eb9efedfb92c68ae39310f0382fa565dd3bc0c"
+source = "git+https://github.com/weiloon1234/Forge.git?branch=main#db4c6037e1968fc92e1202dddb8379b53b3e94ec"
 
 [[package]]
 name = "forge-macros"
 version = "0.1.0"
-source = "git+https://github.com/weiloon1234/Forge.git?branch=main#21eb9efedfb92c68ae39310f0382fa565dd3bc0c"
+source = "git+https://github.com/weiloon1234/Forge.git?branch=main#db4c6037e1968fc92e1202dddb8379b53b3e94ec"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1237,6 +1237,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "tower-http",
+ "tracing",
  "ts-rs",
 ]
 

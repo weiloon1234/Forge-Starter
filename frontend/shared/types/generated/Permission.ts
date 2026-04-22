@@ -1,6 +1,6 @@
 // Auto-generated from AppEnum. Do not edit.
 
-export type Permission = "exports.read" | "observability.view" | "admins.read" | "admins.manage" | "users.read" | "users.manage" | "introducer_changes.read" | "introducer_changes.manage" | "countries.read" | "countries.manage" | "settings.read" | "settings.manage" | "pages.read" | "pages.manage" | "credits.read" | "credits.manage" | "credit_transactions.read" | "logs.read" | "logs.manage";
+export type Permission = "exports.read" | "observability.view" | "admins.read" | "admins.manage" | "users.read" | "users.manage" | "introducer_changes.read" | "introducer_changes.manage" | "countries.read" | "countries.manage" | "settings.read" | "settings.manage" | "pages.read" | "pages.manage" | "credits.read" | "credits.manage" | "credit_transactions.read" | "logs.read" | "logs.manage" | "audit_logs.read";
 
 export const PermissionValues = [
   "exports.read",
@@ -22,6 +22,7 @@ export const PermissionValues = [
   "credit_transactions.read",
   "logs.read",
   "logs.manage",
+  "audit_logs.read",
 ] as const;
 
 export const PermissionOptions = [
@@ -44,6 +45,7 @@ export const PermissionOptions = [
   { value: "credit_transactions.read", labelKey: "enum.permission.credit_transactions_read" },
   { value: "logs.read", labelKey: "enum.permission.logs_read" },
   { value: "logs.manage", labelKey: "enum.permission.logs_manage" },
+  { value: "audit_logs.read", labelKey: "enum.permission.audit_logs_read" },
 ] as const;
 
 export const PermissionMeta = {

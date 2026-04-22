@@ -23,10 +23,10 @@ pub struct User {
     pub credit_5: Numeric,
     pub credit_6: Numeric,
     #[serde(skip)]
-    #[forge(write_mutator = "hash_secret")]
+    #[forge(write_mutator = "hash_secret", audit_exclude)]
     pub password_hash: String,
     #[serde(skip)]
-    #[forge(write_mutator = "hash_secret")]
+    #[forge(write_mutator = "hash_secret", audit_exclude)]
     pub password2_hash: String,
     pub created_at: DateTime,
     pub updated_at: DateTime,

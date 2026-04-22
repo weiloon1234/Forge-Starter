@@ -4,7 +4,7 @@ use serde::Serialize;
 use crate::domain::models::Page;
 
 #[derive(Serialize, forge::Model)]
-#[forge(model = "model_translations")]
+#[forge(model = "model_translations", audit = false)]
 pub struct PageTranslation {
     pub id: ModelId<Self>,
     pub translatable_type: String,

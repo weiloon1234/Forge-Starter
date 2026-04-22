@@ -1,4 +1,5 @@
 use forge::prelude::*;
+use forge::LoginThrottle;
 
 use crate::domain::models::{Admin, User};
 use crate::domain::services::admin_service;
@@ -10,18 +11,31 @@ pub async fn login_with_token(
     login: &str,
     password: &str,
 ) -> Result<TokenPair> {
+    let throttle = LoginThrottle::new(app)?;
+    throttle.before_attempt(login).await?;
+
     let db = app.database()?;
-    let user = User::find_active_by_login(db.as_ref(), login)
-        .await?
-        .ok_or_else(|| Error::http(401, forge::t!(i18n, "auth.invalid_credentials")))?;
+    let user = match User::find_active_by_login(db.as_ref(), login).await? {
+        Some(user) => user,
+        None => {
+            throttle.record_failure(login).await?;
+            return Err(Error::http(
+                401,
+                forge::t!(i18n, "auth.invalid_credentials"),
+            ));
+        }
+    };
 
     let hash = app.hash()?;
     if !hash.check(password, &user.password_hash)? {
+        throttle.record_failure(login).await?;
         return Err(Error::http(
             401,
             forge::t!(i18n, "auth.invalid_credentials"),
         ));
     }
+
+    throttle.record_success(login).await?;
 
     let tokens = user.create_token_named(app, "user").await?;
 
@@ -39,21 +53,36 @@ pub async fn admin_login_with_token(
     username: &str,
     password: &str,
 ) -> Result<TokenPair> {
+    let throttle = LoginThrottle::new(app)?;
+    throttle.before_attempt(username).await?;
+
     let db = app.database()?;
 
-    let admin = Admin::model_query()
+    let admin = match Admin::model_query()
         .where_(Admin::USERNAME.eq(username))
         .first(&*db)
         .await?
-        .ok_or_else(|| Error::http(401, forge::t!(i18n, "auth.invalid_credentials")))?;
+    {
+        Some(admin) => admin,
+        None => {
+            throttle.record_failure(username).await?;
+            return Err(Error::http(
+                401,
+                forge::t!(i18n, "auth.invalid_credentials"),
+            ));
+        }
+    };
 
     let hash = app.hash()?;
     if !hash.check(password, &admin.password_hash)? {
+        throttle.record_failure(username).await?;
         return Err(Error::http(
             401,
             forge::t!(i18n, "auth.invalid_credentials"),
         ));
     }
+
+    throttle.record_success(username).await?;
 
     let tokens = admin
         .create_token_with_abilities(

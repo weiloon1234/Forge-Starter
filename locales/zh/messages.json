@@ -52,7 +52,8 @@
     "logged_in": "已登录",
     "logged_out": "已退出",
     "session_expired": "会话已过期",
-    "refresh_token_required": "需要刷新令牌"
+    "refresh_token_required": "需要刷新令牌",
+    "login_locked_out": "登录失败次数过多，请稍后再试。"
   },
   "connected": "已连接",
   "connecting": "连接中",
