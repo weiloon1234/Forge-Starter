@@ -29,10 +29,53 @@ Admin datatables in this starter are defined backend-side as `impl forge::Datata
 Frontend renders with `<DataTable>` from `@shared/components`, pointing at the generic query URL with the datatable's ID. Create/edit/delete are modal-based: click a row action → `modal.open(FormModal, { id, onSaved })` → service call → `toast` + refresh.
 
 **Deeper references** (read only if the procedure below is unclear):
-- Existing datatables: `src/portals/admin/datatables/admin_datatable.rs` (simplest), `user_datatable.rs` (projection with joins)
+- Existing datatables: `src/portals/admin/datatables/admin_datatable.rs` (simplest), `user_datatable.rs` (projection with joins), `setting_datatable.rs` (`updated_at`-primary exception)
 - Generic query endpoint: `src/portals/admin/datatable_routes.rs`
 - Example list page: `frontend/admin/src/pages/AdminsPage.tsx`
 - Example form modal: `frontend/admin/src/components/AdminFormModal.tsx`
+
+## Column arrangement convention
+
+Every admin datatable follows the same column layout — backend + frontend together:
+
+1. **`#` index** — auto-rendered by `<DataTable />` because `showIndex` defaults to `true`. Do **NOT** include `#` in the frontend `columns` array and do **NOT** declare it backend-side. It is a presentation-layer row counter, not a data column.
+2. **`__actions`** (optional, frontend only) — if any row-level action exists (edit modal, approve, view, navigate), this is the FIRST entry in the frontend `columns` array. Key = `"__actions"`, header label = `""`, renderer is a tight icon-only `<Button unstyled>`. Backend has no counterpart — it is not a DB column.
+3. **Domain fields** — the user-visible row data. Order by what a human would scan for first (identity → status → amounts → metadata). Both `columns()` (backend) and the frontend `columns` array mirror this order.
+4. **Timestamp column — `created_at` (default)** — the LAST column, backend `.field(<Model>::CREATED_AT).label("Created").sortable().exportable()`, frontend `{ key: "created_at", label: t("Created"), sortable: true, format: "datetime" }`. Default sort is `DatatableSort::desc(<Model>::CREATED_AT)`. The filter bar carries a date-range pair.
+
+   **CRITICAL — `from` and `to` MUST live inside the SAME `DatatableFilterRow::pair(...)`.** They are one logical filter; splitting them across two `DatatableFilterRow::single(...)` rows (or pairing `from` with an unrelated field and putting `to` in its own row) breaks the UX — the user expects the range widgets side-by-side on a single visual row. The correct shape is:
+
+   ```rust
+   DatatableFilterRow::pair(
+       DatatableFilterField::date_from("created_from", "admin.datatable.filters.created_from")
+           .bind("created_at", DatatableFilterOp::DateFrom, DatatableFilterValueKind::Date),
+       DatatableFilterField::date_to("created_to", "admin.datatable.filters.created_to")
+           .bind("created_at", DatatableFilterOp::DateTo, DatatableFilterValueKind::Date),
+   )
+   ```
+
+   The `name` ("created_from" / "created_to") is the filter's URL param; `.bind(...)` redirects its DB binding to the real column. Both date-range fields target `created_at`. `DatatableFilterRow::pair(left, right)` takes exactly two `DatatableFilterField` arguments — that's the full API.
+
+### Exception — `updated_at`-primary tables
+
+Swap `created_at` → `updated_at` ONLY when the table genuinely has no "creation" semantics — rows are seeded / singleton / configuration, and the only human-meaningful timestamp is the last edit. Canonical example: `setting_datatable.rs`.
+
+When this exception applies:
+
+- **Last column**: `.field(<Model>::UPDATED_AT).label("Updated")` (not "Created").
+- **Default sort**: typically a domain-meaningful order (settings group → sort_order → key) or `DatatableSort::desc(<Model>::UPDATED_AT)`. Not `CREATED_AT`.
+- **Filter pair**: `date_from("updated_from", ...).bind("updated_at", ...)` + `date_to("updated_to", ...).bind("updated_at", ...)`.
+
+Do NOT use `updated_at` for anything that is actually "created" by a human (users, admins, top-ups, credit transactions, audit trails) — `created_at` stays correct there even if `updated_at` also exists on the row.
+
+### Anti-patterns
+
+- **Do not include `#` in the frontend `columns` array.** It's auto-rendered; adding it manually double-renders.
+- **Do not put `__actions` anywhere except first.** Last-column actions was an older pattern; the starter standardized on first-column actions.
+- **Do not skip the `created_at` (or `updated_at`) date-range filter pair** unless the user explicitly opts out. It's part of the default bar, not a nice-to-have.
+- **Do not use `DatatableFilterField::date(...)` (single-value)** for the timestamp filter. Use the `date_from` + `date_to` pair — users filter by ranges, never exact dates.
+- **Do not split `from` and `to` into separate filter rows.** They belong in ONE `DatatableFilterRow::pair(from_field, to_field)`. Two `DatatableFilterRow::single(...)` calls render as two stacked rows, which is wrong — the user reads `from` + `to` as one control.
+- **Do not pair `from` / `to` with an unrelated filter.** `DatatableFilterRow::pair(date_from, select_status)` puts the `to` field elsewhere (or drops it). Keep the from/to pair whole; add other filters as their own rows.
 
 ## Prerequisites
 
@@ -68,9 +111,11 @@ Walk the user through every question. If any answer is unclear or indicates a no
    - `text_like(field, label)` — substring match on one column.
    - `text_search_fields(key, label, [Field1, Field2, ...])` — OR across multiple columns (free-text search).
    - `select(field, label).options(Enum::options())` — dropdown bound to an `AppEnum`.
-   - Date range / other — escalate to `references/custom-filter.md` if non-default.
+   - `checkbox(field, label)` — boolean.
+   - `date_from(name, label).bind(column, DateFrom, Date)` + `date_to(...)` pair — date-range filter. The `created_from`/`created_to` (or `updated_from`/`updated_to`) pair is part of the default bar per "Column arrangement convention"; include it unless the user opts out.
+   - Anything more exotic (relation picker, multi-select, custom op) — escalate to `references/custom-filter.md`.
 
-5. **Default sort** — which column and direction? Typically `created_at DESC`.
+5. **Default sort + timestamp column** — which column and direction? Default is `created_at DESC` and the last column is `created_at`. Use `updated_at` only if this resource qualifies for the exception documented in "Column arrangement convention" above (seeded configs, settings, singletons that are edited but never created by a human). If yes, pick either `updated_at DESC` or a domain-meaningful order (e.g., `group_name ASC, sort_order ASC, key ASC`).
 
 6. **Permissions** — typically two: `<Resource>Read` (view list + detail) and `<Resource>Manage` (create/update/delete). Fine-grained exceptions (e.g., per-column gating) live in `references/permission-gated-column.md`.
 
@@ -122,7 +167,9 @@ impl Datatable for <YourModel>Datatable {
                 .sortable()
                 .filterable()
                 .exportable(),
-            // ... one per user-visible column
+            // ... one per user-visible column, in scan order
+            // LAST column: the timestamp. created_at by default; swap to UPDATED_AT
+            // only if this resource qualifies per "Column arrangement convention".
             DatatableColumn::field(<YourModel>::CREATED_AT)
                 .label("Created")
                 .sortable()
@@ -158,6 +205,15 @@ impl Datatable for <YourModel>Datatable {
                     "admin.datatable.filters.<status_field>",
                 )
                 .options(<YourEnum>::options()),
+            ),
+            // Default timestamp range filter — include unless the user explicitly
+            // opts out. Swap "created_from"/"created_to" → "updated_from"/"updated_to"
+            // and the bind target → "updated_at" for the exception case.
+            DatatableFilterRow::pair(
+                DatatableFilterField::date_from("created_from", "admin.datatable.filters.created_from")
+                    .bind("created_at", DatatableFilterOp::DateFrom, DatatableFilterValueKind::Date),
+                DatatableFilterField::date_to("created_to", "admin.datatable.filters.created_to")
+                    .bind("created_at", DatatableFilterOp::DateTo, DatatableFilterValueKind::Date),
             ),
         ])
     }
@@ -292,6 +348,11 @@ export function <Resource>sPage() {
     [t, canManage],
   );
 
+  // Column order matches the convention documented in SKILL.md → "Column arrangement convention":
+  //   (1) `#` auto-rendered by <DataTable showIndex defaults to true> — do NOT add it here
+  //   (2) `__actions` FIRST (only if any row action exists)
+  //   (3) domain fields, in scan order
+  //   (4) `created_at` LAST (or `updated_at` in the exception case)
   const columns: DataTableColumn<<Resource>Row>[] = [
     {
       key: "__actions",
@@ -307,7 +368,7 @@ export function <Resource>sPage() {
         </Button>
       ),
     },
-    // ... one entry per column. Use `sortable: true` where backend declared .sortable().
+    // ... one entry per domain column. Use `sortable: true` where backend declared .sortable().
     // Use `render: (row) => ...` for custom cells (buttons, badges, enum labels).
     { key: "created_at", label: t("Created"), sortable: true, format: "datetime" },
   ];
@@ -815,6 +876,7 @@ Log in as developer admin, navigate to the new page via the menu, verify:
 - **Don't skip `make types` after adding request/response DTOs.** Frontend will `any`-type the fields without regeneration.
 - **Don't forget `locales/zh/*` (or any non-English locale).** CLAUDE.md rule: every non-English locale file must have every key.
 - **Don't install new dependencies without asking.** Datatable + modal + form + i18n infra is already in place.
+- **Don't violate the column-arrangement convention.** `#` is auto-rendered (never in `columns`); `__actions` is always FIRST when present; `created_at` is always LAST (or `updated_at` in the documented exception case); the `date_from`/`date_to` range pair ships by default.
 
 ## When this skill doesn't fit
 

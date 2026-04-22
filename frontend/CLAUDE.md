@@ -18,7 +18,7 @@ Quick index — each skill has a triggering `description` that surfaces it when 
 | [`admin-badge`](../.claude/skills/admin-badge/SKILL.md) | Sidebar count indicator |
 | [`typescript`](../.claude/skills/typescript/SKILL.md) | Understanding / extending the Rust → TS generation pipeline |
 
-Root `CLAUDE.md` indexes all 21 skills including backend + cross-cutting.
+Root `CLAUDE.md` indexes all 22 skills including backend + cross-cutting.
 
 ## Rules
 

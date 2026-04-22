@@ -14,7 +14,7 @@ Portal-scoped discipline for anything under `src/portals/`. Every HTTP route in 
 | [`new-permission`](../../.claude/skills/new-permission/SKILL.md) | New RBAC variant on the `Permission` enum |
 | [`middleware`](../../.claude/skills/middleware/SKILL.md) | Configuring per-route or per-scope middleware (RateLimit, Csrf, CORS, MaxBodySize, RequestTimeout) |
 
-Root `CLAUDE.md` indexes all 21 skills. Frontend-facing counterparts (pages, forms, shared components) live in `frontend/CLAUDE.md`.
+Root `CLAUDE.md` indexes all 22 skills. Frontend-facing counterparts (pages, forms, shared components) live in `frontend/CLAUDE.md`.
 
 ## Route scope DSL at a glance
 
