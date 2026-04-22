@@ -877,6 +877,7 @@ Log in as developer admin, navigate to the new page via the menu, verify:
 - **Don't forget `locales/zh/*` (or any non-English locale).** CLAUDE.md rule: every non-English locale file must have every key.
 - **Don't install new dependencies without asking.** Datatable + modal + form + i18n infra is already in place.
 - **Don't violate the column-arrangement convention.** `#` is auto-rendered (never in `columns`); `__actions` is always FIRST when present; `created_at` is always LAST (or `updated_at` in the documented exception case); the `date_from`/`date_to` range pair ships by default.
+- **Don't split a `from`/`to` range across two filter rows.** They go inside a SINGLE `DatatableFilterRow::pair(date_from_field, date_to_field)`. Never `::single` each; never pair `from` with an unrelated select and leave `to` orphaned.
 
 ## When this skill doesn't fit
 
