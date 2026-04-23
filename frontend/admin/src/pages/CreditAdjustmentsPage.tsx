@@ -1,10 +1,9 @@
-import { Button, DataTable } from "@shared/components";
+import { Button } from "@shared/components";
 import { modal } from "@shared/modal";
 import type { DataTableColumn } from "@shared/types/form";
 import type {
   CreditTransactionType,
   CreditType,
-  Permission,
 } from "@shared/types/generated";
 import {
   CreditTransactionTypeOptions,
@@ -14,15 +13,13 @@ import { enumLabel } from "@shared/utils";
 import { Plus } from "lucide-react";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/api";
 import { auth } from "@/auth";
+import { AdminDatatablePage } from "@/components/AdminDatatablePage";
 import { CreateCreditAdjustmentModal } from "@/components/CreateCreditAdjustmentModal";
+import { createdAtColumn } from "@/datatableColumns";
 import { hasAllPermissions, usePermission } from "@/hooks/usePermission";
 import { NotFoundPage } from "@/pages/NotFoundPage";
-
-const CREDITS_READ: Permission = "credits.read";
-const CREDITS_MANAGE: Permission = "credits.manage";
-const EXPORTS_READ: Permission = "exports.read";
+import { permissions } from "@/permissions";
 
 interface CreditAdjustmentRow {
   id: string;
@@ -39,11 +36,11 @@ export function CreditAdjustmentsPage() {
   const { t } = useTranslation();
   const tableRefresh = useRef<(() => void) | null>(null);
   const { user } = auth.useAuth();
-  const canReadCredits = usePermission(CREDITS_READ);
-  const canManageCredits = usePermission(CREDITS_MANAGE);
+  const canReadCredits = usePermission(permissions.credits.read);
+  const canManageCredits = usePermission(permissions.credits.manage);
   const canExport = hasAllPermissions(
     user?.abilities,
-    [CREDITS_READ, EXPORTS_READ],
+    [permissions.credits.read, permissions.exports.read],
     user?.admin_type,
   );
 
@@ -86,23 +83,15 @@ export function CreditAdjustmentsPage() {
       label: t("Remark"),
       render: (row) => row.remark ?? "—",
     },
-    {
-      key: "created_at",
-      label: t("Created"),
-      sortable: true,
-      format: "datetime",
-    },
+    createdAtColumn<CreditAdjustmentRow>(t),
   ];
 
   return (
-    <div>
-      <div className="sf-page-header">
-        <div>
-          <h1 className="sf-page-title">{t("admin.credits.title")}</h1>
-          <p className="sf-page-subtitle">{t("admin.credits.subtitle")}</p>
-        </div>
-
-        {canManageCredits && (
+    <AdminDatatablePage<CreditAdjustmentRow>
+      title={t("admin.credits.title")}
+      subtitle={t("admin.credits.subtitle")}
+      action={
+        canManageCredits ? (
           <Button
             type="button"
             size="sm"
@@ -121,23 +110,16 @@ export function CreditAdjustmentsPage() {
           >
             {t("admin.credits.new")}
           </Button>
-        )}
-      </div>
-
-      <div className="mt-4">
-        <DataTable<CreditAdjustmentRow>
-          api={api}
-          url="/datatables/admin.credit_adjustments/query"
-          columns={columns}
-          downloadUrl={
-            canExport
-              ? "/datatables/admin.credit_adjustments/download"
-              : undefined
-          }
-          defaultPerPage={20}
-          refreshRef={tableRefresh}
-        />
-      </div>
-    </div>
+        ) : undefined
+      }
+      datatable={{
+        url: "/datatables/admin.credit_adjustments/query",
+        columns,
+        downloadUrl: canExport
+          ? "/datatables/admin.credit_adjustments/download"
+          : undefined,
+        refreshRef: tableRefresh,
+      }}
+    />
   );
 }

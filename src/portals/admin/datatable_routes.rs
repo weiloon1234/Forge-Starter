@@ -58,27 +58,11 @@ fn resolve_timezone(app: &AppContext, headers: &HeaderMap) -> Timezone {
         .unwrap_or_else(|| app.timezone().unwrap_or_else(|_| Timezone::utc()))
 }
 
-fn minimum_read_permission(id: &str) -> Option<Permission> {
-    match id {
-        "admin.users" => Some(Permission::UsersRead),
-        "admin.introducer_changes" => Some(Permission::IntroducerChangesRead),
-        "admin.countries" => Some(Permission::CountriesRead),
-        "admin.admins" => Some(Permission::AdminsRead),
-        "admin.settings" => Some(Permission::SettingsRead),
-        "admin.pages" => Some(Permission::PagesRead),
-        "admin.credit_adjustments" => Some(Permission::CreditsRead),
-        "admin.credit_transactions" => Some(Permission::CreditTransactionsRead),
-        "admin.user_credit_transactions" => Some(Permission::CreditTransactionsRead),
-        "admin.audit_logs" => Some(Permission::AuditLogsRead),
-        _ => None,
-    }
-}
-
 fn required_permissions(
     id: &str,
     include_export: bool,
 ) -> Option<std::collections::BTreeSet<PermissionId>> {
-    let read_permission = minimum_read_permission(id)?;
+    let read_permission = datatables::minimum_read_permission(id)?;
 
     let mut permissions = std::collections::BTreeSet::from([PermissionId::from(read_permission)]);
     if include_export {

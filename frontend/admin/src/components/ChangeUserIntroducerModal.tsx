@@ -14,10 +14,6 @@ import { mergeUserOptions, userOptionLabel } from "@/userLookup";
 
 const FORM_ID = "change-user-introducer-form";
 
-interface ChangeUserIntroducerFormValues extends Record<string, unknown> {
-  introducer_user_id: string;
-}
-
 interface ChangeUserIntroducerModalProps {
   userId: string;
   userLabel: string;
@@ -44,17 +40,15 @@ export function ChangeUserIntroducerModal({
     useState<AdminUserLookupOptionResponse | null>(null);
   const userSearchRequestRef = useRef(0);
 
-  const form = useForm<ChangeUserIntroducerFormValues>({
+  const form = useForm<ChangeUserIntroducerRequest>({
     initialValues: {
       introducer_user_id: "",
     },
     validate: (values) => {
       const errors: Partial<
-        Record<keyof ChangeUserIntroducerFormValues, string[]>
+        Record<keyof ChangeUserIntroducerRequest, string[]>
       > = {};
-      const nextIntroducerUserId = String(
-        values.introducer_user_id ?? "",
-      ).trim();
+      const nextIntroducerUserId = values.introducer_user_id.trim();
 
       if (
         nextIntroducerUserId !== "" &&
@@ -74,13 +68,11 @@ export function ChangeUserIntroducerModal({
       return errors;
     },
     onSubmit: async (values) => {
-      const payload: ChangeUserIntroducerRequest = {
-        introducer_user_id: String(values.introducer_user_id ?? "").trim(),
-      };
-
       await api.post<AdminUserIntroducerChangeResponse>(
         `/users/${userId}/introducer-changes`,
-        payload,
+        {
+          introducer_user_id: values.introducer_user_id.trim(),
+        },
       );
 
       toast.success(t("admin.introducer_changes.changed"));
@@ -180,11 +172,7 @@ export function ChangeUserIntroducerModal({
               <Select
                 name={introducerField.name}
                 label={t("admin.introducer_changes.fields.introducer")}
-                value={
-                  typeof introducerField.value === "string"
-                    ? introducerField.value
-                    : ""
-                }
+                value={introducerField.value}
                 options={userSelectOptions}
                 searchable
                 clearable

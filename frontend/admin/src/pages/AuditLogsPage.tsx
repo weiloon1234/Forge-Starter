@@ -1,22 +1,19 @@
-import { Button, DataTable } from "@shared/components";
 import type { DataTableColumn } from "@shared/types/form";
-import type { Permission } from "@shared/types/generated";
 import { Eye } from "lucide-react";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/api";
 import { auth } from "@/auth";
+import { AdminDatatablePage } from "@/components/AdminDatatablePage";
 import {
   JsonViewer,
   KeyValueList,
   RightDrawer,
   StatusBadge,
 } from "@/components/observability";
+import { actionColumn, createdAtColumn } from "@/datatableColumns";
 import { hasAllPermissions } from "@/hooks/usePermission";
 import type { StatusTone } from "@/observability/utils";
-
-const AUDIT_LOGS_READ: Permission = "audit_logs.read";
-const EXPORTS_READ: Permission = "exports.read";
+import { permissions } from "@/permissions";
 
 interface AuditLogRow {
   id: string;
@@ -62,27 +59,16 @@ export function AuditLogsPage() {
 
   const canExport = hasAllPermissions(
     user?.abilities,
-    [AUDIT_LOGS_READ, EXPORTS_READ],
+    [permissions.auditLogs.read, permissions.exports.read],
     user?.admin_type,
   );
 
   const columns: DataTableColumn<AuditLogRow>[] = [
-    {
-      key: "__actions",
-      label: "",
-      render: (row) => (
-        <Button
-          type="button"
-          unstyled
-          className="sf-datatable-action"
-          ariaLabel={t("admin.audit_logs.view_payload")}
-          title={t("admin.audit_logs.view_payload")}
-          onClick={() => setSelected(row)}
-        >
-          <Eye size={16} />
-        </Button>
-      ),
-    },
+    actionColumn<AuditLogRow>({
+      label: t("admin.audit_logs.view_payload"),
+      icon: <Eye size={16} />,
+      onClick: setSelected,
+    }),
     {
       key: "event_type",
       label: t("admin.audit_logs.columns.event"),
@@ -120,35 +106,23 @@ export function AuditLogsPage() {
       label: t("admin.audit_logs.columns.ip"),
       render: (row) => row.ip ?? "-",
     },
-    {
-      key: "created_at",
-      label: t("Created"),
-      sortable: true,
-      format: "datetime",
-    },
+    createdAtColumn<AuditLogRow>(t),
   ];
 
   return (
     <div>
-      <div className="sf-page-header">
-        <div>
-          <h1 className="sf-page-title">{t("admin.audit_logs.title")}</h1>
-          <p className="sf-page-subtitle">{t("admin.audit_logs.subtitle")}</p>
-        </div>
-      </div>
-
-      <div className="mt-4">
-        <DataTable<AuditLogRow>
-          api={api}
-          url="/datatables/admin.audit_logs/query"
-          downloadUrl={
-            canExport ? "/datatables/admin.audit_logs/download" : undefined
-          }
-          columns={columns}
-          defaultPerPage={20}
-          refreshRef={tableRefresh}
-        />
-      </div>
+      <AdminDatatablePage<AuditLogRow>
+        title={t("admin.audit_logs.title")}
+        subtitle={t("admin.audit_logs.subtitle")}
+        datatable={{
+          url: "/datatables/admin.audit_logs/query",
+          downloadUrl: canExport
+            ? "/datatables/admin.audit_logs/download"
+            : undefined,
+          columns,
+          refreshRef: tableRefresh,
+        }}
+      />
 
       <RightDrawer
         open={Boolean(selected)}

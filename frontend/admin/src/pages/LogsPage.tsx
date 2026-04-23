@@ -3,7 +3,6 @@ import { modal } from "@shared/modal";
 import type {
   LogEntryResponse,
   LogFileResponse,
-  Permission,
 } from "@shared/types/generated";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -12,12 +11,12 @@ import { api } from "@/api";
 import { ConfirmDeleteLogModal } from "@/components/ConfirmDeleteLogModal";
 import { LogEntryModal } from "@/components/LogEntryModal";
 import { usePermission } from "@/hooks/usePermission";
+import { permissions } from "@/permissions";
 
 type LogEntryRow = LogEntryResponse & { _key: string };
 
 const LEVELS = ["TRACE", "DEBUG", "INFO", "WARN", "ERROR"];
 const TAIL_LIMIT = 500;
-const LOGS_MANAGE: Permission = "logs.manage";
 
 function formatSize(bytes: bigint): string {
   const n = Number(bytes);
@@ -43,7 +42,7 @@ function formatTimestamp(iso: string): string {
 
 export function LogsPage() {
   const { t } = useTranslation();
-  const canManageLogs = usePermission(LOGS_MANAGE);
+  const canManageLogs = usePermission(permissions.logs.manage);
   const [files, setFiles] = useState<LogFileResponse[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [levels, setLevels] = useState<string[]>([]);

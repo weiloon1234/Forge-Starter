@@ -6,7 +6,6 @@ import { modal } from "@shared/modal";
 import type {
   AdminPageResponse,
   EditorUploadFolder,
-  Permission,
 } from "@shared/types/generated";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -26,11 +25,10 @@ import {
   titleFieldKey,
 } from "@/pageForm";
 import { NotFoundPage } from "@/pages/NotFoundPage";
+import { permissions } from "@/permissions";
 import { formatFileSize } from "@/settings";
 
 const FORM_ID = "page-form-page";
-const PAGES_READ: Permission = "pages.read";
-const PAGES_MANAGE: Permission = "pages.manage";
 const PAGES_CONTENT_FOLDER = "pages.content" as EditorUploadFolder;
 
 type PageMode = "create" | "edit" | "view";
@@ -63,8 +61,8 @@ export function PageFormPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { id } = useParams();
-  const canReadPages = usePermission(PAGES_READ);
-  const canManagePages = usePermission(PAGES_MANAGE);
+  const canReadPages = usePermission(permissions.pages.read);
+  const canManagePages = usePermission(permissions.pages.manage);
   const isCreateRoute = location.pathname.endsWith("/pages/new");
   const locales = useMemo(() => {
     const configured = config.locales.length > 0 ? config.locales : ["en"];

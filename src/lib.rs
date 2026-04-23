@@ -6,5 +6,6 @@ pub mod portals;
 pub mod providers;
 pub mod realtime;
 pub mod schedules;
+pub mod support;
 pub mod types;
 pub mod validation;

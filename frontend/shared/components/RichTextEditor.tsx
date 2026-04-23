@@ -3,7 +3,7 @@ import type { RichTextEditorProps } from "@shared/types/form";
 import type { ComponentType } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FieldMessages, fieldClasses } from "./FieldMessages";
+import { FieldShell } from "./FieldShell";
 
 interface FroalaEditorProps {
   tag?: string;
@@ -135,16 +135,16 @@ export function RichTextEditor({
   const hasErrors = !!(allErrors && allErrors.length > 0);
 
   return (
-    <div className={fieldClasses({ hasErrors, disabled, className })}>
-      {label && (
-        <label
-          className={`sf-label${required ? " sf-label--required" : ""}`}
-          htmlFor={name}
-        >
-          {label}
-        </label>
-      )}
-
+    <FieldShell
+      label={label}
+      errors={allErrors}
+      hints={hints}
+      disabled={disabled}
+      required={required}
+      className={className}
+      hasErrors={hasErrors}
+      htmlFor={name}
+    >
       <div className="sf-richtext-shell">
         {Editor ? (
           <Editor
@@ -162,8 +162,6 @@ export function RichTextEditor({
           </div>
         )}
       </div>
-
-      <FieldMessages hints={hints} errors={allErrors} />
-    </div>
+    </FieldShell>
   );
 }

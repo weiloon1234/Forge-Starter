@@ -1,4 +1,8 @@
-use crate::ids;
+use crate::support::validation::{
+    validate_optional_active_country, validate_optional_contact_number, validate_optional_email,
+    validate_optional_name, validate_optional_non_empty_password, validate_optional_username,
+    validate_phone_for_country_pair, validate_required_password, validate_required_uuid,
+};
 use async_trait::async_trait;
 use forge::prelude::*;
 use serde::Deserialize;
@@ -19,89 +23,31 @@ pub struct CreateUserRequest {
 #[async_trait]
 impl RequestValidator for CreateUserRequest {
     async fn validate(&self, validator: &mut Validator) -> Result<()> {
-        validator
-            .field("introducer_user_id", &self.introducer_user_id)
-            .bail()
-            .required()
-            .uuid()
-            .apply()
+        validate_required_uuid(validator, "introducer_user_id", &self.introducer_user_id).await?;
+        validate_optional_username(validator, "username", self.username.as_deref()).await?;
+        validate_optional_email(validator, "email", self.email.as_deref()).await?;
+        validate_optional_name(validator, "name", self.name.as_deref()).await?;
+        validate_required_password(validator, "password", &self.password).await?;
+        validate_optional_active_country(validator, "country_iso2", self.country_iso2.as_deref())
             .await?;
-
-        if let Some(username) = self.username.as_deref() {
-            validator
-                .field("username", username)
-                .bail()
-                .nullable()
-                .max(50)
-                .rule(ids::validation::USERNAME)
-                .apply()
-                .await?;
-        }
-
-        if let Some(email) = self.email.as_deref() {
-            validator
-                .field("email", email)
-                .bail()
-                .nullable()
-                .email()
-                .max(255)
-                .apply()
-                .await?;
-        }
-
-        if let Some(name) = self.name.as_deref() {
-            validator
-                .field("name", name)
-                .bail()
-                .nullable()
-                .min(2)
-                .max(100)
-                .apply()
-                .await?;
-        }
-
-        validator
-            .field("password", &self.password)
-            .bail()
-            .required()
-            .rule(ids::validation::PASSWORD)
-            .apply()
-            .await?;
-
-        if let Some(country_iso2) = self.country_iso2.as_deref() {
-            validator
-                .field("country_iso2", country_iso2)
-                .bail()
-                .nullable()
-                .rule(ids::validation::ACTIVE_COUNTRY)
-                .apply()
-                .await?;
-        }
-
-        if let Some(contact_country_iso2) = self.contact_country_iso2.as_deref() {
-            validator
-                .field("contact_country_iso2", contact_country_iso2)
-                .bail()
-                .nullable()
-                .rule(ids::validation::ACTIVE_COUNTRY)
-                .apply()
-                .await?;
-        }
-
-        if let Some(contact_number) = self.contact_number.as_deref() {
-            validator
-                .field("contact_number", contact_number)
-                .nullable()
-                .apply()
-                .await?;
-        }
-
-        if !crate::validation::is_phone_valid_for_country(
+        validate_optional_active_country(
+            validator,
+            "contact_country_iso2",
+            self.contact_country_iso2.as_deref(),
+        )
+        .await?;
+        validate_optional_contact_number(
+            validator,
+            "contact_number",
+            self.contact_number.as_deref(),
+        )
+        .await?;
+        validate_phone_for_country_pair(
+            validator,
             self.contact_country_iso2.as_deref(),
             self.contact_number.as_deref(),
-        ) {
-            validator.add_error("contact_number", "phone_invalid_for_country", &[]);
-        }
+            "contact_number",
+        );
 
         Ok(())
     }
@@ -122,84 +68,31 @@ pub struct UpdateUserRequest {
 #[async_trait]
 impl RequestValidator for UpdateUserRequest {
     async fn validate(&self, validator: &mut Validator) -> Result<()> {
-        if let Some(username) = self.username.as_deref() {
-            validator
-                .field("username", username)
-                .bail()
-                .nullable()
-                .max(50)
-                .rule(ids::validation::USERNAME)
-                .apply()
-                .await?;
-        }
-
-        if let Some(email) = self.email.as_deref() {
-            validator
-                .field("email", email)
-                .bail()
-                .nullable()
-                .email()
-                .max(255)
-                .apply()
-                .await?;
-        }
-
-        if let Some(name) = self.name.as_deref() {
-            validator
-                .field("name", name)
-                .bail()
-                .nullable()
-                .min(2)
-                .max(100)
-                .apply()
-                .await?;
-        }
-
-        if let Some(password) = self.password.as_deref() {
-            if !password.is_empty() {
-                validator
-                    .field("password", password)
-                    .bail()
-                    .rule(ids::validation::PASSWORD)
-                    .apply()
-                    .await?;
-            }
-        }
-
-        if let Some(country_iso2) = self.country_iso2.as_deref() {
-            validator
-                .field("country_iso2", country_iso2)
-                .bail()
-                .nullable()
-                .rule(ids::validation::ACTIVE_COUNTRY)
-                .apply()
-                .await?;
-        }
-
-        if let Some(contact_country_iso2) = self.contact_country_iso2.as_deref() {
-            validator
-                .field("contact_country_iso2", contact_country_iso2)
-                .bail()
-                .nullable()
-                .rule(ids::validation::ACTIVE_COUNTRY)
-                .apply()
-                .await?;
-        }
-
-        if let Some(contact_number) = self.contact_number.as_deref() {
-            validator
-                .field("contact_number", contact_number)
-                .nullable()
-                .apply()
-                .await?;
-        }
-
-        if !crate::validation::is_phone_valid_for_country(
+        validate_optional_username(validator, "username", self.username.as_deref()).await?;
+        validate_optional_email(validator, "email", self.email.as_deref()).await?;
+        validate_optional_name(validator, "name", self.name.as_deref()).await?;
+        validate_optional_non_empty_password(validator, "password", self.password.as_deref())
+            .await?;
+        validate_optional_active_country(validator, "country_iso2", self.country_iso2.as_deref())
+            .await?;
+        validate_optional_active_country(
+            validator,
+            "contact_country_iso2",
+            self.contact_country_iso2.as_deref(),
+        )
+        .await?;
+        validate_optional_contact_number(
+            validator,
+            "contact_number",
+            self.contact_number.as_deref(),
+        )
+        .await?;
+        validate_phone_for_country_pair(
+            validator,
             self.contact_country_iso2.as_deref(),
             self.contact_number.as_deref(),
-        ) {
-            validator.add_error("contact_number", "phone_invalid_for_country", &[]);
-        }
+            "contact_number",
+        );
 
         Ok(())
     }
@@ -214,13 +107,7 @@ pub struct ChangeUserIntroducerRequest {
 #[async_trait]
 impl RequestValidator for ChangeUserIntroducerRequest {
     async fn validate(&self, validator: &mut Validator) -> Result<()> {
-        validator
-            .field("introducer_user_id", &self.introducer_user_id)
-            .bail()
-            .required()
-            .uuid()
-            .apply()
-            .await?;
+        validate_required_uuid(validator, "introducer_user_id", &self.introducer_user_id).await?;
 
         Ok(())
     }

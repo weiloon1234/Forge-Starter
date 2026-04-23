@@ -1,5 +1,7 @@
 use forge::prelude::*;
 
+use crate::ids::permissions::Permission;
+
 pub mod admin_datatable;
 pub mod audit_log_datatable;
 pub mod country_datatable;
@@ -23,18 +25,94 @@ pub use page_datatable::PageDatatable;
 pub use setting_datatable::SettingDatatable;
 pub use user_datatable::UserDatatable;
 
+macro_rules! admin_datatables {
+    ($macro:ident $(, $context:tt)?) => {
+        $macro!(
+            $( $context, )?
+            (AdminDatatable, Permission::AdminsRead),
+            (UserDatatable, Permission::UsersRead),
+            (CountryDatatable, Permission::CountriesRead),
+            (SettingDatatable, Permission::SettingsRead),
+            (PageDatatable, Permission::PagesRead),
+            (CreditAdjustmentDatatable, Permission::CreditsRead),
+            (CreditTransactionDatatable, Permission::CreditTransactionsRead),
+            (
+                UserCreditTransactionDatatable,
+                Permission::CreditTransactionsRead
+            ),
+            (
+                IntroducerChangeDatatable,
+                Permission::IntroducerChangesRead
+            ),
+            (AuditLogDatatable, Permission::AuditLogsRead),
+        )
+    };
+}
+
+macro_rules! register_all_datatables {
+    ($registrar:ident, $(($datatable:ident, $permission:expr)),* $(,)?) => {{
+        $($registrar.register_datatable::<$datatable>()?;)*
+        Ok(())
+    }};
+}
+
+macro_rules! match_json_datatable {
+    (($id:ident, $app:ident, $actor:ident, $request:ident, $locale:ident, $timezone:ident), $(($datatable:ident, $permission:expr)),* $(,)?) => {{
+        Some(match $id {
+            $(
+                $datatable::ID => {
+                    runner::build_json_response::<$datatable>(
+                        $app,
+                        $actor,
+                        $request,
+                        $locale,
+                        $timezone,
+                    )
+                        .await
+                }
+            )*
+            _ => return None,
+        })
+    }};
+}
+
+macro_rules! match_download_datatable {
+    (($id:ident, $app:ident, $actor:ident, $request:ident, $locale:ident, $timezone:ident), $(($datatable:ident, $permission:expr)),* $(,)?) => {{
+        Some(match $id {
+            $(
+                $datatable::ID => {
+                    runner::build_download_response::<$datatable>(
+                        $app,
+                        $actor,
+                        $request,
+                        $locale,
+                        $timezone,
+                    )
+                    .await
+                }
+            )*
+            _ => return None,
+        })
+    }};
+}
+
+macro_rules! match_minimum_permission {
+    ($id:ident, $(($datatable:ident, $permission:expr)),* $(,)?) => {{
+        match $id {
+            $(
+                $datatable::ID => Some($permission),
+            )*
+            _ => None,
+        }
+    }};
+}
+
 pub fn register_all(registrar: &mut ServiceRegistrar) -> Result<()> {
-    registrar.register_datatable::<AdminDatatable>()?;
-    registrar.register_datatable::<UserDatatable>()?;
-    registrar.register_datatable::<CountryDatatable>()?;
-    registrar.register_datatable::<SettingDatatable>()?;
-    registrar.register_datatable::<PageDatatable>()?;
-    registrar.register_datatable::<CreditAdjustmentDatatable>()?;
-    registrar.register_datatable::<CreditTransactionDatatable>()?;
-    registrar.register_datatable::<UserCreditTransactionDatatable>()?;
-    registrar.register_datatable::<IntroducerChangeDatatable>()?;
-    registrar.register_datatable::<AuditLogDatatable>()?;
-    Ok(())
+    admin_datatables!(register_all_datatables, registrar)
+}
+
+pub fn minimum_read_permission(id: &str) -> Option<Permission> {
+    admin_datatables!(match_minimum_permission, id)
 }
 
 pub async fn run_json(
@@ -45,57 +123,10 @@ pub async fn run_json(
     locale: Option<&str>,
     timezone: Timezone,
 ) -> Option<Result<DatatableJsonResponse>> {
-    Some(match id {
-        AdminDatatable::ID => {
-            runner::build_json_response::<AdminDatatable>(app, actor, request, locale, timezone)
-                .await
-        }
-        UserDatatable::ID => {
-            runner::build_json_response::<UserDatatable>(app, actor, request, locale, timezone)
-                .await
-        }
-        CountryDatatable::ID => {
-            runner::build_json_response::<CountryDatatable>(app, actor, request, locale, timezone)
-                .await
-        }
-        SettingDatatable::ID => {
-            runner::build_json_response::<SettingDatatable>(app, actor, request, locale, timezone)
-                .await
-        }
-        PageDatatable::ID => {
-            runner::build_json_response::<PageDatatable>(app, actor, request, locale, timezone)
-                .await
-        }
-        CreditAdjustmentDatatable::ID => {
-            runner::build_json_response::<CreditAdjustmentDatatable>(
-                app, actor, request, locale, timezone,
-            )
-            .await
-        }
-        CreditTransactionDatatable::ID => {
-            runner::build_json_response::<CreditTransactionDatatable>(
-                app, actor, request, locale, timezone,
-            )
-            .await
-        }
-        UserCreditTransactionDatatable::ID => {
-            runner::build_json_response::<UserCreditTransactionDatatable>(
-                app, actor, request, locale, timezone,
-            )
-            .await
-        }
-        IntroducerChangeDatatable::ID => {
-            runner::build_json_response::<IntroducerChangeDatatable>(
-                app, actor, request, locale, timezone,
-            )
-            .await
-        }
-        AuditLogDatatable::ID => {
-            runner::build_json_response::<AuditLogDatatable>(app, actor, request, locale, timezone)
-                .await
-        }
-        _ => return None,
-    })
+    admin_datatables!(
+        match_json_datatable,
+        (id, app, actor, request, locale, timezone)
+    )
 }
 
 pub async fn run_download(
@@ -106,61 +137,51 @@ pub async fn run_download(
     locale: Option<&str>,
     timezone: Timezone,
 ) -> Option<Result<Response>> {
-    Some(match id {
-        AdminDatatable::ID => {
-            runner::build_download_response::<AdminDatatable>(app, actor, request, locale, timezone)
-                .await
+    admin_datatables!(
+        match_download_datatable,
+        (id, app, actor, request, locale, timezone)
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeSet;
+
+    use super::*;
+
+    #[test]
+    fn every_registered_datatable_exposes_a_permission_mapping() {
+        macro_rules! assert_permissions {
+            ($(($datatable:ident, $permission:expr)),* $(,)?) => {{
+                $(
+                    assert_eq!(minimum_read_permission($datatable::ID), Some($permission));
+                )*
+            }};
         }
-        UserDatatable::ID => {
-            runner::build_download_response::<UserDatatable>(app, actor, request, locale, timezone)
-                .await
+
+        admin_datatables!(assert_permissions);
+    }
+
+    #[test]
+    fn datatable_ids_remain_unique() {
+        macro_rules! collect_ids {
+            ($(($datatable:ident, $permission:expr)),* $(,)?) => {{
+                let mut ids = BTreeSet::new();
+                $(
+                    assert!(
+                        ids.insert($datatable::ID),
+                        "duplicate datatable id `{}`",
+                        $datatable::ID
+                    );
+                )*
+            }};
         }
-        CountryDatatable::ID => {
-            runner::build_download_response::<CountryDatatable>(
-                app, actor, request, locale, timezone,
-            )
-            .await
-        }
-        SettingDatatable::ID => {
-            runner::build_download_response::<SettingDatatable>(
-                app, actor, request, locale, timezone,
-            )
-            .await
-        }
-        PageDatatable::ID => {
-            runner::build_download_response::<PageDatatable>(app, actor, request, locale, timezone)
-                .await
-        }
-        CreditAdjustmentDatatable::ID => {
-            runner::build_download_response::<CreditAdjustmentDatatable>(
-                app, actor, request, locale, timezone,
-            )
-            .await
-        }
-        CreditTransactionDatatable::ID => {
-            runner::build_download_response::<CreditTransactionDatatable>(
-                app, actor, request, locale, timezone,
-            )
-            .await
-        }
-        UserCreditTransactionDatatable::ID => {
-            runner::build_download_response::<UserCreditTransactionDatatable>(
-                app, actor, request, locale, timezone,
-            )
-            .await
-        }
-        IntroducerChangeDatatable::ID => {
-            runner::build_download_response::<IntroducerChangeDatatable>(
-                app, actor, request, locale, timezone,
-            )
-            .await
-        }
-        AuditLogDatatable::ID => {
-            runner::build_download_response::<AuditLogDatatable>(
-                app, actor, request, locale, timezone,
-            )
-            .await
-        }
-        _ => return None,
-    })
+
+        admin_datatables!(collect_ids);
+    }
+
+    #[test]
+    fn unknown_datatable_has_no_permission_mapping() {
+        assert_eq!(minimum_read_permission("admin.missing"), None);
+    }
 }

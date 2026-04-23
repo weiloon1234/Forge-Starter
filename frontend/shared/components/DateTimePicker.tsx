@@ -1,7 +1,7 @@
 import type { DateTimePickerProps } from "@shared/types/form";
 import { useTranslation } from "react-i18next";
 import { DatePicker } from "./DatePicker";
-import { FieldMessages } from "./FieldMessages";
+import { FieldShell } from "./FieldShell";
 import { TimePicker } from "./TimePicker";
 
 function getTimeString(date: Date | null | undefined): string {
@@ -37,15 +37,6 @@ export function DateTimePicker({
   const { t } = useTranslation();
   const hasErrors = errors && errors.length > 0;
 
-  const fieldClasses = [
-    "sf-field",
-    hasErrors && "sf-field--error",
-    disabled && "sf-field--disabled",
-    className,
-  ]
-    .filter(Boolean)
-    .join(" ");
-
   const handleDateChange = (date: Date | null) => {
     const time = getTimeString(value);
     onChange?.(combineDateAndTime(date, time));
@@ -57,13 +48,16 @@ export function DateTimePicker({
   };
 
   return (
-    <div className={fieldClasses}>
-      {label && (
-        <div className={`sf-label${required ? " sf-label--required" : ""}`}>
-          {label}
-        </div>
-      )}
-
+    <FieldShell
+      label={label}
+      errors={errors}
+      hints={hints}
+      disabled={disabled}
+      required={required}
+      className={className}
+      hasErrors={Boolean(hasErrors)}
+      labelElement="div"
+    >
       <div className="sf-datetime">
         <DatePicker
           name={`${name}_date`}
@@ -83,8 +77,6 @@ export function DateTimePicker({
           minuteStep={minuteStep}
         />
       </div>
-
-      <FieldMessages hints={hints} errors={errors} />
-    </div>
+    </FieldShell>
   );
 }

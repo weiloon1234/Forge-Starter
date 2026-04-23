@@ -9,6 +9,8 @@ use ts_rs::TS;
 use crate::domain::models::Page;
 use crate::portals::admin::requests::{CreatePageRequest, UpdatePageRequest};
 use crate::portals::admin::responses::{AdminPageResponse, PageCoverResponse};
+use crate::support::i18n::default_locale;
+use crate::support::validation::new_validator;
 
 const PAGE_SLUG_PATTERN: &str = r"^[a-z0-9]+(?:-[a-z0-9]+)*$";
 const PAGE_COVER_COLLECTION: &str = "cover";
@@ -215,8 +217,7 @@ async fn validate_page_input(
     current_id: Option<ModelId<Page>>,
     default_locale: &str,
 ) -> Result<()> {
-    let mut validator = Validator::new(app.clone());
-    validator.set_locale(i18n.locale().to_string());
+    let mut validator = new_validator(app, i18n.locale());
     validator.custom_attribute("slug", forge::t!(i18n, "admin.pages.fields.slug"));
     validator.custom_attribute(
         format!("title.{default_locale}"),
@@ -319,12 +320,6 @@ fn normalize_slug(value: &str) -> String {
     }
 
     normalized.trim_matches('-').to_string()
-}
-
-fn default_locale(app: &AppContext) -> String {
-    app.i18n()
-        .map(|manager| manager.default_locale().to_string())
-        .unwrap_or_else(|_| "en".to_string())
 }
 
 async fn sync_translations<E>(

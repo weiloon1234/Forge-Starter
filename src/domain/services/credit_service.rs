@@ -10,6 +10,7 @@ use crate::domain::models::{
 use crate::domain::services::user_service;
 use crate::portals::admin::requests::CreateAdminCreditAdjustmentRequest;
 use crate::portals::admin::responses::AdminCreditAdjustmentResponse;
+use crate::support::strings::trimmed_string;
 
 const CREDIT_SCALE: u32 = 8;
 const CREDIT_INTEGER_DIGITS: usize = 12;
@@ -39,8 +40,8 @@ pub async fn admin_adjust(
             forge::t!(i18n, "admin.credits.errors.invalid_related_key"),
         )
     })?;
-    let related_type = trimmed_option(req.related_type.as_deref());
-    let remark = trimmed_option(req.remark.as_deref());
+    let related_type = trimmed_string(req.related_type.as_deref());
+    let remark = trimmed_string(req.remark.as_deref());
     let signed_delta = amount.apply(req.operation);
     let transaction_type = match req.operation {
         CreditAdjustmentOperation::Add => CreditTransactionType::AdminAdd,
@@ -186,9 +187,9 @@ pub fn render_explanation(
 }
 
 pub fn admin_label(admin: &Admin) -> String {
-    trimmed_option(Some(admin.name.as_str()))
-        .or_else(|| trimmed_option(Some(admin.username.as_str())))
-        .or_else(|| trimmed_option(Some(admin.email.as_str())))
+    trimmed_string(Some(admin.name.as_str()))
+        .or_else(|| trimmed_string(Some(admin.username.as_str())))
+        .or_else(|| trimmed_string(Some(admin.email.as_str())))
         .unwrap_or_else(|| admin.id.to_string())
 }
 
@@ -238,7 +239,7 @@ fn normalized_object(value: &Option<Value>) -> Result<Value> {
 }
 
 fn normalized_related_key(value: Option<&str>) -> Result<Option<ModelId<CreditRelatedKey>>> {
-    let Some(value) = trimmed_option(value) else {
+    let Some(value) = trimmed_string(value) else {
         return Ok(None);
     };
 
@@ -275,13 +276,6 @@ fn translation_value(value: &Value) -> String {
         Value::Number(value) => value.to_string(),
         Value::Array(_) | Value::Object(_) => value.to_string(),
     }
-}
-
-fn trimmed_option(value: Option<&str>) -> Option<String> {
-    value
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(str::to_string)
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

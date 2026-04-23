@@ -7,6 +7,7 @@ export { DataTable } from "./DataTable";
 export { DatePicker } from "./DatePicker";
 export { DateTimePicker } from "./DateTimePicker";
 export { FieldMessages, fieldClasses } from "./FieldMessages";
+export { FieldShell } from "./FieldShell";
 export { FileUpload } from "./FileUpload";
 export { FormBuilder } from "./FormBuilder";
 export { FormField } from "./FormField";

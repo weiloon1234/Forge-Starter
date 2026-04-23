@@ -1,19 +1,16 @@
-import { Button, DataTable } from "@shared/components";
+import { Button } from "@shared/components";
 import type { DataTableColumn } from "@shared/types/form";
-import type { Permission } from "@shared/types/generated";
 import { formatDateTime } from "@shared/utils";
 import { Eye, Pencil, Plus } from "lucide-react";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { api } from "@/api";
 import { auth } from "@/auth";
+import { AdminDatatablePage } from "@/components/AdminDatatablePage";
+import { actionColumn } from "@/datatableColumns";
 import { hasAllPermissions, usePermission } from "@/hooks/usePermission";
 import { NotFoundPage } from "@/pages/NotFoundPage";
-
-const PAGES_READ: Permission = "pages.read";
-const PAGES_MANAGE: Permission = "pages.manage";
-const EXPORTS_READ: Permission = "exports.read";
+import { permissions } from "@/permissions";
 
 interface PageRow {
   id: string;
@@ -28,11 +25,11 @@ export function PagesPage() {
   const navigate = useNavigate();
   const { user } = auth.useAuth();
   const tableRefresh = useRef<(() => void) | null>(null);
-  const canReadPages = usePermission(PAGES_READ);
-  const canManagePages = usePermission(PAGES_MANAGE);
+  const canReadPages = usePermission(permissions.pages.read);
+  const canManagePages = usePermission(permissions.pages.manage);
   const canExport = hasAllPermissions(
     user?.abilities,
-    [PAGES_READ, EXPORTS_READ],
+    [permissions.pages.read, permissions.exports.read],
     user?.admin_type,
   );
 
@@ -41,30 +38,13 @@ export function PagesPage() {
   }
 
   const columns: DataTableColumn<PageRow>[] = [
-    {
-      key: "__actions",
-      label: "",
-      render: (row) => (
-        <Button
-          type="button"
-          unstyled
-          className="sf-datatable-action"
-          ariaLabel={
-            canManagePages
-              ? t("admin.pages.edit_action")
-              : t("admin.pages.view_action")
-          }
-          title={
-            canManagePages
-              ? t("admin.pages.edit_action")
-              : t("admin.pages.view_action")
-          }
-          onClick={() => navigate(`/pages/${row.id}`)}
-        >
-          {canManagePages ? <Pencil size={16} /> : <Eye size={16} />}
-        </Button>
-      ),
-    },
+    actionColumn<PageRow>({
+      label: canManagePages
+        ? t("admin.pages.edit_action")
+        : t("admin.pages.view_action"),
+      icon: canManagePages ? <Pencil size={16} /> : <Eye size={16} />,
+      onClick: (row) => navigate(`/pages/${row.id}`),
+    }),
     {
       key: "slug",
       label: t("Slug"),
@@ -99,14 +79,11 @@ export function PagesPage() {
   ];
 
   return (
-    <div>
-      <div className="sf-page-header">
-        <div>
-          <h1 className="sf-page-title">{t("admin.pages.title")}</h1>
-          <p className="sf-page-subtitle">{t("admin.pages.subtitle")}</p>
-        </div>
-
-        {canManagePages && (
+    <AdminDatatablePage<PageRow>
+      title={t("admin.pages.title")}
+      subtitle={t("admin.pages.subtitle")}
+      action={
+        canManagePages ? (
           <Button
             type="button"
             size="sm"
@@ -115,21 +92,14 @@ export function PagesPage() {
           >
             {t("admin.pages.new")}
           </Button>
-        )}
-      </div>
-
-      <div className="mt-4">
-        <DataTable<PageRow>
-          api={api}
-          url="/datatables/admin.pages/query"
-          columns={columns}
-          downloadUrl={
-            canExport ? "/datatables/admin.pages/download" : undefined
-          }
-          defaultPerPage={20}
-          refreshRef={tableRefresh}
-        />
-      </div>
-    </div>
+        ) : undefined
+      }
+      datatable={{
+        url: "/datatables/admin.pages/query",
+        columns,
+        downloadUrl: canExport ? "/datatables/admin.pages/download" : undefined,
+        refreshRef: tableRefresh,
+      }}
+    />
   );
 }

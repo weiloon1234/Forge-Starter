@@ -1,4 +1,4 @@
-use crate::ids;
+use crate::support::validation::{validate_required_locale, validate_required_password};
 use async_trait::async_trait;
 use forge::prelude::*;
 use serde::Deserialize;
@@ -32,11 +32,9 @@ impl RequestValidator for ChangeAdminPasswordRequest {
             .apply()
             .await?;
 
+        validate_required_password(validator, "password", &self.password).await?;
         validator
             .field("password", &self.password)
-            .bail()
-            .required()
-            .rule(ids::validation::PASSWORD)
             .confirmed("password_confirmation", &self.password_confirmation)
             .apply()
             .await?;
@@ -54,25 +52,7 @@ pub struct UpdateAdminLocaleRequest {
 #[async_trait]
 impl RequestValidator for UpdateAdminLocaleRequest {
     async fn validate(&self, validator: &mut Validator) -> Result<()> {
-        let locales = validator
-            .app()
-            .i18n()
-            .map(|manager| {
-                manager
-                    .locale_list()
-                    .into_iter()
-                    .map(str::to_string)
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_else(|_| vec!["en".to_string()]);
-
-        validator
-            .field("locale", &self.locale)
-            .bail()
-            .required()
-            .in_list(locales)
-            .apply()
-            .await?;
+        validate_required_locale(validator, "locale", &self.locale).await?;
 
         Ok(())
     }

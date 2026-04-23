@@ -37,10 +37,6 @@ import {
   settingTypeLabel,
 } from "@/settings";
 
-interface SettingFormValues extends Record<string, unknown> {
-  value: unknown;
-}
-
 interface EditSettingModalProps {
   settingKey: string;
   onSaved?: () => void;
@@ -69,7 +65,7 @@ export function EditSettingModal({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [clearAsset, setClearAsset] = useState(false);
 
-  const form = useForm<SettingFormValues>({
+  const form = useForm<UpdateSettingValueRequest>({
     initialValues: {
       value: "",
     },

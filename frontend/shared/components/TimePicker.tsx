@@ -1,7 +1,7 @@
 import type { TimePickerProps } from "@shared/types/form";
 import { Clock } from "lucide-react";
 import { useMemo } from "react";
-import { FieldMessages, fieldClasses } from "./FieldMessages";
+import { FieldShell } from "./FieldShell";
 
 function pad(n: number): string {
   return n.toString().padStart(2, "0");
@@ -39,19 +39,17 @@ export function TimePicker({
     }
   };
 
-  const classes = fieldClasses({ hasErrors: !!hasErrors, disabled, className });
-
   return (
-    <div className={classes}>
-      {label && (
-        <label
-          className={`sf-label${required ? " sf-label--required" : ""}`}
-          htmlFor={name}
-        >
-          {label}
-        </label>
-      )}
-
+    <FieldShell
+      label={label}
+      errors={errors}
+      hints={hints}
+      disabled={disabled}
+      required={required}
+      className={className}
+      hasErrors={Boolean(hasErrors)}
+      htmlFor={name}
+    >
       <div className="sf-timepicker">
         <Clock size={16} className="sf-timepicker-icon" />
         <select
@@ -92,8 +90,6 @@ export function TimePicker({
           ))}
         </select>
       </div>
-
-      <FieldMessages hints={hints} errors={errors} />
-    </div>
+    </FieldShell>
   );
 }

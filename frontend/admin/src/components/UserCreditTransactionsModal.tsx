@@ -4,7 +4,6 @@ import type { DataTableColumn, DataTableFilter } from "@shared/types/form";
 import type {
   CreditTransactionType,
   CreditType,
-  Permission,
 } from "@shared/types/generated";
 import {
   CreditTransactionTypeOptions,
@@ -15,10 +14,9 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "@/api";
 import { auth } from "@/auth";
+import { createdAtColumn } from "@/datatableColumns";
 import { hasAllPermissions } from "@/hooks/usePermission";
-
-const CREDIT_TRANSACTIONS_READ: Permission = "credit_transactions.read";
-const EXPORTS_READ: Permission = "exports.read";
+import { permissions } from "@/permissions";
 
 interface UserCreditTransactionsModalProps {
   userId: string;
@@ -44,7 +42,7 @@ export function UserCreditTransactionsModal({
   const creditTypeLabel = enumLabel(CreditTypeOptions, creditType, t);
   const canExport = hasAllPermissions(
     user?.abilities,
-    [CREDIT_TRANSACTIONS_READ, EXPORTS_READ],
+    [permissions.creditTransactions.read, permissions.exports.read],
     user?.admin_type,
   );
 
@@ -78,12 +76,7 @@ export function UserCreditTransactionsModal({
       sortable: true,
       render: (row) => row.amount,
     },
-    {
-      key: "created_at",
-      label: t("Created"),
-      sortable: true,
-      format: "datetime",
-    },
+    createdAtColumn<CreditTransactionRow>(t),
   ];
 
   return (

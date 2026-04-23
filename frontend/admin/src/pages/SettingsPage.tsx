@@ -1,20 +1,17 @@
-import { Button, DataTable } from "@shared/components";
 import { modal } from "@shared/modal";
 import type { DataTableColumn } from "@shared/types/form";
-import type { Permission, SettingType } from "@shared/types/generated";
+import type { SettingType } from "@shared/types/generated";
 import { formatDateTime } from "@shared/utils";
 import { Pencil } from "lucide-react";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/api";
 import { auth } from "@/auth";
+import { AdminDatatablePage } from "@/components/AdminDatatablePage";
 import { EditSettingModal } from "@/components/EditSettingModal";
+import { actionColumn } from "@/datatableColumns";
 import { hasAllPermissions, usePermission } from "@/hooks/usePermission";
+import { permissions } from "@/permissions";
 import { settingTypeLabel, summarizeSettingValue } from "@/settings";
-
-const SETTINGS_READ: Permission = "settings.read";
-const SETTINGS_MANAGE: Permission = "settings.manage";
-const EXPORTS_READ: Permission = "exports.read";
 
 interface SettingRow {
   key: string;
@@ -30,10 +27,10 @@ export function SettingsPage() {
   const { t } = useTranslation();
   const tableRefresh = useRef<(() => void) | null>(null);
   const { user } = auth.useAuth();
-  const canManageSettings = usePermission(SETTINGS_MANAGE);
+  const canManageSettings = usePermission(permissions.settings.manage);
   const canExport = hasAllPermissions(
     user?.abilities,
-    [SETTINGS_READ, EXPORTS_READ],
+    [permissions.settings.read, permissions.exports.read],
     user?.admin_type,
   );
 
@@ -55,22 +52,11 @@ export function SettingsPage() {
   const columns: DataTableColumn<SettingRow>[] = [
     ...(canManageSettings
       ? [
-          {
-            key: "__actions",
-            label: "",
-            render: (row: SettingRow) => (
-              <Button
-                type="button"
-                unstyled
-                className="sf-datatable-action"
-                ariaLabel={t("admin.settings.edit_action")}
-                title={t("admin.settings.edit_action")}
-                onClick={() => openEdit(row)}
-              >
-                <Pencil size={16} />
-              </Button>
-            ),
-          },
+          actionColumn<SettingRow>({
+            label: t("admin.settings.edit_action"),
+            icon: <Pencil size={16} />,
+            onClick: openEdit,
+          }),
         ]
       : []),
     {
@@ -122,22 +108,17 @@ export function SettingsPage() {
   ];
 
   return (
-    <div>
-      <h1 className="sf-page-title">{t("admin.settings.title")}</h1>
-      <p className="sf-page-subtitle">{t("admin.settings.subtitle")}</p>
-
-      <div className="mt-4">
-        <DataTable<SettingRow>
-          api={api}
-          url="/datatables/admin.settings/query"
-          columns={columns}
-          downloadUrl={
-            canExport ? "/datatables/admin.settings/download" : undefined
-          }
-          defaultPerPage={20}
-          refreshRef={tableRefresh}
-        />
-      </div>
-    </div>
+    <AdminDatatablePage<SettingRow>
+      title={t("admin.settings.title")}
+      subtitle={t("admin.settings.subtitle")}
+      datatable={{
+        url: "/datatables/admin.settings/query",
+        columns,
+        downloadUrl: canExport
+          ? "/datatables/admin.settings/download"
+          : undefined,
+        refreshRef: tableRefresh,
+      }}
+    />
   );
 }

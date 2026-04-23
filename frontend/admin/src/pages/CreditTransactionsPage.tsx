@@ -1,19 +1,14 @@
-import { DataTable } from "@shared/components";
 import type { DataTableColumn } from "@shared/types/form";
-import type {
-  CreditTransactionType,
-  Permission,
-} from "@shared/types/generated";
+import type { CreditTransactionType } from "@shared/types/generated";
 import { CreditTransactionTypeOptions } from "@shared/types/generated";
 import { enumLabel } from "@shared/utils";
 import { useTranslation } from "react-i18next";
-import { api } from "@/api";
 import { auth } from "@/auth";
+import { AdminDatatablePage } from "@/components/AdminDatatablePage";
+import { createdAtColumn } from "@/datatableColumns";
 import { hasAllPermissions, usePermission } from "@/hooks/usePermission";
 import { NotFoundPage } from "@/pages/NotFoundPage";
-
-const CREDIT_TRANSACTIONS_READ: Permission = "credit_transactions.read";
-const EXPORTS_READ: Permission = "exports.read";
+import { permissions } from "@/permissions";
 
 interface CreditTransactionRow {
   id: string;
@@ -26,10 +21,12 @@ interface CreditTransactionRow {
 export function CreditTransactionsPage() {
   const { t } = useTranslation();
   const { user } = auth.useAuth();
-  const canReadCreditTransactions = usePermission(CREDIT_TRANSACTIONS_READ);
+  const canReadCreditTransactions = usePermission(
+    permissions.creditTransactions.read,
+  );
   const canExport = hasAllPermissions(
     user?.abilities,
-    [CREDIT_TRANSACTIONS_READ, EXPORTS_READ],
+    [permissions.creditTransactions.read, permissions.exports.read],
     user?.admin_type,
   );
 
@@ -57,40 +54,20 @@ export function CreditTransactionsPage() {
       sortable: true,
       render: (row) => row.amount,
     },
-    {
-      key: "created_at",
-      label: t("Created"),
-      sortable: true,
-      format: "datetime",
-    },
+    createdAtColumn<CreditTransactionRow>(t),
   ];
 
   return (
-    <div>
-      <div className="sf-page-header">
-        <div>
-          <h1 className="sf-page-title">
-            {t("admin.credit_transactions.title")}
-          </h1>
-          <p className="sf-page-subtitle">
-            {t("admin.credit_transactions.subtitle")}
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-4">
-        <DataTable<CreditTransactionRow>
-          api={api}
-          url="/datatables/admin.credit_transactions/query"
-          columns={columns}
-          downloadUrl={
-            canExport
-              ? "/datatables/admin.credit_transactions/download"
-              : undefined
-          }
-          defaultPerPage={20}
-        />
-      </div>
-    </div>
+    <AdminDatatablePage<CreditTransactionRow>
+      title={t("admin.credit_transactions.title")}
+      subtitle={t("admin.credit_transactions.subtitle")}
+      datatable={{
+        url: "/datatables/admin.credit_transactions/query",
+        columns,
+        downloadUrl: canExport
+          ? "/datatables/admin.credit_transactions/download"
+          : undefined,
+      }}
+    />
   );
 }

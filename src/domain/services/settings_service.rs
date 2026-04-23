@@ -1,6 +1,7 @@
 use crate::domain::models::AppSetting;
 use crate::domain::services::runtime_bootstrap_service;
 use crate::portals::admin::responses::{AdminSettingAssetResponse, AdminSettingResponse};
+use crate::support::validation;
 use forge::prelude::*;
 use forge::settings::{Setting, SettingType};
 use forge::validation::file_rules::{
@@ -401,18 +402,11 @@ async fn validate_upload(
 }
 
 fn value_validator(app: &AppContext, i18n: &I18n) -> Validator {
-    let mut validator = Validator::new(app.clone());
-    validator.set_locale(i18n.locale().to_string());
-    validator
+    validation::new_validator(app, i18n.locale())
 }
 
 fn field_error(app: &AppContext, i18n: &I18n, code: &str, params: &[(&str, &str)]) -> Error {
-    let mut validator = value_validator(app, i18n);
-    validator.add_error("value", code, params);
-    validator
-        .finish()
-        .expect_err("single field error should fail validation")
-        .into()
+    validation::field_error(app, i18n.locale(), "value", code, params)
 }
 
 fn is_upload_setting(setting_type: &SettingType) -> bool {

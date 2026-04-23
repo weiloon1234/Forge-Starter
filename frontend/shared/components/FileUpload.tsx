@@ -1,7 +1,7 @@
 import type { FileUploadProps } from "@shared/types/form";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FieldMessages, fieldClasses } from "./FieldMessages";
+import { FieldShell } from "./FieldShell";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -130,8 +130,6 @@ export function FileUpload({
     if (fileList) addFiles(Array.from(fileList));
   };
 
-  const classes = fieldClasses({ hasErrors, disabled, className });
-
   const dropzoneClasses = [
     "sf-file-dropzone",
     dragover && "sf-file-dropzone--dragover",
@@ -140,13 +138,16 @@ export function FileUpload({
     .join(" ");
 
   return (
-    <div className={classes}>
-      {label && (
-        <div className={`sf-label${required ? " sf-label--required" : ""}`}>
-          {label}
-        </div>
-      )}
-
+    <FieldShell
+      label={label}
+      errors={allErrors}
+      hints={hints}
+      disabled={disabled}
+      required={required}
+      className={className}
+      hasErrors={hasErrors}
+      labelElement="div"
+    >
       <button
         type="button"
         className={dropzoneClasses}
@@ -204,8 +205,6 @@ export function FileUpload({
           })}
         </div>
       )}
-
-      <FieldMessages hints={hints} errors={allErrors} />
-    </div>
+    </FieldShell>
   );
 }

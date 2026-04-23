@@ -1,14 +1,11 @@
-import { DataTable } from "@shared/components";
 import type { DataTableColumn } from "@shared/types/form";
-import type { Permission } from "@shared/types/generated";
 import { useTranslation } from "react-i18next";
-import { api } from "@/api";
 import { auth } from "@/auth";
+import { AdminDatatablePage } from "@/components/AdminDatatablePage";
+import { createdAtColumn } from "@/datatableColumns";
 import { hasAllPermissions, usePermission } from "@/hooks/usePermission";
 import { NotFoundPage } from "@/pages/NotFoundPage";
-
-const INTRODUCER_CHANGES_READ: Permission = "introducer_changes.read";
-const EXPORTS_READ: Permission = "exports.read";
+import { permissions } from "@/permissions";
 
 interface IntroducerChangeRow {
   id: string;
@@ -22,10 +19,12 @@ interface IntroducerChangeRow {
 export function IntroducerChangesPage() {
   const { t } = useTranslation();
   const { user } = auth.useAuth();
-  const canReadIntroducerChanges = usePermission(INTRODUCER_CHANGES_READ);
+  const canReadIntroducerChanges = usePermission(
+    permissions.introducerChanges.read,
+  );
   const canExport = hasAllPermissions(
     user?.abilities,
-    [INTRODUCER_CHANGES_READ, EXPORTS_READ],
+    [permissions.introducerChanges.read, permissions.exports.read],
     user?.admin_type,
   );
 
@@ -34,12 +33,7 @@ export function IntroducerChangesPage() {
   }
 
   const columns: DataTableColumn<IntroducerChangeRow>[] = [
-    {
-      key: "created_at",
-      label: t("Created"),
-      sortable: true,
-      format: "datetime",
-    },
+    createdAtColumn<IntroducerChangeRow>(t),
     {
       key: "user_label",
       label: t("User"),
@@ -63,31 +57,16 @@ export function IntroducerChangesPage() {
   ];
 
   return (
-    <div>
-      <div className="sf-page-header">
-        <div>
-          <h1 className="sf-page-title">
-            {t("admin.introducer_changes.title")}
-          </h1>
-          <p className="sf-page-subtitle">
-            {t("admin.introducer_changes.subtitle")}
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-4">
-        <DataTable<IntroducerChangeRow>
-          api={api}
-          url="/datatables/admin.introducer_changes/query"
-          columns={columns}
-          downloadUrl={
-            canExport
-              ? "/datatables/admin.introducer_changes/download"
-              : undefined
-          }
-          defaultPerPage={20}
-        />
-      </div>
-    </div>
+    <AdminDatatablePage<IntroducerChangeRow>
+      title={t("admin.introducer_changes.title")}
+      subtitle={t("admin.introducer_changes.subtitle")}
+      datatable={{
+        url: "/datatables/admin.introducer_changes/query",
+        columns,
+        downloadUrl: canExport
+          ? "/datatables/admin.introducer_changes/download"
+          : undefined,
+      }}
+    />
   );
 }

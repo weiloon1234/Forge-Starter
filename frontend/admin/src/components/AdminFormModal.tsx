@@ -22,8 +22,8 @@ import { auth } from "@/auth";
 import { ConfirmDeleteAdminModal } from "@/components/ConfirmDeleteAdminModal";
 import { PermissionMatrix } from "@/components/PermissionMatrix";
 import { hasPermission } from "@/hooks/usePermission";
+import { permissions } from "@/permissions";
 
-const ADMINS_MANAGE: Permission = "admins.manage";
 const FORM_ID = "admin-form-modal";
 
 interface AdminFormValues extends Record<string, unknown> {
@@ -104,7 +104,7 @@ export function AdminFormModal({
   const isCreate = !adminId;
   const canManageAdmins = hasPermission(
     user?.abilities,
-    ADMINS_MANAGE,
+    permissions.admins.manage,
     user?.admin_type,
   );
   const createLocale = user?.locale ?? default_locale;

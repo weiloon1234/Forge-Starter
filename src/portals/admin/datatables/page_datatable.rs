@@ -3,6 +3,7 @@ use forge::prelude::*;
 use serde::Serialize;
 
 use crate::domain::models::Page;
+use crate::support::i18n::default_locale;
 
 const PAGES_TABLE: &str = "pages";
 const PAGE_TITLES_TABLE: &str = "page_titles";
@@ -32,11 +33,7 @@ impl Datatable for PageDatatable {
     const ID: &'static str = "admin.pages";
 
     fn query(ctx: &DatatableContext) -> Self::Query {
-        let default_locale = ctx
-            .app
-            .i18n()
-            .map(|manager| manager.default_locale().to_string())
-            .unwrap_or_else(|_| "en".to_string());
+        let default_locale = default_locale(ctx.app);
 
         PageDatatableRow::source(PAGES_TABLE)
             .left_join(

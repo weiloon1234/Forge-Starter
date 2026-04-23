@@ -1,58 +1,16 @@
+mod support;
+
 use std::net::SocketAddr;
 
 use axum::http::StatusCode;
 use forge::prelude::*;
-use forge_starter::bootstrap::{cli, http};
 use forge_starter::domain::enums::{enum_key_string, AdminType};
 use forge_starter::domain::models::Admin;
 use forge_starter::domain::services::admin_service;
 use forge_starter::ids::permissions::Permission;
+use support::{boot_api, issue_admin_token, migrate_and_seed, reset_database};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
-
-async fn run_cli(args: &[&str]) -> Result<()> {
-    cli::builder()
-        .build_cli_kernel()
-        .await?
-        .run_with_args(std::iter::once("forge").chain(args.iter().copied()))
-        .await
-}
-
-async fn boot_app() -> Result<(AppContext, SocketAddr)> {
-    std::env::set_var("SERVER__PORT", "0");
-
-    run_cli(&["db:migrate"]).await?;
-    run_cli(&["db:seed"]).await?;
-
-    let kernel = http::builder().build_http_kernel().await?;
-    let app = kernel.app().clone();
-    let server = kernel.bind().await?;
-    let addr = server.local_addr();
-
-    tokio::spawn(async move {
-        let _ = server.serve().await;
-    });
-
-    Ok((app, addr))
-}
-
-async fn issue_admin_token(app: &AppContext, username: &str) -> Result<String> {
-    let db = app.database()?;
-    let admin = Admin::model_query()
-        .where_(Admin::USERNAME.eq(username))
-        .first(&*db)
-        .await?
-        .ok_or_else(|| Error::message(format!("missing seeded admin `{username}`")))?;
-
-    Ok(admin
-        .create_token_with_abilities(
-            app,
-            "test",
-            admin_service::effective_permission_keys(&admin),
-        )
-        .await?
-        .access_token)
-}
 
 async fn create_admin_with_permissions(
     app: &AppContext,
@@ -118,7 +76,10 @@ async fn get_status(addr: SocketAddr, path: &str, token: &str) -> Result<StatusC
 #[tokio::test]
 #[ignore = "requires local PostgreSQL and Redis services with the starter config"]
 async fn observability_is_developer_only_even_with_permission() -> Result<()> {
-    let (app, addr) = boot_app().await?;
+    reset_database().await?;
+    migrate_and_seed().await?;
+
+    let (app, addr) = boot_api().await?;
 
     let developer_token = issue_admin_token(&app, "developer").await?;
     let super_admin_token = issue_admin_token(&app, "superadmin").await?;

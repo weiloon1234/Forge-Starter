@@ -1,4 +1,5 @@
 use crate::domain::models::Country;
+use crate::support::i18n::{available_locales, default_locale};
 use forge::countries::CountryStatus;
 use forge::prelude::*;
 use forge::settings::Setting;
@@ -98,24 +99,11 @@ fn runtime_bootstrap_ttl(app: &AppContext) -> Duration {
 
 async fn build_runtime_bootstrap(app: &AppContext) -> Result<RuntimeBootstrap> {
     let ws = app.config().websocket().ok();
-    let i18n = app.i18n().ok();
     let server = app.config().server().ok();
 
     let ws_url = ws.map(|config| format!("ws://{}:{}{}", config.host, config.port, config.path));
-    let locales = i18n
-        .as_ref()
-        .map(|manager| {
-            manager
-                .locale_list()
-                .into_iter()
-                .map(str::to_string)
-                .collect::<Vec<_>>()
-        })
-        .unwrap_or_else(|| vec!["en".to_string()]);
-    let default_locale = i18n
-        .as_ref()
-        .map(|manager| manager.default_locale().to_string())
-        .unwrap_or_else(|| "en".to_string());
+    let locales = available_locales(app);
+    let default_locale = default_locale(app);
     let app_url = server
         .map(|config| format!("http://{}:{}", config.host, config.port))
         .unwrap_or_else(|| "http://127.0.0.1:3000".to_string());

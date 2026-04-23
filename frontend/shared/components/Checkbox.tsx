@@ -1,5 +1,5 @@
 import type { CheckboxProps } from "@shared/types/form";
-import { FieldMessages, fieldClasses } from "./FieldMessages";
+import { FieldShell } from "./FieldShell";
 
 export function Checkbox({
   name,
@@ -15,7 +15,13 @@ export function Checkbox({
   const hasErrors = !!(errors && errors.length > 0);
 
   return (
-    <div className={fieldClasses({ hasErrors, disabled, className })}>
+    <FieldShell
+      errors={errors}
+      hints={hints}
+      disabled={disabled}
+      className={className}
+      hasErrors={hasErrors}
+    >
       <label className="sf-checkbox">
         <input
           type="checkbox"
@@ -27,8 +33,6 @@ export function Checkbox({
         />
         <span className="sf-checkbox-label">{children || label}</span>
       </label>
-
-      <FieldMessages hints={hints} errors={errors} />
-    </div>
+    </FieldShell>
   );
 }

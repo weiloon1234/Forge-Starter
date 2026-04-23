@@ -459,9 +459,14 @@ mod tests {
     fn bypass_admin_types_count_all_modules() {
         let developer = admin_fixture(ModelId::generate(), AdminType::Developer);
         let super_admin = admin_fixture(ModelId::generate(), AdminType::SuperAdmin);
+        let expected_modules = enum_variants::<Permission>()
+            .into_iter()
+            .map(Permission::module)
+            .collect::<BTreeSet<_>>()
+            .len();
 
-        assert_eq!(permission_module_count(&developer), 7);
-        assert_eq!(permission_module_count(&super_admin), 7);
+        assert_eq!(permission_module_count(&developer), expected_modules);
+        assert_eq!(permission_module_count(&super_admin), expected_modules);
     }
 
     #[test]

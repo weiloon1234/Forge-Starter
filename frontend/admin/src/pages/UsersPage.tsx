@@ -1,25 +1,22 @@
-import { Button, DataTable } from "@shared/components";
+import { Button } from "@shared/components";
 import { modal } from "@shared/modal";
 import type { DataTableColumn } from "@shared/types/form";
-import type { CreditType, Permission } from "@shared/types/generated";
+import type { CreditType } from "@shared/types/generated";
 import { CreditTypeOptions, CreditTypeValues } from "@shared/types/generated";
 import { enumLabel } from "@shared/utils";
 import { Pencil, Plus } from "lucide-react";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/api";
 import { auth } from "@/auth";
+import { AdminDatatablePage } from "@/components/AdminDatatablePage";
 import { ChangeUserIntroducerModal } from "@/components/ChangeUserIntroducerModal";
 import { UserCreditTransactionsModal } from "@/components/UserCreditTransactionsModal";
 import { UserFormModal } from "@/components/UserFormModal";
 import { balanceForCreditType } from "@/credits";
+import { createdAtColumn } from "@/datatableColumns";
 import { hasAllPermissions, usePermission } from "@/hooks/usePermission";
+import { permissions } from "@/permissions";
 
-const USERS_READ: Permission = "users.read";
-const USERS_MANAGE: Permission = "users.manage";
-const CREDIT_TRANSACTIONS_READ: Permission = "credit_transactions.read";
-const INTRODUCER_CHANGES_MANAGE: Permission = "introducer_changes.manage";
-const EXPORTS_READ: Permission = "exports.read";
 const CREDIT_TYPES: CreditType[] = [...CreditTypeValues];
 
 interface UserRow {
@@ -44,12 +41,16 @@ export function UsersPage() {
   const { t } = useTranslation();
   const tableRefresh = useRef<(() => void) | null>(null);
   const { user } = auth.useAuth();
-  const canReadCreditTransactions = usePermission(CREDIT_TRANSACTIONS_READ);
-  const canManageIntroducerChanges = usePermission(INTRODUCER_CHANGES_MANAGE);
-  const canManageUsers = usePermission(USERS_MANAGE);
+  const canReadCreditTransactions = usePermission(
+    permissions.creditTransactions.read,
+  );
+  const canManageIntroducerChanges = usePermission(
+    permissions.introducerChanges.manage,
+  );
+  const canManageUsers = usePermission(permissions.users.manage);
   const canExport = hasAllPermissions(
     user?.abilities,
-    [USERS_READ, EXPORTS_READ],
+    [permissions.users.read, permissions.exports.read],
     user?.admin_type,
   );
 
@@ -247,23 +248,15 @@ export function UsersPage() {
       sortable: true,
       render: (row) => displayValue(row.contact_number),
     },
-    {
-      key: "created_at",
-      label: t("Created"),
-      sortable: true,
-      format: "datetime",
-    },
+    createdAtColumn<UserRow>(t),
   ];
 
   return (
-    <div>
-      <div className="sf-page-header">
-        <div>
-          <h1 className="sf-page-title">{t("admin.users.title")}</h1>
-          <p className="sf-page-subtitle">{t("admin.users.subtitle")}</p>
-        </div>
-
-        {canManageUsers && (
+    <AdminDatatablePage<UserRow>
+      title={t("admin.users.title")}
+      subtitle={t("admin.users.subtitle")}
+      action={
+        canManageUsers ? (
           <Button
             type="button"
             size="sm"
@@ -272,21 +265,14 @@ export function UsersPage() {
           >
             {t("New User")}
           </Button>
-        )}
-      </div>
-
-      <div className="mt-4">
-        <DataTable<UserRow>
-          api={api}
-          url="/datatables/admin.users/query"
-          downloadUrl={
-            canExport ? "/datatables/admin.users/download" : undefined
-          }
-          columns={columns}
-          defaultPerPage={20}
-          refreshRef={tableRefresh}
-        />
-      </div>
-    </div>
+        ) : undefined
+      }
+      datatable={{
+        url: "/datatables/admin.users/query",
+        downloadUrl: canExport ? "/datatables/admin.users/download" : undefined,
+        columns,
+        refreshRef: tableRefresh,
+      }}
+    />
   );
 }

@@ -1,7 +1,7 @@
 import { useCountryOptions } from "@shared/hooks/useCountryOptions";
 import type { FieldBase } from "@shared/types/form";
 import { useTranslation } from "react-i18next";
-import { FieldMessages, fieldClasses } from "./FieldMessages";
+import { FieldShell } from "./FieldShell";
 import { Input } from "./Input";
 import { Select } from "./Select";
 
@@ -38,12 +38,16 @@ export function ContactInput({
   const hasErrors = combinedErrors.length > 0;
 
   return (
-    <div className={fieldClasses({ hasErrors, disabled, className })}>
-      {label && (
-        <div className={`sf-label${required ? " sf-label--required" : ""}`}>
-          {label}
-        </div>
-      )}
+    <FieldShell
+      label={label}
+      errors={combinedErrors}
+      hints={hints}
+      disabled={disabled}
+      required={required}
+      className={className}
+      hasErrors={hasErrors}
+      labelElement="div"
+    >
       <div className="sf-contact">
         <Select
           name={countryField.name}
@@ -69,7 +73,6 @@ export function ContactInput({
           maxLength={15}
         />
       </div>
-      <FieldMessages hints={hints} errors={combinedErrors} />
-    </div>
+    </FieldShell>
   );
 }

@@ -11,7 +11,6 @@ import type {
   AdminUserLookupOptionResponse,
   AdminUserResponse,
   CreateUserRequest,
-  Permission,
   UpdateUserRequest,
 } from "@shared/types/generated";
 import { Pencil } from "lucide-react";
@@ -22,10 +21,9 @@ import { api } from "@/api";
 import { auth } from "@/auth";
 import { ChangeUserIntroducerModal } from "@/components/ChangeUserIntroducerModal";
 import { hasPermission } from "@/hooks/usePermission";
+import { permissions } from "@/permissions";
 import { mergeUserOptions, userOptionLabel } from "@/userLookup";
 
-const USERS_MANAGE: Permission = "users.manage";
-const INTRODUCER_CHANGES_MANAGE: Permission = "introducer_changes.manage";
 const FORM_ID = "user-form-modal";
 
 interface UserFormValues extends Record<string, unknown> {
@@ -74,12 +72,12 @@ export function UserFormModal({
   const isCreate = !userId;
   const canManageUsers = hasPermission(
     actor?.abilities,
-    USERS_MANAGE,
+    permissions.users.manage,
     actor?.admin_type,
   );
   const canManageIntroducerChanges = hasPermission(
     actor?.abilities,
-    INTRODUCER_CHANGES_MANAGE,
+    permissions.introducerChanges.manage,
     actor?.admin_type,
   );
 

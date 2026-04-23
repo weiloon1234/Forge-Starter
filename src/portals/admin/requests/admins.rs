@@ -1,7 +1,11 @@
 use crate::domain::enums::enum_key_string;
 use crate::domain::enums::AdminType;
-use crate::ids;
 use crate::ids::permissions::Permission;
+use crate::support::validation::{
+    validate_optional_email, validate_optional_locale, validate_optional_name,
+    validate_optional_password, validate_required_email, validate_required_locale,
+    validate_required_name, validate_required_password, validate_required_username,
+};
 use async_trait::async_trait;
 use forge::prelude::*;
 use serde::Deserialize;
@@ -24,52 +28,10 @@ pub struct CreateAdminRequest {
 impl RequestValidator for CreateAdminRequest {
     async fn validate(&self, validator: &mut Validator) -> Result<()> {
         let admin_type = enum_key_string(self.admin_type);
-        let locales = validator
-            .app()
-            .i18n()
-            .map(|manager| {
-                manager
-                    .locale_list()
-                    .into_iter()
-                    .map(str::to_string)
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_else(|_| vec!["en".to_string()]);
-
-        validator
-            .field("username", &self.username)
-            .bail()
-            .required()
-            .min(3)
-            .max(50)
-            .rule(ids::validation::USERNAME)
-            .apply()
-            .await?;
-
-        validator
-            .field("email", &self.email)
-            .bail()
-            .required()
-            .email()
-            .apply()
-            .await?;
-
-        validator
-            .field("name", &self.name)
-            .bail()
-            .required()
-            .min(2)
-            .max(100)
-            .apply()
-            .await?;
-
-        validator
-            .field("password", &self.password)
-            .bail()
-            .required()
-            .rule(ids::validation::PASSWORD)
-            .apply()
-            .await?;
+        validate_required_username(validator, "username", &self.username).await?;
+        validate_required_email(validator, "email", &self.email).await?;
+        validate_required_name(validator, "name", &self.name).await?;
+        validate_required_password(validator, "password", &self.password).await?;
 
         validator
             .field("admin_type", &admin_type)
@@ -85,13 +47,7 @@ impl RequestValidator for CreateAdminRequest {
             .apply()
             .await?;
 
-        validator
-            .field("locale", &self.locale)
-            .bail()
-            .required()
-            .in_list(locales)
-            .apply()
-            .await?;
+        validate_required_locale(validator, "locale", &self.locale).await?;
 
         Ok(())
     }
@@ -113,45 +69,9 @@ pub struct UpdateAdminRequest {
 #[async_trait]
 impl RequestValidator for UpdateAdminRequest {
     async fn validate(&self, validator: &mut Validator) -> Result<()> {
-        let locales = validator
-            .app()
-            .i18n()
-            .map(|manager| {
-                manager
-                    .locale_list()
-                    .into_iter()
-                    .map(str::to_string)
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_else(|_| vec!["en".to_string()]);
-
-        if let Some(name) = self.name.as_deref() {
-            validator
-                .field("name", name)
-                .bail()
-                .min(2)
-                .max(100)
-                .apply()
-                .await?;
-        }
-
-        if let Some(email) = self.email.as_deref() {
-            validator
-                .field("email", email)
-                .bail()
-                .email()
-                .apply()
-                .await?;
-        }
-
-        if let Some(password) = self.password.as_deref() {
-            validator
-                .field("password", password)
-                .bail()
-                .rule(ids::validation::PASSWORD)
-                .apply()
-                .await?;
-        }
+        validate_optional_name(validator, "name", self.name.as_deref()).await?;
+        validate_optional_email(validator, "email", self.email.as_deref()).await?;
+        validate_optional_password(validator, "password", self.password.as_deref()).await?;
 
         if let Some(admin_type) = self.admin_type {
             let admin_type = enum_key_string(admin_type);
@@ -171,14 +91,7 @@ impl RequestValidator for UpdateAdminRequest {
                 .await?;
         }
 
-        if let Some(locale) = self.locale.as_deref() {
-            validator
-                .field("locale", locale)
-                .bail()
-                .in_list(locales)
-                .apply()
-                .await?;
-        }
+        validate_optional_locale(validator, "locale", self.locale.as_deref()).await?;
 
         Ok(())
     }

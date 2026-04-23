@@ -1,5 +1,5 @@
 import type { CheckboxGroupProps } from "@shared/types/form";
-import { FieldMessages, fieldClasses } from "./FieldMessages";
+import { FieldShell } from "./FieldShell";
 
 export function CheckboxGroup({
   name,
@@ -23,13 +23,16 @@ export function CheckboxGroup({
   };
 
   return (
-    <div className={fieldClasses({ hasErrors, disabled, className })}>
-      {label && (
-        <div className={`sf-label${required ? " sf-label--required" : ""}`}>
-          {label}
-        </div>
-      )}
-
+    <FieldShell
+      label={label}
+      errors={errors}
+      hints={hints}
+      disabled={disabled}
+      required={required}
+      className={className}
+      hasErrors={hasErrors}
+      labelElement="div"
+    >
       {options.map((opt) => (
         <label key={opt.value} className="sf-checkbox">
           <input
@@ -43,8 +46,6 @@ export function CheckboxGroup({
           <span className="sf-checkbox-label">{opt.label}</span>
         </label>
       ))}
-
-      <FieldMessages hints={hints} errors={errors} />
-    </div>
+    </FieldShell>
   );
 }

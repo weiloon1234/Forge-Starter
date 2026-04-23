@@ -4,7 +4,7 @@ import type { CSSProperties } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import { createPortal } from "react-dom";
-import { FieldMessages, fieldClasses } from "./FieldMessages";
+import { FieldShell } from "./FieldShell";
 
 function formatDate(date: Date | null | undefined): string {
   if (!date) return "";
@@ -104,7 +104,6 @@ export function DatePicker({
     return () => document.removeEventListener("keydown", handler);
   }, [open]);
 
-  const classes = fieldClasses({ hasErrors: !!hasErrors, disabled, className });
   const dropdown = open
     ? createPortal(
         <div
@@ -158,34 +157,34 @@ export function DatePicker({
     : null;
 
   return (
-    <div className={classes} ref={containerRef}>
-      {label && (
-        <label
-          className={`sf-label${required ? " sf-label--required" : ""}`}
-          htmlFor={name}
+    <FieldShell
+      label={label}
+      errors={errors}
+      hints={hints}
+      disabled={disabled}
+      required={required}
+      className={className}
+      hasErrors={Boolean(hasErrors)}
+      htmlFor={name}
+    >
+      <div ref={containerRef}>
+        <button
+          type="button"
+          id={name}
+          className="sf-datepicker-trigger"
+          onClick={() => !disabled && setOpen(!open)}
+          disabled={disabled}
+          aria-expanded={open}
+          ref={triggerRef}
         >
-          {label}
-        </label>
-      )}
+          <span className={value ? "" : "sf-datepicker-placeholder"}>
+            {value ? formatDate(value) : placeholder}
+          </span>
+          <CalendarDays size={16} className="sf-datepicker-icon" />
+        </button>
 
-      <button
-        type="button"
-        id={name}
-        className="sf-datepicker-trigger"
-        onClick={() => !disabled && setOpen(!open)}
-        disabled={disabled}
-        aria-expanded={open}
-        ref={triggerRef}
-      >
-        <span className={value ? "" : "sf-datepicker-placeholder"}>
-          {value ? formatDate(value) : placeholder}
-        </span>
-        <CalendarDays size={16} className="sf-datepicker-icon" />
-      </button>
-
-      {dropdown}
-
-      <FieldMessages hints={hints} errors={errors} />
-    </div>
+        {dropdown}
+      </div>
+    </FieldShell>
   );
 }

@@ -1,20 +1,17 @@
-import { Button, DataTable } from "@shared/components";
 import { modal } from "@shared/modal";
 import type { DataTableColumn } from "@shared/types/form";
-import type { CountryStatus, Permission } from "@shared/types/generated";
+import type { CountryStatus } from "@shared/types/generated";
 import { CountryStatusOptions } from "@shared/types/generated";
 import { enumLabel } from "@shared/utils";
 import { Eye } from "lucide-react";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/api";
 import { auth } from "@/auth";
+import { AdminDatatablePage } from "@/components/AdminDatatablePage";
 import { EditCountryModal } from "@/components/EditCountryModal";
+import { actionColumn } from "@/datatableColumns";
 import { hasAllPermissions, usePermission } from "@/hooks/usePermission";
-
-const COUNTRIES_READ: Permission = "countries.read";
-const COUNTRIES_MANAGE: Permission = "countries.manage";
-const EXPORTS_READ: Permission = "exports.read";
+import { permissions } from "@/permissions";
 
 interface CountryRow {
   iso2: string;
@@ -32,10 +29,10 @@ export function CountryPage() {
   const { t } = useTranslation();
   const tableRefresh = useRef<(() => void) | null>(null);
   const { user } = auth.useAuth();
-  const canManageCountries = usePermission(COUNTRIES_MANAGE);
+  const canManageCountries = usePermission(permissions.countries.manage);
   const canExport = hasAllPermissions(
     user?.abilities,
-    [COUNTRIES_READ, EXPORTS_READ],
+    [permissions.countries.read, permissions.exports.read],
     user?.admin_type,
   );
 
@@ -58,22 +55,11 @@ export function CountryPage() {
   const columns: DataTableColumn<CountryRow>[] = [
     ...(canManageCountries
       ? [
-          {
-            key: "__actions",
-            label: "",
-            render: (row: CountryRow) => (
-              <Button
-                type="button"
-                unstyled
-                className="sf-datatable-action"
-                ariaLabel={t("View")}
-                title={t("View")}
-                onClick={() => openEdit(row)}
-              >
-                <Eye size={16} />
-              </Button>
-            ),
-          },
+          actionColumn<CountryRow>({
+            label: t("View"),
+            icon: <Eye size={16} />,
+            onClick: openEdit,
+          }),
         ]
       : []),
     {
@@ -123,22 +109,17 @@ export function CountryPage() {
   ];
 
   return (
-    <div>
-      <h1 className="sf-page-title">{t("Countries")}</h1>
-      <p className="sf-page-subtitle">{t("countries_subtitle")}</p>
-
-      <div className="mt-4">
-        <DataTable<CountryRow>
-          api={api}
-          url="/datatables/admin.countries/query"
-          columns={columns}
-          downloadUrl={
-            canExport ? "/datatables/admin.countries/download" : undefined
-          }
-          defaultPerPage={20}
-          refreshRef={tableRefresh}
-        />
-      </div>
-    </div>
+    <AdminDatatablePage<CountryRow>
+      title={t("Countries")}
+      subtitle={t("countries_subtitle")}
+      datatable={{
+        url: "/datatables/admin.countries/query",
+        columns,
+        downloadUrl: canExport
+          ? "/datatables/admin.countries/download"
+          : undefined,
+        refreshRef: tableRefresh,
+      }}
+    />
   );
 }

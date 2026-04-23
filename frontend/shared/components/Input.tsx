@@ -1,6 +1,6 @@
 import type { InputProps } from "@shared/types/form";
 import { useEffect, useRef } from "react";
-import { FieldMessages, fieldClasses } from "./FieldMessages";
+import { FieldShell } from "./FieldShell";
 
 const DEFAULT_COLOR_VALUE = "#334155";
 
@@ -136,16 +136,16 @@ export function Input({
   const colorPickerValue = normalizeColorForPicker(value);
 
   return (
-    <div className={fieldClasses({ hasErrors, disabled, className })}>
-      {label && (
-        <label
-          className={`sf-label${required ? " sf-label--required" : ""}`}
-          htmlFor={name}
-        >
-          {label}
-        </label>
-      )}
-
+    <FieldShell
+      label={label}
+      errors={errors}
+      hints={hints}
+      disabled={disabled}
+      required={required}
+      className={className}
+      hasErrors={hasErrors}
+      htmlFor={name}
+    >
       {isTextarea ? (
         <textarea
           id={name}
@@ -245,8 +245,6 @@ export function Input({
           {suffix && <span className="sf-input-suffix">{suffix}</span>}
         </div>
       )}
-
-      <FieldMessages hints={hints} errors={errors} />
-    </div>
+    </FieldShell>
   );
 }

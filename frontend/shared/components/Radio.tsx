@@ -1,5 +1,5 @@
 import type { RadioProps } from "@shared/types/form";
-import { FieldMessages, fieldClasses } from "./FieldMessages";
+import { FieldShell } from "./FieldShell";
 
 export function Radio({
   name,
@@ -23,13 +23,16 @@ export function Radio({
   ].join(" ");
 
   return (
-    <div className={fieldClasses({ hasErrors, disabled, className })}>
-      {label && (
-        <div className={`sf-label${required ? " sf-label--required" : ""}`}>
-          {label}
-        </div>
-      )}
-
+    <FieldShell
+      label={label}
+      errors={errors}
+      hints={hints}
+      disabled={disabled}
+      required={required}
+      className={className}
+      hasErrors={hasErrors}
+      labelElement="div"
+    >
       <div className={groupClassName}>
         {options.map((opt) => (
           <label key={opt.value} className="sf-radio">
@@ -45,8 +48,6 @@ export function Radio({
           </label>
         ))}
       </div>
-
-      <FieldMessages hints={hints} errors={errors} />
-    </div>
+    </FieldShell>
   );
 }

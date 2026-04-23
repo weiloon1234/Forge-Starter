@@ -1,22 +1,20 @@
-import { Button, DataTable } from "@shared/components";
+import { Button } from "@shared/components";
 import { modal } from "@shared/modal";
 import type { DataTableColumn } from "@shared/types/form";
-import type { AdminType, Permission } from "@shared/types/generated";
+import type { AdminType } from "@shared/types/generated";
 import { AdminTypeOptions } from "@shared/types/generated";
 import { enumLabel } from "@shared/utils";
 import { Eye, Pencil, Plus } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { adminFormModeForTarget, canManageAdminTarget } from "@/adminAccess";
-import { api } from "@/api";
 import { auth } from "@/auth";
+import { AdminDatatablePage } from "@/components/AdminDatatablePage";
 import { AdminFormModal } from "@/components/AdminFormModal";
 import { AdminPermissionsModal } from "@/components/AdminPermissionsModal";
+import { actionColumn, createdAtColumn } from "@/datatableColumns";
 import { hasAllPermissions, usePermission } from "@/hooks/usePermission";
-
-const ADMINS_READ: Permission = "admins.read";
-const ADMINS_MANAGE: Permission = "admins.manage";
-const EXPORTS_READ: Permission = "exports.read";
+import { permissions } from "@/permissions";
 
 interface AdminRow {
   id: string;
@@ -41,10 +39,10 @@ export function AdminsPage({
   const { user } = auth.useAuth();
   const tableRefresh = useRef<(() => void) | null>(null);
   const routeModalKeyRef = useRef<string | null>(null);
-  const canManageAdmins = usePermission(ADMINS_MANAGE);
+  const canManageAdmins = usePermission(permissions.admins.manage);
   const canExport = hasAllPermissions(
     user?.abilities,
-    [ADMINS_READ, EXPORTS_READ],
+    [permissions.admins.read, permissions.exports.read],
     user?.admin_type,
   );
 
@@ -157,26 +155,19 @@ export function AdminsPage({
   ]);
 
   const columns: DataTableColumn<AdminRow>[] = [
-    {
-      key: "__actions",
-      label: "",
-      render: (row) => {
-        const editable = canManageAdmins && canManageAdminTarget(user, row);
-
-        return (
-          <Button
-            type="button"
-            unstyled
-            className="sf-datatable-action"
-            ariaLabel={editable ? t("admin.admins.edit") : t("View")}
-            title={editable ? t("admin.admins.edit") : t("View")}
-            onClick={() => openTargetModal(row)}
-          >
-            {editable ? <Pencil size={16} /> : <Eye size={16} />}
-          </Button>
-        );
-      },
-    },
+    actionColumn<AdminRow>({
+      label: (row) =>
+        canManageAdmins && canManageAdminTarget(user, row)
+          ? t("admin.admins.edit")
+          : t("View"),
+      icon: (row) =>
+        canManageAdmins && canManageAdminTarget(user, row) ? (
+          <Pencil size={16} />
+        ) : (
+          <Eye size={16} />
+        ),
+      onClick: openTargetModal,
+    }),
     { key: "username", label: t("Username"), sortable: true },
     { key: "name", label: t("Name"), sortable: true },
     { key: "email", label: t("Email"), sortable: true },
@@ -204,23 +195,15 @@ export function AdminsPage({
         </Button>
       ),
     },
-    {
-      key: "created_at",
-      label: t("Created"),
-      sortable: true,
-      format: "datetime",
-    },
+    createdAtColumn<AdminRow>(t),
   ];
 
   return (
-    <div>
-      <div className="sf-page-header">
-        <div>
-          <h1 className="sf-page-title">{t("admin.admins.title")}</h1>
-          <p className="sf-page-subtitle">{t("admin.admins.subtitle")}</p>
-        </div>
-
-        {canManageAdmins && (
+    <AdminDatatablePage<AdminRow>
+      title={t("admin.admins.title")}
+      subtitle={t("admin.admins.subtitle")}
+      action={
+        canManageAdmins ? (
           <Button
             type="button"
             size="sm"
@@ -229,21 +212,16 @@ export function AdminsPage({
           >
             {t("admin.admins.new")}
           </Button>
-        )}
-      </div>
-
-      <div className="mt-4">
-        <DataTable<AdminRow>
-          api={api}
-          url="/datatables/admin.admins/query"
-          downloadUrl={
-            canExport ? "/datatables/admin.admins/download" : undefined
-          }
-          columns={columns}
-          defaultPerPage={20}
-          refreshRef={tableRefresh}
-        />
-      </div>
-    </div>
+        ) : undefined
+      }
+      datatable={{
+        url: "/datatables/admin.admins/query",
+        downloadUrl: canExport
+          ? "/datatables/admin.admins/download"
+          : undefined,
+        columns,
+        refreshRef: tableRefresh,
+      }}
+    />
   );
 }

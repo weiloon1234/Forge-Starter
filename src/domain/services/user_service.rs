@@ -9,14 +9,15 @@ use crate::portals::admin::responses::{
     AdminUserIntroducerChangeResponse, AdminUserLookupOptionResponse,
 };
 use crate::portals::user::requests::UpdateProfileRequest;
+use crate::support::strings::{normalized_email, normalized_iso2, trimmed_string};
+use crate::support::validation;
 
 const USER_OPTION_LIMIT: u64 = 20;
 
 pub async fn create(app: &AppContext, i18n: &I18n, req: &CreateUserRequest) -> Result<User> {
     let changes = UserCreationChanges::from_request(req)?;
 
-    let mut validator = Validator::new(app.clone());
-    validator.set_locale(i18n.locale().to_string());
+    let mut validator = validation::new_validator(app, i18n.locale());
 
     ensure_identifier_available(
         app,
@@ -73,7 +74,7 @@ pub async fn user_options(
 ) -> Result<Vec<AdminUserLookupOptionResponse>> {
     let db = app.database()?;
     let mut users = User::model_query().order_by(User::CREATED_AT.desc());
-    let query = query.and_then(|value| trimmed_option(Some(value)));
+    let query = query.and_then(|value| trimmed_string(Some(value)));
 
     if let Some(query) = query.as_deref() {
         users = users.where_(Condition::or([
@@ -109,8 +110,7 @@ pub async fn change_introducer(
     let next_introducer_user_id =
         ModelId::<User>::parse_str(req.introducer_user_id.trim()).map_err(Error::other)?;
 
-    let mut validator = Validator::new(app.clone());
-    validator.set_locale(i18n.locale().to_string());
+    let mut validator = validation::new_validator(app, i18n.locale());
     ensure_introducer_exists(app, &mut validator, next_introducer_user_id).await?;
     validator.finish()?;
 
@@ -164,7 +164,9 @@ pub async fn change_introducer(
         .where_(User::ID.eq(next_introducer_user_id))
         .first(&transaction)
         .await?
-        .ok_or_else(|| fail_field_validation(app, i18n.locale(), "introducer_user_id", "exists"))?;
+        .ok_or_else(|| {
+            validation::field_error(app, i18n.locale(), "introducer_user_id", "exists", &[])
+        })?;
 
     transaction
         .raw_execute(
@@ -235,8 +237,7 @@ pub async fn update(
 
     let changes = UserUpdateChanges::from_request(req);
 
-    let mut validator = Validator::new(app.clone());
-    validator.set_locale(i18n.locale().to_string());
+    let mut validator = validation::new_validator(app, i18n.locale());
 
     ensure_identifier_available(
         app,
@@ -295,8 +296,7 @@ pub async fn update_profile(
 ) -> Result<User> {
     let changes = UserProfileChanges::from_request(req);
 
-    let mut validator = Validator::new(app.clone());
-    validator.set_locale(i18n.locale().to_string());
+    let mut validator = validation::new_validator(app, i18n.locale());
 
     ensure_identifier_available(
         app,
@@ -374,13 +374,13 @@ struct UserUpdateChanges {
 impl UserUpdateChanges {
     fn from_request(req: &UpdateUserRequest) -> Self {
         Self {
-            username: trimmed_option(req.username.as_deref()),
-            name: trimmed_option(req.name.as_deref()),
+            username: trimmed_string(req.username.as_deref()),
+            name: trimmed_string(req.name.as_deref()),
             email: normalized_email(req.email.as_deref()),
             country_iso2: normalized_iso2(req.country_iso2.as_deref()),
             contact_country_iso2: normalized_iso2(req.contact_country_iso2.as_deref()),
-            contact_number: trimmed_option(req.contact_number.as_deref()),
-            password: trimmed_option(req.password.as_deref()),
+            contact_number: trimmed_string(req.contact_number.as_deref()),
+            password: trimmed_string(req.password.as_deref()),
         }
     }
 }
@@ -400,12 +400,12 @@ struct UserCreationChanges {
 impl UserProfileChanges {
     fn from_request(req: &UpdateProfileRequest) -> Self {
         Self {
-            username: trimmed_option(req.username.as_deref()),
-            name: trimmed_option(req.name.as_deref()),
+            username: trimmed_string(req.username.as_deref()),
+            name: trimmed_string(req.name.as_deref()),
             email: normalized_email(req.email.as_deref()),
             country_iso2: normalized_iso2(req.country_iso2.as_deref()),
             contact_country_iso2: normalized_iso2(req.contact_country_iso2.as_deref()),
-            contact_number: trimmed_option(req.contact_number.as_deref()),
+            contact_number: trimmed_string(req.contact_number.as_deref()),
         }
     }
 }
@@ -415,12 +415,12 @@ impl UserCreationChanges {
         Ok(Self {
             introducer_user_id: ModelId::<User>::parse_str(req.introducer_user_id.trim())
                 .map_err(Error::other)?,
-            username: trimmed_option(req.username.as_deref()),
-            name: trimmed_option(req.name.as_deref()),
+            username: trimmed_string(req.username.as_deref()),
+            name: trimmed_string(req.name.as_deref()),
             email: normalized_email(req.email.as_deref()),
             country_iso2: normalized_iso2(req.country_iso2.as_deref()),
             contact_country_iso2: normalized_iso2(req.contact_country_iso2.as_deref()),
-            contact_number: trimmed_option(req.contact_number.as_deref()),
+            contact_number: trimmed_string(req.contact_number.as_deref()),
             password: req.password.clone(),
         })
     }
@@ -492,56 +492,30 @@ async fn ensure_introducer_exists(
     Ok(())
 }
 
-fn fail_field_validation(app: &AppContext, locale: &str, field: &str, code: &str) -> Error {
-    let mut validator = Validator::new(app.clone());
-    validator.set_locale(locale.to_string());
-    validator.add_error(field, code, &[]);
-
-    match validator.finish() {
-        Ok(()) => Error::message("validation error was expected"),
-        Err(error) => Error::Validation(error),
-    }
-}
-
 fn user_identity_label(
     name: Option<&str>,
     username: Option<&str>,
     email: Option<&str>,
     fallback: &str,
 ) -> String {
-    trimmed_option(name)
-        .or_else(|| trimmed_option(username))
-        .or_else(|| trimmed_option(email))
+    trimmed_string(name)
+        .or_else(|| trimmed_string(username))
+        .or_else(|| trimmed_string(email))
         .unwrap_or_else(|| fallback.to_string())
 }
 
 pub fn user_identity_subtitle(user: &User) -> Option<String> {
     user.username
         .as_deref()
-        .and_then(|value| trimmed_option(Some(value)))
+        .and_then(|value| trimmed_string(Some(value)))
         .filter(|value| Some(value.as_str()) != user.name.as_deref().map(str::trim))
         .or_else(|| {
             user.email
                 .as_deref()
-                .and_then(|value| trimmed_option(Some(value)))
+                .and_then(|value| trimmed_string(Some(value)))
         })
 }
 
 pub fn snapshot_label(username: Option<&str>, fallback: &str) -> String {
-    trimmed_option(username).unwrap_or_else(|| fallback.to_string())
-}
-
-fn trimmed_option(value: Option<&str>) -> Option<String> {
-    value
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(str::to_string)
-}
-
-fn normalized_email(value: Option<&str>) -> Option<String> {
-    trimmed_option(value).map(|value| value.to_ascii_lowercase())
-}
-
-fn normalized_iso2(value: Option<&str>) -> Option<String> {
-    trimmed_option(value).map(|value| value.to_ascii_uppercase())
+    trimmed_string(username).unwrap_or_else(|| fallback.to_string())
 }

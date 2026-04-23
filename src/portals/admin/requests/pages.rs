@@ -4,6 +4,8 @@ use serde::Deserialize;
 use serde_json::Value;
 use std::collections::BTreeMap;
 
+use crate::support::i18n::{available_locales, default_locale};
+
 #[derive(Debug, Deserialize, ts_rs::TS, forge::ApiSchema)]
 #[ts(export)]
 pub struct CreatePageRequest {
@@ -74,22 +76,8 @@ impl PagePayload for UpdatePageRequest {
 
 async fn validate_page_request<T: PagePayload>(req: &T, validator: &mut Validator) -> Result<()> {
     let i18n = validator.app().i18n().ok();
-    let locales = validator
-        .app()
-        .i18n()
-        .map(|manager| {
-            manager
-                .locale_list()
-                .into_iter()
-                .map(str::to_string)
-                .collect::<Vec<_>>()
-        })
-        .unwrap_or_else(|_| vec!["en".to_string()]);
-    let default_locale = validator
-        .app()
-        .i18n()
-        .map(|manager| manager.default_locale().to_string())
-        .unwrap_or_else(|_| "en".to_string());
+    let locales = available_locales(validator.app());
+    let default_locale = default_locale(validator.app());
 
     if let Some(manager) = i18n.as_ref() {
         let slug_label = manager.translate(&default_locale, "admin.pages.fields.slug", &[]);

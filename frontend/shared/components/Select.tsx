@@ -4,7 +4,7 @@ import { ChevronDown } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { FieldMessages, fieldClasses } from "./FieldMessages";
+import { FieldShell } from "./FieldShell";
 
 export function Select({
   name,
@@ -238,16 +238,16 @@ export function Select({
     : null;
 
   return (
-    <div className={fieldClasses({ hasErrors, disabled, className })}>
-      {label && (
-        <label
-          className={`sf-label${required ? " sf-label--required" : ""}`}
-          htmlFor={name}
-        >
-          {label}
-        </label>
-      )}
-
+    <FieldShell
+      label={label}
+      errors={errors}
+      hints={hints}
+      disabled={disabled}
+      required={required}
+      className={className}
+      hasErrors={hasErrors}
+      htmlFor={name}
+    >
       <div className="sf-select-trigger-wrapper">
         <button
           type="button"
@@ -278,8 +278,6 @@ export function Select({
       </div>
 
       {dropdown}
-
-      <FieldMessages hints={hints} errors={errors} />
-    </div>
+    </FieldShell>
   );
 }
