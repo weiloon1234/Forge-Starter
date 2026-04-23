@@ -35,6 +35,8 @@ An admin page in this starter is:
 
 The page itself is thin. Per CLAUDE.md's "Portals are THIN" rule: route handlers call service functions; pages don't re-implement business logic. When a page grows past ~200 lines of JSX, look for a sub-component to extract or a service call to move backend.
 
+Standard non-datatable admin pages render their title/subtitle block through `frontend/admin/src/components/AdminPageHeader.tsx`. Do not hand-write raw `sf-page-header` markup in page components.
+
 ## Prerequisites
 
 - [ ] The portal (admin) exists (it always does for this skill's scope).
@@ -170,8 +172,7 @@ export function <Name>Page() {
 
   return (
     <div>
-      <h1 className="sf-page-title">{t("<Name>")}</h1>
-      {/* Subtitle is decorative — drop unless it adds value (CLAUDE.md rule 13) */}
+      <AdminPageHeader title={t("<Name>")} />
 
       {/* page content — see variant extensions */}
     </div>

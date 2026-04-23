@@ -15,8 +15,32 @@ export default function App() {
   const { authenticated, busy } = auth.useAuth();
 
   useEffect(() => {
-    auth.check();
-    return auth.onAuthChange(async (user) => {
+    let active = true;
+    let sessionVersion = 0;
+    let removeBadgeListener: (() => void) | null = null;
+    let removeReconnectListener: (() => void) | null = null;
+
+    const hydrateBadges = async (version: number) => {
+      try {
+        const { data } = await api.get<BadgeCountsResponse>("/badges");
+        if (active && version === sessionVersion) {
+          adminBadges.hydrate(data.counts);
+        }
+      } catch {
+        if (active && version === sessionVersion) {
+          adminBadges.hydrate({});
+        }
+      }
+    };
+
+    const unsubscribeAuth = auth.onAuthChange(async (user) => {
+      sessionVersion += 1;
+      const version = sessionVersion;
+      removeBadgeListener?.();
+      removeBadgeListener = null;
+      removeReconnectListener?.();
+      removeReconnectListener = null;
+
       if (!user) {
         adminBadges.reset();
         ws.disconnect();
@@ -27,26 +51,34 @@ export default function App() {
         api.put("/profile/locale", { locale: currentLocale }).catch(() => {});
       }
 
-      // Hydrate badges before connecting so WS deltas arriving right after the
-      // connect already have a populated allowlist.
-      try {
-        const { data } = await api.get<BadgeCountsResponse>("/badges");
-        adminBadges.hydrate(data.counts);
-      } catch {
-        adminBadges.hydrate({});
-      }
+      await hydrateBadges(version);
 
       ws.connect();
       ws.subscribe("admin:presence");
       ws.subscribe("admin:badges");
-      ws.on("admin:badges", "badge:updated", (payload) => {
-        const data = payload as { key: string; count: number };
-        if (!adminBadges.knows(data.key)) return;
-        adminBadges.set(data.key, data.count);
+      removeBadgeListener = ws.on(
+        "admin:badges",
+        "badge:updated",
+        (payload) => {
+          const data = payload as { key: string; count: number };
+          if (!adminBadges.knows(data.key)) return;
+          adminBadges.set(data.key, data.count);
+        },
+      );
+      removeReconnectListener = ws.onReconnect(async () => {
+        await hydrateBadges(version);
       });
-      // TODO(badges): refetch snapshot on WS reconnect once createWebSocket exposes
-      // a reconnect hook. Current behavior: counts may go stale until next login.
     });
+
+    void auth.check();
+
+    return () => {
+      active = false;
+      unsubscribeAuth();
+      removeBadgeListener?.();
+      removeReconnectListener?.();
+      ws.disconnect();
+    };
   }, []);
 
   if (busy) return null;

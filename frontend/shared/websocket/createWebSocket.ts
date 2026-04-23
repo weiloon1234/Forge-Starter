@@ -5,6 +5,7 @@ import { createStore, useStore } from "@shared/store/createStore";
 type ConnectionStatus = "disconnected" | "connecting" | "connected";
 type WebSocketPayload = unknown;
 type WebSocketEventHandler = (payload: WebSocketPayload) => void;
+type WebSocketReconnectHandler = () => void | Promise<void>;
 
 export interface WebSocketChannelEvent {
   event: string;
@@ -50,6 +51,7 @@ export interface WebSocketManager {
     event: string,
     handler: WebSocketEventHandler,
   ): () => void;
+  onReconnect: (handler: WebSocketReconnectHandler) => () => void;
   useStatus: () => ConnectionStatus;
 }
 
@@ -73,9 +75,11 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
   let reconnectAttempts = 0;
   let intentionalClose = false;
   let connecting = false;
+  let hasConnectedOnce = false;
 
   // Event listener registry: Map<"channel:event", Set<handler>>
   const listeners = new Map<string, Set<WebSocketListener>>();
+  const reconnectListeners = new Set<WebSocketReconnectHandler>();
 
   // Pending subscriptions (queued while connecting)
   const pendingSubscriptions = new Set<string>();
@@ -153,6 +157,12 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
     }, delay);
   }
 
+  function notifyReconnectListeners() {
+    for (const handler of reconnectListeners) {
+      void Promise.resolve(handler()).catch(() => {});
+    }
+  }
+
   async function connect() {
     if (
       connecting ||
@@ -174,11 +184,16 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
       ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
+        const isReconnect = hasConnectedOnce;
         connecting = false;
         setStatus("connected");
         reconnectAttempts = 0;
+        hasConnectedOnce = true;
         resubscribeAll();
         flushPendingSubscriptions();
+        if (isReconnect) {
+          notifyReconnectListeners();
+        }
       };
 
       ws.onmessage = handleMessage;
@@ -207,6 +222,7 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
       reconnectTimer = undefined;
     }
     reconnectAttempts = 0;
+    hasConnectedOnce = false;
     activeSubscriptions.clear();
     pendingSubscriptions.clear();
     if (ws) {
@@ -266,6 +282,13 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
     };
   }
 
+  function onReconnect(handler: WebSocketReconnectHandler): () => void {
+    reconnectListeners.add(handler);
+    return () => {
+      reconnectListeners.delete(handler);
+    };
+  }
+
   function useStatus(): ConnectionStatus {
     return useStore(statusStore).status;
   }
@@ -277,6 +300,7 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
     unsubscribe,
     send,
     on: on as WebSocketManager["on"],
+    onReconnect,
     useStatus,
   };
 }

@@ -4,7 +4,7 @@
 # Run: make <target>
 # =============================================================================
 
-.PHONY: help setup dev dev\:api dev\:admin dev\:user build check lint lint\:rust lint\:frontend lint\:fix api-docs types migrate seed routes deploy clean
+.PHONY: help setup dev dev\:api dev\:admin dev\:user build check lint lint\:rust lint\:frontend lint\:starter lint\:fix api-docs types migrate seed routes deploy clean
 
 # Default: show help
 help:
@@ -21,6 +21,7 @@ help:
 	@echo "  make lint         Run Rust + frontend lint checks"
 	@echo "  make lint:rust    Run rustfmt check + clippy"
 	@echo "  make lint:frontend Run Biome on React/TypeScript code"
+	@echo "  make lint:starter Run starter-template DRY/SSOT guardrails"
 	@echo "  make lint:fix     Auto-fix Rust formatting + frontend formatting/imports"
 	@echo "  make api-docs     Generate API docs at docs/api/"
 	@echo "  make types        Generate TypeScript types from Rust DTOs"
@@ -74,6 +75,7 @@ check:
 lint:
 	$(MAKE) lint:rust
 	$(MAKE) lint:frontend
+	$(MAKE) lint:starter
 
 # Rust linting
 lint\:rust:
@@ -83,6 +85,9 @@ lint\:rust:
 # Frontend linting / formatting
 lint\:frontend:
 	npm run lint:frontend
+
+lint\:starter:
+	bash scripts/check-starter-guardrails.sh
 
 # Auto-fix formatting and import organization
 lint\:fix:

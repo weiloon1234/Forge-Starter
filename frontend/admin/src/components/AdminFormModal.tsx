@@ -6,9 +6,7 @@ import type {
   AdminPermissionResponse,
   AdminResponse,
   AdminType,
-  CreateAdminRequest,
   Permission,
-  UpdateAdminRequest,
 } from "@shared/types/generated";
 import { AdminTypeOptions, AdminTypeValues } from "@shared/types/generated";
 import { enumOptions } from "@shared/utils";
@@ -17,6 +15,13 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { adminFormModeForTarget, canDeleteAdminTarget } from "@/adminAccess";
+import {
+  type AdminFormValues,
+  adminFormValuesFromResponse,
+  buildCreateAdminPayload,
+  buildUpdateAdminPayload,
+  emptyAdminFormValues,
+} from "@/adminForm";
 import { api } from "@/api";
 import { auth } from "@/auth";
 import { ConfirmDeleteAdminModal } from "@/components/ConfirmDeleteAdminModal";
@@ -26,16 +31,6 @@ import { permissions } from "@/permissions";
 
 const FORM_ID = "admin-form-modal";
 
-interface AdminFormValues extends Record<string, unknown> {
-  username: string;
-  email: string;
-  name: string;
-  password: string;
-  admin_type: AdminType;
-  permissions: Permission[];
-  locale: string;
-}
-
 interface AdminFormModalProps {
   adminId?: string;
   onSaved?: () => void;
@@ -43,18 +38,6 @@ interface AdminFormModalProps {
 }
 
 type ModalMode = "create" | "edit" | "view";
-
-function emptyAdminFormValues(locale: string): AdminFormValues {
-  return {
-    username: "",
-    email: "",
-    name: "",
-    password: "",
-    admin_type: "admin",
-    permissions: [],
-    locale,
-  };
-}
 
 function modeTitleKey(mode: ModalMode): string {
   switch (mode) {
@@ -119,31 +102,11 @@ export function AdminFormModal({
   const form = useForm<AdminFormValues>({
     initialValues: emptyAdminFormValues(createLocale),
     onSubmit: async (values) => {
-      const permissions =
-        values.admin_type === "admin" ? values.permissions : [];
-
       if (isCreate) {
-        const payload: CreateAdminRequest = {
-          username: values.username,
-          email: values.email,
-          name: values.name,
-          password: values.password,
-          admin_type: values.admin_type,
-          permissions,
-          locale: createLocale,
-        };
-        await api.post("/admins", payload);
+        await api.post("/admins", buildCreateAdminPayload(values));
         toast.success(t("admin.admins.created"));
       } else if (adminId) {
-        const payload: UpdateAdminRequest = {
-          name: values.name,
-          email: values.email,
-          permissions,
-          admin_type: values.admin_type,
-          locale: null,
-          password: values.password || null,
-        };
-        await api.put(`/admins/${adminId}`, payload);
+        await api.put(`/admins/${adminId}`, buildUpdateAdminPayload(values));
         toast.success(t("admin.admins.updated"));
       }
 
@@ -191,15 +154,7 @@ export function AdminFormModal({
           setMode(
             !canManageAdmins ? "view" : adminFormModeForTarget(user, nextAdmin),
           );
-          setValues({
-            username: nextAdmin.username,
-            email: nextAdmin.email,
-            name: nextAdmin.name,
-            password: "",
-            admin_type: nextAdmin.admin_type,
-            permissions: nextAdmin.permissions,
-            locale: nextAdmin.locale,
-          });
+          setValues(adminFormValuesFromResponse(nextAdmin));
         }
 
         setLoading(false);

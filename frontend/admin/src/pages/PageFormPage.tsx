@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { api } from "@/api";
+import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { ConfirmDeletePageModal } from "@/components/ConfirmDeletePageModal";
 import { usePermission } from "@/hooks/usePermission";
 import {
@@ -304,8 +305,8 @@ export function PageFormPage() {
 
   return (
     <div className="sf-admin-form-page">
-      <div className="sf-page-header">
-        <div className="space-y-3">
+      <AdminPageHeader
+        eyebrow={
           <Button
             type="button"
             variant="secondary"
@@ -315,19 +316,17 @@ export function PageFormPage() {
           >
             {t("admin.pages.back")}
           </Button>
-
-          <div>
-            <h1 className="sf-page-title">{t(modeTitleKey(mode))}</h1>
-            <p className="sf-page-subtitle">{t(modeHelpKey(mode))}</p>
-          </div>
-        </div>
-
-        {page?.is_system && !isViewMode && (
-          <p className="sf-page-subtitle">
-            {t("admin.pages.system_delete_disabled")}
-          </p>
-        )}
-      </div>
+        }
+        title={t(modeTitleKey(mode))}
+        subtitle={t(modeHelpKey(mode))}
+        actions={
+          page?.is_system && !isViewMode ? (
+            <p className="sf-page-subtitle">
+              {t("admin.pages.system_delete_disabled")}
+            </p>
+          ) : undefined
+        }
+      />
 
       {loading ? (
         <div className="sf-page-subtitle">{t("Loading")}</div>

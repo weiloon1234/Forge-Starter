@@ -10,8 +10,6 @@ import { ModalBody, ModalFooter, modal } from "@shared/modal";
 import type {
   AdminUserLookupOptionResponse,
   AdminUserResponse,
-  CreateUserRequest,
-  UpdateUserRequest,
 } from "@shared/types/generated";
 import { Pencil } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -22,39 +20,22 @@ import { auth } from "@/auth";
 import { ChangeUserIntroducerModal } from "@/components/ChangeUserIntroducerModal";
 import { hasPermission } from "@/hooks/usePermission";
 import { permissions } from "@/permissions";
+import {
+  buildCreateUserPayload,
+  buildUpdateUserPayload,
+  emptyUserFormValues,
+  type UserFormValues,
+  userFormValuesFromResponse,
+} from "@/userForm";
 import { mergeUserOptions, userOptionLabel } from "@/userLookup";
 
 const FORM_ID = "user-form-modal";
-
-interface UserFormValues extends Record<string, unknown> {
-  introducer_user_id: string;
-  username: string;
-  name: string;
-  email: string;
-  password: string;
-  country_iso2: string;
-  contact_country_iso2: string;
-  contact_number: string;
-}
 
 interface UserFormModalProps {
   userId?: string;
   initialIntroducerLabel?: string | null;
   onSaved?: () => void;
   onClose: () => void;
-}
-
-function emptyUserFormValues(): UserFormValues {
-  return {
-    introducer_user_id: "",
-    username: "",
-    name: "",
-    email: "",
-    password: "",
-    country_iso2: "",
-    contact_country_iso2: "",
-    contact_number: "",
-  };
 }
 
 function userDisplayLabel(user: AdminUserResponse): string {
@@ -97,29 +78,16 @@ export function UserFormModal({
     initialValues: emptyUserFormValues(),
     onSubmit: async (values) => {
       if (isCreate) {
-        const payload: CreateUserRequest = {
-          introducer_user_id: values.introducer_user_id.trim(),
-          username: values.username.trim() || null,
-          email: values.email.trim() || null,
-          name: values.name.trim() || null,
-          password: values.password,
-          country_iso2: values.country_iso2.trim() || null,
-          contact_country_iso2: values.contact_country_iso2.trim() || null,
-          contact_number: values.contact_number.trim() || null,
-        };
-        await api.post<AdminUserResponse>("/users", payload);
+        await api.post<AdminUserResponse>(
+          "/users",
+          buildCreateUserPayload(values),
+        );
         toast.success(t("User created"));
       } else if (userId) {
-        const payload: UpdateUserRequest = {
-          username: values.username.trim() || null,
-          email: values.email.trim() || null,
-          name: values.name.trim() || null,
-          password: values.password ? values.password : null,
-          country_iso2: values.country_iso2.trim() || null,
-          contact_country_iso2: values.contact_country_iso2.trim() || null,
-          contact_number: values.contact_number.trim() || null,
-        };
-        await api.put<AdminUserResponse>(`/users/${userId}`, payload);
+        await api.put<AdminUserResponse>(
+          `/users/${userId}`,
+          buildUpdateUserPayload(values),
+        );
         toast.success(t("User updated"));
       }
       onSaved?.();
@@ -148,16 +116,7 @@ export function UserFormModal({
           return;
         }
         setLoadedUser(data);
-        setValues({
-          introducer_user_id: data.introducer_user_id ?? "",
-          username: data.username ?? "",
-          name: data.name ?? "",
-          email: data.email ?? "",
-          password: "",
-          country_iso2: data.country_iso2 ?? "",
-          contact_country_iso2: data.contact_country_iso2 ?? "",
-          contact_number: data.contact_number ?? "",
-        });
+        setValues(userFormValuesFromResponse(data));
         setLoading(false);
       } catch {
         if (active) {

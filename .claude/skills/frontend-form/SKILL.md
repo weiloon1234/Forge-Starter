@@ -76,7 +76,7 @@ Use a local `FormValues` interface **only when the form carries UI-only state th
 - Preview / computed values shown but not sent
 - **Unified create-or-edit modals** where `Create<Feature>Request` and `Update<Feature>Request` have different shapes (Update typically has `Option<T>` everywhere) — the form carries a superset and maps to the right Request on submit. This is the canonical case for the CRUD modal template in Variant A below.
 
-Outside those cases, skip the `FormValues` interface.
+Outside those cases, skip the `FormValues` interface. When the exception is justified, put the `FormValues` type plus payload-mapping helpers in a dedicated portal-local adapter file (for example `pageForm.ts`, `credits.ts`, `adminForm.ts`, `userForm.ts`) instead of leaving that mapping logic inline inside the component.
 
 ### 2. Set up `useForm`
 

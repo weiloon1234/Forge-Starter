@@ -3,6 +3,7 @@ import { ArrowDownUp, ChevronDown, ChevronUp } from "lucide-react";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { observabilityApi } from "@/api";
+import { AdminPageHeader } from "@/components/AdminPageHeader";
 import {
   DataTable,
   EmptyState,
@@ -321,14 +322,10 @@ export function WebSocketDashboardPage() {
   if (!data && error) {
     return (
       <div className="sf-obs-page">
-        <div className="sf-page-header">
-          <div>
-            <h1 className="sf-page-title">{t("WebSocket")}</h1>
-            <p className="sf-page-subtitle">
-              {t("observability.websocket.subtitle")}
-            </p>
-          </div>
-        </div>
+        <AdminPageHeader
+          title={t("WebSocket")}
+          subtitle={t("observability.websocket.subtitle")}
+        />
         <ErrorState
           title={t("observability.websocket.unavailable")}
           description={error}
@@ -340,19 +337,17 @@ export function WebSocketDashboardPage() {
 
   return (
     <div className="sf-obs-page">
-      <div className="sf-page-header">
-        <div>
-          <h1 className="sf-page-title">{t("WebSocket")}</h1>
-          <p className="sf-page-subtitle">
-            {t("observability.websocket.subtitle")}
-          </p>
-        </div>
-        <RefreshIndicator
-          lastUpdated={lastUpdated}
-          refreshing={refreshing || loading}
-          onRefresh={refresh}
-        />
-      </div>
+      <AdminPageHeader
+        title={t("WebSocket")}
+        subtitle={t("observability.websocket.subtitle")}
+        actions={
+          <RefreshIndicator
+            lastUpdated={lastUpdated}
+            refreshing={refreshing || loading}
+            onRefresh={refresh}
+          />
+        }
+      />
 
       <p className="sf-obs-page-note">
         {t("observability.common.node_local_note")}

@@ -3,6 +3,7 @@ import { ArrowDownUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { observabilityApi } from "@/api";
+import { AdminPageHeader } from "@/components/AdminPageHeader";
 import {
   DataTable,
   EmptyState,
@@ -199,14 +200,10 @@ export function JobsDashboardPage() {
   if (!data && error) {
     return (
       <div className="sf-obs-page">
-        <div className="sf-page-header">
-          <div>
-            <h1 className="sf-page-title">{t("Jobs")}</h1>
-            <p className="sf-page-subtitle">
-              {t("observability.jobs.subtitle")}
-            </p>
-          </div>
-        </div>
+        <AdminPageHeader
+          title={t("Jobs")}
+          subtitle={t("observability.jobs.subtitle")}
+        />
         <ErrorState
           title={t("observability.jobs.unavailable")}
           description={error}
@@ -218,18 +215,18 @@ export function JobsDashboardPage() {
 
   return (
     <div className="sf-obs-page">
-      <div className="sf-page-header">
-        <div>
-          <h1 className="sf-page-title">{t("Jobs")}</h1>
-          <p className="sf-page-subtitle">{t("observability.jobs.subtitle")}</p>
-        </div>
-        <RefreshIndicator
-          lastUpdated={lastUpdated}
-          refreshing={refreshing || loading}
-          paused={Boolean(selectedJob)}
-          onRefresh={refresh}
-        />
-      </div>
+      <AdminPageHeader
+        title={t("Jobs")}
+        subtitle={t("observability.jobs.subtitle")}
+        actions={
+          <RefreshIndicator
+            lastUpdated={lastUpdated}
+            refreshing={refreshing || loading}
+            paused={Boolean(selectedJob)}
+            onRefresh={refresh}
+          />
+        }
+      />
 
       <div className="sf-obs-grid sf-obs-grid--metrics">
         <section className="sf-obs-health-card">

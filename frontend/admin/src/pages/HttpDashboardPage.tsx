@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { observabilityApi } from "@/api";
+import { AdminPageHeader } from "@/components/AdminPageHeader";
 import {
   EmptyState,
   ErrorState,
@@ -95,14 +96,10 @@ export function HttpDashboardPage() {
   if (!data && error) {
     return (
       <div className="sf-obs-page">
-        <div className="sf-page-header">
-          <div>
-            <h1 className="sf-page-title">{t("HTTP")}</h1>
-            <p className="sf-page-subtitle">
-              {t("observability.http.subtitle")}
-            </p>
-          </div>
-        </div>
+        <AdminPageHeader
+          title={t("HTTP")}
+          subtitle={t("observability.http.subtitle")}
+        />
         <ErrorState
           title={t("observability.http.unavailable")}
           description={error}
@@ -114,17 +111,17 @@ export function HttpDashboardPage() {
 
   return (
     <div className="sf-obs-page">
-      <div className="sf-page-header">
-        <div>
-          <h1 className="sf-page-title">{t("HTTP")}</h1>
-          <p className="sf-page-subtitle">{t("observability.http.subtitle")}</p>
-        </div>
-        <RefreshIndicator
-          lastUpdated={lastUpdated}
-          refreshing={refreshing || loading}
-          onRefresh={refresh}
-        />
-      </div>
+      <AdminPageHeader
+        title={t("HTTP")}
+        subtitle={t("observability.http.subtitle")}
+        actions={
+          <RefreshIndicator
+            lastUpdated={lastUpdated}
+            refreshing={refreshing || loading}
+            onRefresh={refresh}
+          />
+        }
+      />
 
       <div className="sf-obs-grid sf-obs-grid--metrics">
         <MetricCard

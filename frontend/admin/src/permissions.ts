@@ -31,7 +31,11 @@ export const permissions = {
     manage: permission("introducer_changes.manage"),
   },
   logs: {
+    read: permission("logs.read"),
     manage: permission("logs.manage"),
+  },
+  observability: {
+    view: permission("observability.view"),
   },
   pages: {
     read: permission("pages.read"),

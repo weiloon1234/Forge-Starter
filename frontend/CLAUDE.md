@@ -30,6 +30,10 @@ Root `CLAUDE.md` indexes all 22 skills including backend + cross-cutting.
 6. **Icons: use `lucide-react`.** Import directly. No `react-icons`, no `heroicons`, no `feather`, no Font Awesome (Admin portal has Font Awesome as a Froala editor transitive dep — do not import from it in your own code).
 7. **Tailwind v4 CSS-first.** Use `@theme`, `@layer components`, `@layer base`, `@utility` directives — standard Tailwind v4 at-rules, NOT "unknown at-rules". If your IDE flags them, install the Tailwind CSS IntelliSense extension. Custom classes go inside `@layer components`; custom utilities via `@utility`. Never invent bare classes at the top level of a CSS file.
 8. **NEVER use relative path imports.** `@/` for portal-local, `@shared/` for shared. Relative `../../` is banned except for `main.tsx` loading locales via `import.meta.glob` (Vite requirement).
+9. **Admin permission literals live in one file.** `frontend/admin/src/permissions.ts` is the only place that may contain admin `Permission` string literals. Feature/page/modal code imports typed constants from there.
+10. **Use shared admin page shells by default.** Datatable pages compose through `AdminDatatablePage`; non-datatable admin pages use `AdminPageHeader` instead of rendering raw `sf-page-header` markup.
+11. **Integration-test harness code belongs in `tests/support/`.** When frontend-adjacent work needs backend integration coverage, import the shared helpers instead of recreating `run_cli`, `reset_database`, `boot_api`, `send_json`, `get_html`, or token helpers inline in test files.
+12. **Complex form exceptions use adapter files.** If a page/modal cannot type `useForm<T>` directly against the generated Rust Request, move the local `FormValues` type plus request-mapping helpers into a dedicated portal-local `*Form.ts` adapter file rather than keeping that logic inline in the component.
 
 ## SSOT — Rust → TypeScript
 
@@ -77,7 +81,7 @@ The fourth role is the most often violated. Default: type the form against the g
 - Preview / computed values displayed but not sent
 - Unified create-or-edit modals where `CreateRequest` and `UpdateRequest` have different shapes (Update typically has `Option<T>` everywhere) — the form carries a superset and maps to the right Request on submit
 
-In those cases, define the local `FormValues`, and map to the Request in `onSubmit`. Otherwise: one struct, four roles, one TypeScript alias, one `useForm` type parameter.
+In those cases, define the local `FormValues`, and map to the Request in `onSubmit` from a dedicated portal-local adapter file (`pageForm.ts`, `credits.ts`, `adminForm.ts`, `userForm.ts`, etc.), not inline inside the page or modal component. Otherwise: one struct, four roles, one TypeScript alias, one `useForm` type parameter.
 
 Do NOT hand-write a matching TS Request type on the frontend. The generated file is the single source; every edit is overwritten on the next `make types`.
 

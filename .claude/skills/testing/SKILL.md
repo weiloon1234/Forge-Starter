@@ -113,7 +113,7 @@ Expected: green. If it fails, fix the function or the assertion — never adjust
 
 ## Core steps — integration test (HTTP end-to-end)
 
-One `.rs` file per scenario. Shared boilerplate is duplicated across existing files today (see "Shared helpers" below — extracting them into `tests/common/mod.rs` is a legitimate cleanup).
+One `.rs` file per scenario. Shared boilerplate belongs in `tests/support/mod.rs`; new integration tests import those helpers instead of redefining `run_cli`, `reset_database`, `boot_api`, `send_json`, `get_html`, or token-login helpers inline.
 
 ### 1. Create `tests/<scenario>.rs`
 

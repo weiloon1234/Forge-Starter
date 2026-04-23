@@ -28,6 +28,8 @@ Admin datatables in this starter are defined backend-side as `impl forge::Datata
 
 Frontend renders with `<DataTable>` from `@shared/components`, pointing at the generic query URL with the datatable's ID. Create/edit/delete are modal-based: click a row action → `modal.open(FormModal, { id, onSaved })` → service call → `toast` + refresh.
 
+Frontend page shells are standardized: datatable pages compose through `frontend/admin/src/components/AdminDatatablePage.tsx`, and any permission checks in those pages import typed constants from `frontend/admin/src/permissions.ts` instead of inlining permission keys.
+
 **Deeper references** (read only if the procedure below is unclear):
 - Existing datatables: `src/portals/admin/datatables/admin_datatable.rs` (simplest), `user_datatable.rs` (projection with joins), `setting_datatable.rs` (`updated_at`-primary exception)
 - Generic query endpoint: `src/portals/admin/datatable_routes.rs`

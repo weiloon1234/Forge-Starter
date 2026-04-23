@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { api } from "@/api";
+import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { ConfirmDeleteLogModal } from "@/components/ConfirmDeleteLogModal";
 import { LogEntryModal } from "@/components/LogEntryModal";
 import { usePermission } from "@/hooks/usePermission";
@@ -130,8 +131,7 @@ export function LogsPage() {
 
   return (
     <div>
-      <h1 className="sf-page-title">{t("Logs")}</h1>
-      <p className="sf-page-subtitle">{t("logs_subtitle")}</p>
+      <AdminPageHeader title={t("Logs")} subtitle={t("logs_subtitle")} />
 
       <div className="mt-4 flex flex-wrap items-end gap-3">
         <div className="min-w-[260px] flex-1">

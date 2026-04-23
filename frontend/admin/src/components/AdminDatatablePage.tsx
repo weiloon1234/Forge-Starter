@@ -2,6 +2,7 @@ import { DataTable } from "@shared/components";
 import type { DataTableProps } from "@shared/types/form";
 import type { ReactNode } from "react";
 import { api } from "@/api";
+import { AdminPageHeader } from "@/components/AdminPageHeader";
 
 interface AdminDatatablePageProps<T> {
   title: string;
@@ -18,14 +19,7 @@ export function AdminDatatablePage<T>({
 }: AdminDatatablePageProps<T>) {
   return (
     <div>
-      <div className="sf-page-header">
-        <div>
-          <h1 className="sf-page-title">{title}</h1>
-          {subtitle && <p className="sf-page-subtitle">{subtitle}</p>}
-        </div>
-
-        {action}
-      </div>
+      <AdminPageHeader title={title} subtitle={subtitle} actions={action} />
 
       <div className="mt-4">
         <DataTable<T> api={api} defaultPerPage={20} {...datatable} />
