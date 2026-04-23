@@ -30,8 +30,8 @@ Every user-facing control in the portals is a shared primitive imported from `@s
 
 The library is organized around four axes:
 
-1. **Controls** — `@shared/components` — Input, Select, Checkbox, Radio, FileUpload, DatePicker, TimePicker, DateTimePicker, Button, Lightbox, DataTable, FormBuilder, FormField.
-2. **State** — `@shared/hooks` (useForm, useDebounce, useInfiniteScroll), `@shared/store` (createStore, useStore), `@shared/i18n` (localeStore, useLocale).
+1. **Controls** — `@shared/components` — Input, Select, CountrySelect, ContactInput, Checkbox, Radio, FileUpload, DatePicker, TimePicker, DateTimePicker, Button, Lightbox, DataTable, FormBuilder, FormField.
+2. **State** — `@shared/hooks` (useForm, useDebounce, useInfiniteScroll, useCountryOptions), `@shared/store` (createStore, useStore), `@shared/i18n` (localeStore, useLocale), `@shared/config` (runtimeStore, useRuntimeStore).
 3. **Infrastructure factories** — `@shared/api` (createApi), `@shared/auth` (createAuth), `@shared/websocket` (createWebSocket), `@shared/config` (getConfig, runtimeStore).
 4. **Modals** — `@shared/modal` (modal.open, modal.close, ModalProvider, ModalBody, ModalFooter).
 
@@ -90,6 +90,46 @@ For searchable user lookup or other async remote options:
   loading={searching}
 />
 ```
+
+### CountrySelect — ISO2 picker sourced from `runtimeStore.countries`
+
+Path: `import { CountrySelect } from "@shared/components";`
+
+Single-select country picker. Reads enabled countries from the injected `window.__APP_CONFIG__` (via `useRuntimeStore`), emits the ISO2 string, renders searchable options labeled "🇲🇾 Malaysia" by default (or "🇲🇾 +60" in calling-code style — pass the hook explicitly if needed; see `useCountryOptions` below).
+
+```tsx
+<CountrySelect
+  {...form.field("country_iso2")}
+  label={t("Country")}
+/>
+```
+
+Optional filter for allowlisting a subset (e.g., countries where a feature is live):
+```tsx
+<CountrySelect
+  {...form.field("country_iso2")}
+  label={t("Country")}
+  filter={(iso2) => ALLOWLIST.includes(iso2)}
+/>
+```
+
+Pair with `.rule(ids::validation::ACTIVE_COUNTRY)` server-side on the request DTO so an iso2 of a disabled country is rejected.
+
+### ContactInput — calling-code picker + digit-only phone
+
+Path: `import { ContactInput } from "@shared/components";`
+
+One visual field containing two coordinated controls: country calling-code select on the left (compact `🇲🇾 +60`), digit-only `<Input type="tel">` on the right. Accepts two `useForm` field bindings — one for `contact_country_iso2`, one for `contact_number` — and writes both independently. Non-digit characters are stripped on keystroke; backend stores digits-only.
+
+```tsx
+<ContactInput
+  label={t("Contact")}
+  countryField={form.field("contact_country_iso2")}
+  numberField={form.field("contact_number")}
+/>
+```
+
+Backend pairs with `crate::validation::is_phone_valid_for_country(iso2, phone)` for per-country phone pattern validation (powered by the `phonenumber` crate — every country libphonenumber knows, which is all of them).
 
 ### Checkbox / CheckboxGroup / Radio — boolean and multi-choice
 
@@ -288,6 +328,17 @@ const { items, loading, hasMore, loadMore } = useInfiniteScroll({
   url: "/feed",
   perPage: 20,
 });
+```
+
+### useCountryOptions — SelectOption[] for country pickers
+
+Path: `import { useCountryOptions } from "@shared/hooks";`
+
+Reactive hook that maps `runtimeStore.countries` (all enabled countries, injected via `window.__APP_CONFIG__`) to `SelectOption[]`. Used internally by `CountrySelect` and `ContactInput`, but also callable directly when you need a country Select with custom shape (e.g., a filter dropdown).
+
+```tsx
+const countryOptions = useCountryOptions();                    // default: 🇲🇾 Malaysia
+const callingCodeOptions = useCountryOptions("calling_code"); // compact: 🇲🇾 +60
 ```
 
 ## State stores

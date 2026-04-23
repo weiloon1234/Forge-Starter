@@ -170,8 +170,8 @@ export function <Name>Page() {
 
   return (
     <div>
-      <h1 className="sf-page-title">{t("admin.<name>.title")}</h1>
-      <p className="sf-page-subtitle">{t("admin.<name>.subtitle")}</p>
+      <h1 className="sf-page-title">{t("<Name>")}</h1>
+      {/* Subtitle is decorative — drop unless it adds value (CLAUDE.md rule 13) */}
 
       {/* page content — see variant extensions */}
     </div>
@@ -249,12 +249,12 @@ export function AdminDashboardPage() {
 
   return (
     <div>
-      <h1 className="sf-page-title">{t("admin.dashboard.title")}</h1>
+      <h1 className="sf-page-title">{t("Dashboard")}</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-        <StatCard label={t("admin.dashboard.users")} value={stats.users} />
-        <StatCard label={t("admin.dashboard.active")} value={stats.active} />
-        <StatCard label={t("admin.dashboard.pending")} value={stats.pending} />
+        <StatCard label={t("Users")} value={stats.users} />
+        <StatCard label={t("Active")} value={stats.active} />
+        <StatCard label={t("Pending")} value={stats.pending} />
       </div>
     </div>
   );
@@ -292,7 +292,7 @@ export function <Resource>DetailPage() {
     modal.open(
       <Resource>FormModal,
       { <resource>Id: data.id, onSaved: load },
-      { title: t("admin.<resource>.edit_title") },
+      { title: t("Edit <Resource>") },
     );
   };
 
@@ -301,7 +301,7 @@ export function <Resource>DetailPage() {
       <div className="sf-page-header">
         <div>
           <h1 className="sf-page-title">{data.<display_field>}</h1>
-          <p className="sf-page-subtitle">{t("admin.<resource>.detail_subtitle")}</p>
+          {/* Subtitle is decorative — drop unless it adds value (CLAUDE.md rule 13) */}
         </div>
         <Button type="button" size="sm" prefix={<Pencil size={16} />} onClick={openEdit}>
           {t("Edit")}
@@ -344,7 +344,7 @@ export function <Report>Page() {
 
   return (
     <div>
-      <h1 className="sf-page-title">{t("admin.<report>.title")}</h1>
+      <h1 className="sf-page-title">{t("<Report>")}</h1>
 
       {/* filter row */}
       <div className="flex gap-2 mt-4">
@@ -378,7 +378,7 @@ export function <Entity>ViewerPage() {
 
   return (
     <div>
-      <h1 className="sf-page-title">{t("admin.<entity>.title")}</h1>
+      <h1 className="sf-page-title">{t("<Entity>")}</h1>
 
       <div className="mt-4 space-y-2">
         {items.map(item => <EntityRow key={item.id} item={item} />)}

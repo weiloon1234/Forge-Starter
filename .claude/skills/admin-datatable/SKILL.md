@@ -333,7 +333,7 @@ export function <Resource>sPage() {
     modal.open(
       <Resource>FormModal,
       { onSaved: () => tableRefresh.current?.() },
-      { title: t("admin.<resource>s.create_title") },
+      { title: t("Create <Resource>") },
     );
   }, [t]);
 
@@ -342,7 +342,7 @@ export function <Resource>sPage() {
       modal.open(
         <Resource>FormModal,
         { <resource>Id: row.id, onSaved: () => tableRefresh.current?.() },
-        { title: t(canManage ? "admin.<resource>s.edit_title" : "admin.<resource>s.view_title") },
+        { title: t(canManage ? "Edit <Resource>" : "View <Resource>") },
       );
     },
     [t, canManage],
@@ -377,12 +377,12 @@ export function <Resource>sPage() {
     <div>
       <div className="sf-page-header">
         <div>
-          <h1 className="sf-page-title">{t("admin.<resource>s.title")}</h1>
-          <p className="sf-page-subtitle">{t("admin.<resource>s.subtitle")}</p>
+          <h1 className="sf-page-title">{t("<Resource>s")}</h1>
+          {/* Subtitle is decorative — drop it unless it genuinely adds value (CLAUDE.md rule 13) */}
         </div>
         {canManage && (
           <Button type="button" size="sm" prefix={<Plus size={16} />} onClick={openCreateModal}>
-            {t("admin.<resource>s.new")}
+            {t("New <Resource>")}
           </Button>
         )}
       </div>
@@ -426,28 +426,29 @@ Edit `frontend/admin/src/config/side-menu.ts`. Add to the appropriate parent gro
 
 ### 7. Add i18n keys
 
-Edit `locales/en/admin.json` (or `messages.json` if that's where admin keys live — check neighboring datatables first). Add:
+**Follow CLAUDE.md Translation Rules 10–13: English-as-key is the STRONG default for UI text. Do NOT feature-namespace static labels under `admin.<resource>s.*` — that's the banned legacy pattern.**
+
+The page code already uses flat native keys like `t("New <Resource>")`, `t("Create <Resource>")`, `t("<Resource>s")`, `t("<Resource> created")`, `t("Delete {{name}}? This action cannot be undone.", { name })`. These need ZERO entries in `locales/en/*.json` (key == value falls back to the key itself).
+
+Add only the non-English locale translations in `locales/zh/messages.json` (flat, top-level):
 
 ```json
 {
-  "admin": {
-    "<resource>s": {
-      "title": "<Human label, plural>",
-      "subtitle": "<one-line page purpose>",
-      "new": "New <singular>",
-      "create_title": "Create <singular>",
-      "edit_title": "Edit <singular>",
-      "view_title": "View <singular>",
-      "created": "<singular> created",
-      "updated": "<singular> updated",
-      "deleted": "<singular> deleted",
-      "confirm_delete": "Delete <singular> \"{{name}}\"?"
-    }
-  }
+  "New <Resource>": "新增<Resource>",
+  "Create <Resource>": "创建<Resource>",
+  "Edit <Resource>": "编辑<Resource>",
+  "View <Resource>": "查看<Resource>",
+  "<Resource>s": "<Resources 中文>",
+  "<Resource> created": "<Resource> 已创建",
+  "<Resource> updated": "<Resource> 已更新",
+  "<Resource> deleted": "<Resource> 已删除",
+  "Delete {{name}}? This action cannot be undone.": "删除 {{name}}？此操作无法撤销。"
 }
 ```
 
-Duplicate the same keys in `locales/zh/admin.json` with Chinese translations. Per CLAUDE.md translation rules, every non-English locale MUST have every key.
+If any of these keys already exist (because a previous feature translated "New User" / "Delete {{name}}? ..." etc.), **reuse the existing entry — don't duplicate**. Grep `locales/zh/messages.json` first.
+
+Only use namespaced keys (`admin.<resource>.fields.<name>`) for the three structural cases in CLAUDE.md rule 12: AppEnum `labelKey` outputs, validator `custom_attribute(...)` field-name conventions, and domain-coded multi-context strings. Never for button labels, modal titles, toasts, or placeholders.
 
 ## Extensions — standard CRUD (if applicable)
 
@@ -754,7 +755,7 @@ export function Confirm<Resource>DeleteModal({
   return (
     <>
       <ModalBody>
-        <p>{t("admin.<resource>s.confirm_delete", { name })}</p>
+        <p>{t("Delete {{name}}? This action cannot be undone.", { name })}</p>
       </ModalBody>
       <ModalFooter>
         <Button variant="secondary" size="sm" onClick={onClose} disabled={busy}>

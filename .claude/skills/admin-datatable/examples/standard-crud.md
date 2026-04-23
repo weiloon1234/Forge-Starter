@@ -22,20 +22,20 @@ The base `frontend-form` Variant A already covers the full shape. The additions 
    modal.open(
      <Resource>FormModal,
      { onSaved: () => tableRefresh.current?.() },
-     { title: t("admin.<resource>s.create_title") },
+     { title: t("Create <Resource>") },
    );
 
    // Edit — pre-loads the record via the base template's useEffect
    modal.open(
      <Resource>FormModal,
      { <resource>Id: row.id, onSaved: () => tableRefresh.current?.() },
-     { title: t("admin.<resource>s.edit_title") },
+     { title: t("Edit <Resource>") },
    );
    ```
 
 3. **`onSaved` calls `tableRefresh.current?.()`** — the admin-datatable list page holds a `useRef<(() => void) | null>(null)` tableRefresh, passed as `refreshRef` to `<DataTable>`. After successful save or delete, calling this re-fetches the list. This wiring is specific to datatable-backed CRUD; standalone forms don't need it.
 
-4. **`<display_field>`** in the delete confirmation — pick whatever makes a human-readable identity for the resource (`loaded.name`, `loaded.username`, `loaded.title`). It appears in the `admin.<resource>s.confirm_delete` translation: `"Delete <resource> \"{{name}}\"?"`.
+4. **`<display_field>`** in the delete confirmation — pick whatever makes a human-readable identity for the resource (`loaded.name`, `loaded.username`, `loaded.title`). It's interpolated into the native-key confirm string `t("Delete {{name}}? This action cannot be undone.", { name: loaded.<display_field> })`.
 
 5. **View-only mode** (optional) — if some admins can view but not edit records, extend the base template with a `mode: "edit" | "view"` derived from a per-target permission helper (see `frontend/admin/src/adminAccess.ts` for `adminFormModeForTarget`). Disable every `<Input>` / `<Select>` in view mode, hide the Delete button, and replace Save with Close. The real-world pattern lives in `frontend/admin/src/components/AdminFormModal.tsx` — consult it if you hit view-mode requirements.
 
