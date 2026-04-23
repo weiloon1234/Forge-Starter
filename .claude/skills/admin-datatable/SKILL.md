@@ -557,7 +557,7 @@ admin.scope("/<resource>s", |scope| {
 
 ### 10. Add request DTOs
 
-Edit `src/portals/admin/requests.rs`. Add:
+Edit `src/portals/admin/requests/<resource>.rs` (create the file if the resource doesn't have one — then add `pub mod <resource>;` + `pub use <resource>::*;` to `requests/mod.rs`). Add:
 
 ```rust
 #[derive(Debug, Deserialize, ts_rs::TS, forge::ApiSchema)]
@@ -607,7 +607,7 @@ impl RequestValidator for Update<Resource>Request {
 
 ### 11. Add response DTO
 
-Edit `src/portals/admin/responses.rs`. Add:
+Edit `src/portals/admin/responses/<resource>.rs` (create the file + update `responses/mod.rs` barrel if the resource doesn't have one). Add:
 
 ```rust
 #[derive(Serialize, TS, forge::ApiSchema)]

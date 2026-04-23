@@ -151,7 +151,7 @@ All column references use `Widget::NAME`, `Widget::ID`, `Widget::CREATED_AT` —
 - **No `impl Widget { ... }`** — scoped queries, computed accessors, and relation methods only exist when needed. Empty-impl-blocks are noise.
 - **No seeder** — seed data is optional. Add one only if dev / prod needs pre-populated rows.
 - **No admin page / datatable / badge** — downstream concerns. After the model lands, invoke the `admin-datatable` skill for a CRUD page or the `admin-badge` skill for a sidebar count.
-- **No response DTO** — response shapes live in `src/portals/<portal>/responses.rs` and are added per-route. Models themselves are not exported to TypeScript.
+- **No response DTO** — response shapes live in `src/portals/<portal>/responses/<resource>.rs` and are added per-route. Models themselves are not exported to TypeScript.
 
 ## When your model needs more than this
 

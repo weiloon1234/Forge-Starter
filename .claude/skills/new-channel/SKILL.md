@@ -116,7 +116,7 @@ Each channel has a set of event names (the second argument to `publish` and `on`
 
 ### 6. Payload shape
 
-Payloads are JSON (`serde_json::Value` on the wire). Typed shapes are encouraged: define a struct in the portal's `responses.rs` with `#[derive(Serialize, ts_rs::TS, forge::ApiSchema)]` + `#[ts(export)]` so frontend consumers get typed payload.
+Payloads are JSON (`serde_json::Value` on the wire). Typed shapes are encouraged: define a struct in the portal's `responses/<resource>.rs` with `#[derive(Serialize, ts_rs::TS, forge::ApiSchema)]` + `#[ts(export)]` so frontend consumers get typed payload.
 
 ## Steps
 

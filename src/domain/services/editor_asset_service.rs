@@ -1,23 +1,11 @@
 use forge::prelude::*;
 use forge::validation::file_rules::is_image;
-use serde::Serialize;
-use ts_rs::TS;
 
 use crate::domain::models::Admin;
 use crate::domain::services::admin_service;
 use crate::ids::upload_folders::EditorUploadFolder;
 use crate::portals::admin::requests::UploadEditorAssetRequest;
-
-#[derive(Clone, Debug, Serialize, TS, forge::ApiSchema)]
-#[ts(export)]
-pub struct AdminEditorAssetUploadResponse {
-    pub link: String,
-    pub path: String,
-    pub name: String,
-    pub mime: Option<String>,
-    #[ts(type = "number")]
-    pub size_bytes: u64,
-}
+use crate::portals::admin::responses::AdminEditorAssetUploadResponse;
 
 pub async fn upload(
     app: &AppContext,

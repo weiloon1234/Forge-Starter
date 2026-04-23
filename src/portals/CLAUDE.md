@@ -89,8 +89,16 @@ src/portals/{portal}/
 ├── mod.rs                      # register() — api_version + nested scopes
 ├── auth_routes.rs              # Auth handlers (login / refresh / logout / me / ws_token)
 ├── {resource}_routes.rs        # Per-resource handlers (index, show, store, update, destroy, custom)
-├── requests.rs                 # Request DTOs (Deserialize + ts_rs::TS + forge::ApiSchema; RequestValidator impls OR #[derive(Validate)])
-├── responses.rs                # Response DTOs (Serialize + ts_rs::TS + forge::ApiSchema)
+├── requests/                   # Request DTOs, one file per resource (Deserialize + ts_rs::TS + forge::ApiSchema; RequestValidator impls OR #[derive(Validate)])
+│   ├── mod.rs                  #   barrel re-exports (pub mod users; pub use users::*; etc.)
+│   ├── auth.rs
+│   ├── users.rs
+│   └── ...
+├── responses/                  # Response DTOs, one file per resource (Serialize + ts_rs::TS + forge::ApiSchema)
+│   ├── mod.rs                  #   barrel re-exports
+│   ├── auth.rs
+│   ├── users.rs
+│   └── ...
 ├── resources.rs                # ApiResource impls (model → response-DTO transform helpers, when reused)
 ├── datatables/                 # Datatable trait impls per resource
 │   ├── mod.rs                  # register_all() + run_json() + run_download()
@@ -103,7 +111,7 @@ src/portals/{portal}/
 
 ## Request / Response DTO rules
 
-A DTO in `requests.rs` / `responses.rs` is not just the wire shape — it's the **single source for four roles at once**: (1) server-side validation, (2) HTTP payload + OpenAPI schema, (3) generated TypeScript type in `frontend/shared/types/generated/`, (4) the React form's value type via `useForm<CreateFooRequest>`. One Rust struct, four lenses. The frontend never reimplements validation, never hand-writes a parallel TS Request, and defaults to typing forms against the generated type — not against a hand-maintained `FormValues` interface. Full discipline lives in `frontend/CLAUDE.md` "SSOT — Rust → TypeScript"; full procedures in the skills. This section is the backend shape rule.
+A DTO in `requests/<resource>.rs` / `responses/<resource>.rs` is not just the wire shape — it's the **single source for four roles at once**: (1) server-side validation, (2) HTTP payload + OpenAPI schema, (3) generated TypeScript type in `frontend/shared/types/generated/`, (4) the React form's value type via `useForm<CreateFooRequest>`. One Rust struct, four lenses. The frontend never reimplements validation, never hand-writes a parallel TS Request, and defaults to typing forms against the generated type — not against a hand-maintained `FormValues` interface. Full discipline lives in `frontend/CLAUDE.md` "SSOT — Rust → TypeScript"; full procedures in the skills. This section is the backend shape rule.
 
 **Preferred for simple validation** — `#[derive(Validate)]` alongside `ts_rs::TS` + `forge::ApiSchema`:
 

@@ -37,7 +37,7 @@ The frontend never hand-writes types that exist on the backend. Every type a han
 
 ### DTOs — one struct, four roles
 
-Each Rust DTO in `src/portals/<portal>/{requests,responses}.rs` serves **four purposes simultaneously** from a single declaration. Understanding this is the core of the frontend's relationship with the backend:
+Each Rust DTO in `src/portals/<portal>/{requests,responses}/<resource>.rs` (one file per resource, barrel re-exported via `mod.rs` so import paths stay flat) serves **four purposes simultaneously** from a single declaration. Understanding this is the core of the frontend's relationship with the backend:
 
 1. **Validation surface** — the DTO's `#[derive(Validate)]` or `impl RequestValidator` runs server-side before the handler sees the request. Frontend does NOT reimplement validation.
 2. **Wire contract** — `serde::Deserialize` (Request) / `serde::Serialize` (Response) + `forge::ApiSchema` drives the actual HTTP payload + the OpenAPI schema.

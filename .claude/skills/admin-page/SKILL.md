@@ -116,7 +116,7 @@ admin.scope("/<name>", |scope| {
 
 ### 3. (Backend, if needed) Create response DTO
 
-Edit `src/portals/admin/responses.rs`:
+Edit `src/portals/admin/responses/<resource>.rs` (create the file + update `responses/mod.rs` barrel if the resource doesn't have one):
 
 ```rust
 #[derive(Serialize, TS, forge::ApiSchema)]

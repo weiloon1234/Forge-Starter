@@ -104,8 +104,8 @@ Reference for reviewers. Each item is either a "create" or a "modify". The later
 ### Backend — create
 - `src/portals/<name>/mod.rs` — portal route registration
 - `src/portals/<name>/auth_routes.rs` — login/refresh (+ logout/me/ws-token if admin-style)
-- `src/portals/<name>/requests.rs` — `<Name>LoginRequest`, etc.
-- `src/portals/<name>/responses.rs` — `<Name>MeResponse`, etc. (only if admin-style)
+- `src/portals/<name>/requests/mod.rs` + `src/portals/<name>/requests/auth.rs` — `<Name>LoginRequest`, etc. (one file per resource; barrel re-exports in `mod.rs`)
+- `src/portals/<name>/responses/mod.rs` + `src/portals/<name>/responses/auth.rs` — `<Name>MeResponse`, etc. (only if admin-style)
 - `src/domain/models/<name>.rs` — the auth actor (delegated to `new-model`)
 - `database/migrations/{timestamp}_create_<name>s.rs` — actor table (delegated)
 
@@ -165,7 +165,7 @@ Return here when it reports DONE. Run `make migrate` and `make check` to confirm
 
 ### 2. Create request / response DTOs
 
-Path: `src/portals/<name>/requests.rs`
+Path: `src/portals/<name>/requests/auth.rs` (plus `src/portals/<name>/requests/mod.rs` with `pub mod auth; pub use auth::*;`)
 
 ```rust
 use async_trait::async_trait;
@@ -189,7 +189,7 @@ impl RequestValidator for <Name>LoginRequest {
 }
 ```
 
-Path: `src/portals/<name>/responses.rs` (admin-style — skip if User-style minimal)
+Path: `src/portals/<name>/responses/auth.rs` (admin-style — plus `responses/mod.rs` barrel; skip if User-style minimal)
 
 ```rust
 use serde::Serialize;

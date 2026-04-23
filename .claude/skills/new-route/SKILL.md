@@ -53,7 +53,7 @@ Paired: most backend routes surface in the frontend either as a direct fetch (fr
 - [ ] The portal exists (admin / user / whatever you're adding to). Adding a whole portal is `new-portal`.
 - [ ] The handler's service function exists OR you're creating it inline (keep handlers thin — extract → validate → service → respond).
 - [ ] If the route is permission-gated, the `Permission` variant exists. Use `new-permission` if it doesn't.
-- [ ] If the route takes / returns a DTO with new shape, know where the DTO will land (`src/portals/<portal>/{requests,responses}.rs`).
+- [ ] If the route takes / returns a DTO with new shape, know where the DTO will land (`src/portals/<portal>/{requests,responses}/<resource>.rs` — one file per resource, create + add to `mod.rs` barrel if it doesn't exist yet).
 
 ## Decisions — answer before writing code
 
@@ -70,7 +70,7 @@ Paired: most backend routes surface in the frontend either as a direct fetch (fr
 
 ### 1. Add the request DTO (if the route takes a body)
 
-Edit `src/portals/<portal>/requests.rs`:
+Edit `src/portals/<portal>/requests/<resource>.rs` (create the file + add `pub mod <resource>;` + `pub use <resource>::*;` to `requests/mod.rs` if the resource doesn't have one):
 
 ```rust
 #[derive(Debug, Deserialize, ts_rs::TS, forge::ApiSchema)]
@@ -98,7 +98,7 @@ Skip if the route uses only path / query params.
 
 ### 2. Add the response DTO (if non-trivial)
 
-Edit `src/portals/<portal>/responses.rs`:
+Edit `src/portals/<portal>/responses/<resource>.rs` (create the file + update `responses/mod.rs` barrel if the resource doesn't have one):
 
 ```rust
 #[derive(Serialize, ts_rs::TS, forge::ApiSchema)]

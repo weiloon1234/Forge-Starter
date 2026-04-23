@@ -30,8 +30,8 @@ The pipeline is fully macro-driven. In a Rust source file you add a `ts_rs::TS` 
 ## What gets exported vs. what doesn't
 
 **EXPORTED (has ts_rs / AppEnum annotations):**
-- Response DTOs in `src/portals/<portal>/responses.rs` — `#[derive(Serialize, ts_rs::TS, forge::ApiSchema)]` + `#[ts(export)]`.
-- Request DTOs in `src/portals/<portal>/requests.rs` — `#[derive(Debug, Deserialize, ts_rs::TS, forge::ApiSchema)]` (+ `forge::Validate` when using derive-style validators) + `#[ts(export)]`.
+- Response DTOs in `src/portals/<portal>/responses/<resource>.rs` — `#[derive(Serialize, ts_rs::TS, forge::ApiSchema)]` + `#[ts(export)]`. Location within the `responses/` tree doesn't matter — ts-rs keys the generated `.ts` filename by struct name, not source path.
+- Request DTOs in `src/portals/<portal>/requests/<resource>.rs` — `#[derive(Debug, Deserialize, ts_rs::TS, forge::ApiSchema)]` (+ `forge::Validate` when using derive-style validators) + `#[ts(export)]`.
 - Cross-cutting shared types in `src/types/mod.rs` — e.g., `StatusResponse`, `ApiError`, `FieldError`.
 - App-owned enums in `src/domain/enums/` — `#[derive(..., forge::AppEnum)]`.
 - The `Permission` enum in `src/ids/permissions.rs` — same AppEnum treatment.
@@ -45,7 +45,7 @@ The pipeline is fully macro-driven. In a Rust source file you add a `ts_rs::TS` 
 
 ## The annotations you use
 
-### Response DTO (seen in `src/portals/admin/responses.rs`)
+### Response DTO (seen in `src/portals/admin/responses/admins.rs`)
 
 ```rust
 use serde::Serialize;
@@ -64,7 +64,7 @@ pub struct AdminResponse {
 }
 ```
 
-### Request DTO (seen in `src/portals/admin/requests.rs`)
+### Request DTO (seen in `src/portals/admin/requests/admins.rs`)
 
 ```rust
 #[derive(Debug, Deserialize, ts_rs::TS, forge::ApiSchema)]
@@ -177,7 +177,7 @@ Under the hood: `PROCESS=cli cargo run -- types:export`. Reads the binary's regi
 
 ### Override a complex type (the `serde_json::Value` trick)
 
-When a Rust type like `BTreeMap<String, u64>` doesn't implement `forge::ApiSchema` (or ts_rs produces an unhelpful shape), wrap the field as `serde_json::Value` and override the TS type. Pattern from `BadgeCountsResponse` in `src/portals/admin/responses.rs`:
+When a Rust type like `BTreeMap<String, u64>` doesn't implement `forge::ApiSchema` (or ts_rs produces an unhelpful shape), wrap the field as `serde_json::Value` and override the TS type. Pattern from `BadgeCountsResponse` in `src/portals/admin/responses/badges.rs`:
 
 ```rust
 #[derive(Serialize, ts_rs::TS, forge::ApiSchema)]
