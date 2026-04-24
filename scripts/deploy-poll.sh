@@ -4,22 +4,26 @@ set -euo pipefail
 # =============================================================================
 # Forge — Deployment Poller
 # Long-running daemon that polls S3/R2 for new versions and deploys them.
-# Reads identity from deploy.conf, S3 config from config/storage.toml.
+# Reads identity and deploy bucket from deploy.conf or the server .env.
+# Never downloads or replaces the server .env from the bucket.
 # Designed to run as a systemd service.
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# Configuration — loaded from deploy.conf + storage.toml
+# Configuration — loaded from deploy.conf + optional server .env fallback
 # -----------------------------------------------------------------------------
 
-# Default conf path; overridable via DEPLOY_CONF env var
-DEPLOY_CONF="${DEPLOY_CONF:-/opt/forge-starter/config/deploy.conf}"
+# Config path; overridable via DEPLOY_CONF env var.
+# Installed setup copies this script to $APP_DIR/scripts and deploy.conf to
+# $APP_DIR/config, so the script-relative path is the safe default.
+DEPLOY_CONF="${DEPLOY_CONF:-}"
 
 # Try to find deploy.conf from the script's own location first
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [[ -f "${SCRIPT_DIR}/../config/deploy.conf" ]]; then
+if [[ -z "$DEPLOY_CONF" && -f "${SCRIPT_DIR}/../config/deploy.conf" ]]; then
     DEPLOY_CONF="${SCRIPT_DIR}/../config/deploy.conf"
 fi
+DEPLOY_CONF="${DEPLOY_CONF:-${SCRIPT_DIR}/../config/deploy.conf}"
 
 # -----------------------------------------------------------------------------
 # Logging (prefixed with APP_ID)
@@ -29,45 +33,70 @@ log_info()  { echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] [${APP_ID:-init}] INFO  $*"
 log_warn()  { echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] [${APP_ID:-init}] WARN  $*" >&2; }
 log_error() { echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] [${APP_ID:-init}] ERROR $*" >&2; }
 
-# -----------------------------------------------------------------------------
-# Parse S3 config from storage.toml
-# -----------------------------------------------------------------------------
+trim() {
+    local value="$1"
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+    printf '%s' "$value"
+}
 
-parse_storage_toml() {
-    local toml="${APP_DIR}/config/storage.toml"
-    if [[ ! -f "$toml" ]]; then
-        log_error "storage.toml not found at $toml"
-        log_error "Deploy an artifact first, or place config/storage.toml manually."
-        return 1
+strip_quotes() {
+    local value
+    value="$(trim "$1")"
+    if [[ "$value" == \"*\" && "$value" == *\" && ${#value} -ge 2 ]]; then
+        value="${value:1:${#value}-2}"
+    elif [[ "$value" == \'*\' && "$value" == *\' && ${#value} -ge 2 ]]; then
+        value="${value:1:${#value}-2}"
     fi
+    printf '%s' "$value"
+}
 
-    # Read default disk name from [storage] default = "..."
-    local default_disk
-    default_disk="$(grep -oP '^\s*default\s*=\s*"\K[^"]+' "$toml" | head -1)"
-    if [[ -z "$default_disk" ]]; then
-        log_error "No default disk set in $toml"
-        return 1
-    fi
+env_file_value() {
+    local wanted="$1"
+    local file="$2"
+    local line key value
 
-    # Read config from [storage.disks.{default}]
-    local section="storage\\.disks\\.${default_disk}"
-    S3_BUCKET="$(grep -A20 "^\[${section}\]" "$toml" | grep '^\s*bucket' | head -1 | sed 's/.*=\s*"\(.*\)"/\1/')"
-    S3_REGION="$(grep -A20 "^\[${section}\]" "$toml" | grep '^\s*region' | head -1 | sed 's/.*=\s*"\(.*\)"/\1/')"
-    S3_ENDPOINT="$(grep -A20 "^\[${section}\]" "$toml" | grep '^\s*endpoint' | head -1 | sed 's/.*=\s*"\(.*\)"/\1/')"
+    [[ -f "$file" ]] || return 1
 
-    # Default region to auto if empty
-    : "${S3_REGION:=auto}"
-    : "${S3_ENDPOINT:=}"
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        line="$(trim "$line")"
+        [[ -z "$line" || "$line" == \#* ]] && continue
+        if [[ "$line" == export\ * ]]; then
+            line="$(trim "${line#export }")"
+        fi
+        [[ "$line" == *=* ]] || continue
+        key="$(trim "${line%%=*}")"
+        if [[ "$key" == "$wanted" ]]; then
+            value="${line#*=}"
+            strip_quotes "$value"
+            return 0
+        fi
+    done < "$file"
 
-    if [[ -z "$S3_BUCKET" ]]; then
-        log_error "S3 bucket not configured in $toml"
-        log_error "Set the bucket field in your default storage disk in config/storage.toml"
-        return 1
-    fi
+    return 1
+}
+
+first_config_value() {
+    local file="$1"
+    shift
+
+    local key value
+    for key in "$@"; do
+        value="${!key:-}"
+        if [[ -z "$value" && -f "$file" ]]; then
+            value="$(env_file_value "$key" "$file" || true)"
+        fi
+        if [[ -n "$value" ]]; then
+            printf '%s' "$value"
+            return 0
+        fi
+    done
+
+    return 1
 }
 
 # -----------------------------------------------------------------------------
-# Load config from deploy.conf + storage.toml
+# Load config from deploy.conf + optional server .env fallback
 # -----------------------------------------------------------------------------
 
 load_config() {
@@ -85,10 +114,18 @@ load_config() {
     : "${APP_DIR:?APP_DIR not set in $DEPLOY_CONF}"
     : "${BINARY_NAME:?BINARY_NAME not set in $DEPLOY_CONF}"
     : "${POLL_INTERVAL:=30}"
+    : "${RUN_USER:=forge}"
 
-    # Parse S3 config from storage.toml
-    if ! parse_storage_toml; then
-        log_error "Failed to load S3 config from storage.toml. Cannot start polling."
+    ENV_FILE="$APP_DIR/.env"
+    S3_BUCKET="$(first_config_value "$ENV_FILE" DEPLOY_BUCKET STORAGE__DISKS__R2__BUCKET STORAGE__DISKS__S3__BUCKET || true)"
+    S3_REGION="$(first_config_value "$ENV_FILE" DEPLOY_REGION STORAGE__DISKS__R2__REGION STORAGE__DISKS__S3__REGION || true)"
+    S3_ENDPOINT="$(first_config_value "$ENV_FILE" DEPLOY_ENDPOINT STORAGE__DISKS__R2__ENDPOINT STORAGE__DISKS__S3__ENDPOINT || true)"
+    : "${S3_REGION:=auto}"
+    : "${S3_ENDPOINT:=}"
+
+    if [[ -z "$S3_BUCKET" ]]; then
+        log_error "Deploy bucket is not configured."
+        log_error "Set DEPLOY_BUCKET in $DEPLOY_CONF or $ENV_FILE."
         exit 1
     fi
 
@@ -220,7 +257,6 @@ deploy_version() {
     local tmp_dir
     tmp_dir=$(mktemp -d)
     local zip_file="$tmp_dir/${BINARY_NAME}-${version}.zip"
-    local env_file="$tmp_dir/.env.new"
     local success=false
 
     log_info "Deploying version: $version"
@@ -248,24 +284,10 @@ deploy_version() {
         fi
     fi
 
-    # Download .env (optional)
-    local has_new_env=false
-    if s3_download "$S3_PREFIX/.env" "$env_file"; then
-        has_new_env=true
-        log_info "Downloaded .env from bucket."
-    else
-        log_info "No .env in bucket (using existing)."
-    fi
-
     # Backup current binary
     if [[ -f "$BINARY" ]]; then
         cp "$BINARY" "${BINARY}.bak"
         log_info "Backed up current binary."
-    fi
-
-    # Backup current .env
-    if [[ -f "$APP_DIR/.env" ]]; then
-        cp "$APP_DIR/.env" "$APP_DIR/.env.bak"
     fi
 
     # Stop services
@@ -281,7 +303,7 @@ deploy_version() {
     if [[ -f "$extract_dir/$BINARY_NAME" ]]; then
         cp "$extract_dir/$BINARY_NAME" "$BINARY"
         chmod +x "$BINARY"
-        chown forge:forge "$BINARY"
+        chown "$RUN_USER:$RUN_USER" "$BINARY"
     else
         log_error "Binary '$BINARY_NAME' not found in artifact zip."
         if [[ -f "${BINARY}.bak" ]]; then
@@ -294,9 +316,9 @@ deploy_version() {
 
     # Deploy public assets
     if [[ -d "$extract_dir/public" ]]; then
-        rm -rf "$APP_DIR/public/admin" "$APP_DIR/public/user"
+        rm -rf "$APP_DIR/public/website" "$APP_DIR/public/admin" "$APP_DIR/public/user" "$APP_DIR/public/team"
         cp -r "$extract_dir/public/." "$APP_DIR/public/"
-        chown -R forge:forge "$APP_DIR/public/"
+        chown -R "$RUN_USER:$RUN_USER" "$APP_DIR/public/"
         log_info "Deployed public assets."
     fi
 
@@ -323,17 +345,9 @@ deploy_version() {
         cp -r "$extract_dir/docs/." "$APP_DIR/docs/"
     fi
 
-    # Deploy .env if downloaded
-    if [[ "$has_new_env" = true ]]; then
-        cp "$env_file" "$APP_DIR/.env"
-        chmod 600 "$APP_DIR/.env"
-        chown forge:forge "$APP_DIR/.env"
-        log_info "Deployed .env from bucket."
-    fi
-
     # Run database migrations before starting services
     log_info "Running database migrations..."
-    if sudo -u forge PROCESS=cli "$BINARY" db:migrate 2>&1; then
+    if sudo -u "$RUN_USER" PROCESS=cli "$BINARY" db:migrate 2>&1; then
         log_info "Migrations complete."
     else
         log_error "Migration failed. Starting services with current schema."
@@ -354,16 +368,13 @@ deploy_version() {
 
     if [[ "$success" = true ]]; then
         echo "$version" > "$LOCAL_VERSION_FILE"
-        rm -f "${BINARY}.bak" "$APP_DIR/.env.bak"
+        rm -f "${BINARY}.bak"
         log_info "Deployment complete: $version"
     else
         log_warn "Rolling back to previous binary..."
         if [[ -f "${BINARY}.bak" ]]; then
             cp "${BINARY}.bak" "$BINARY"
             chmod +x "$BINARY"
-        fi
-        if [[ -f "$APP_DIR/.env.bak" ]]; then
-            cp "$APP_DIR/.env.bak" "$APP_DIR/.env"
         fi
         start_services
         log_warn "Rollback complete. Continuing to poll."
@@ -383,9 +394,10 @@ main() {
 
     log_info "Starting deploy-poll daemon."
     log_info "App:           $APP_ID"
-    log_info "Bucket:        $S3_BUCKET (from storage.toml)"
+    log_info "Bucket:        $S3_BUCKET"
     log_info "S3 prefix:     $S3_PREFIX"
     log_info "Binary:        $BINARY"
+    log_info "Run user:      $RUN_USER"
     log_info "Poll interval: ${POLL_INTERVAL}s"
 
     while true; do

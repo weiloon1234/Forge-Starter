@@ -78,7 +78,10 @@ to_underscore() { echo "${1//-/_}"; }
 SUMMARY_DATABASE_URL=""
 SUMMARY_REDIS_URL=""
 SUMMARY_APP_KEY=""
+SUMMARY_CRYPT_KEY=""
 SUMMARY_DOMAIN=""
+SUMMARY_HTTP_PORT="3000"
+SUMMARY_WS_PORT="3010"
 SKIP_DEPLOY_POLL=false
 
 # =============================================================================
@@ -151,15 +154,27 @@ REDIS_NAMESPACE="$(to_underscore "${APP_NAME}")_${ENVIRONMENT}"
 EXISTING_DATABASE_URL=""
 EXISTING_REDIS_URL=""
 EXISTING_APP_KEY=""
+EXISTING_CRYPT_KEY=""
 EXISTING_APP_ENV=""
+EXISTING_SERVER_PORT=""
+EXISTING_WS_PORT=""
 EXISTING_POLL_INTERVAL=""
+EXISTING_DEPLOY_BUCKET=""
+EXISTING_DEPLOY_REGION=""
+EXISTING_DEPLOY_ENDPOINT=""
 
 if [[ -f "${APP_DIR}/.env" ]]; then
     info "Found existing .env at ${APP_DIR}/.env — loading as defaults."
-    EXISTING_DATABASE_URL="$(grep -oP '^DATABASE_URL=\K.*' "${APP_DIR}/.env" 2>/dev/null || true)"
-    EXISTING_REDIS_URL="$(grep -oP '^REDIS_URL=\K.*' "${APP_DIR}/.env" 2>/dev/null || true)"
-    EXISTING_APP_KEY="$(grep -oP '^APP_KEY=\K.*' "${APP_DIR}/.env" 2>/dev/null || true)"
-    EXISTING_APP_ENV="$(grep -oP '^APP_ENV=\K.*' "${APP_DIR}/.env" 2>/dev/null || true)"
+    EXISTING_DATABASE_URL="$(grep -oP '^DATABASE__URL=\K.*' "${APP_DIR}/.env" 2>/dev/null || grep -oP '^DATABASE_URL=\K.*' "${APP_DIR}/.env" 2>/dev/null || true)"
+    EXISTING_REDIS_URL="$(grep -oP '^REDIS__URL=\K.*' "${APP_DIR}/.env" 2>/dev/null || grep -oP '^REDIS_URL=\K.*' "${APP_DIR}/.env" 2>/dev/null || true)"
+    EXISTING_APP_KEY="$(grep -oP '^APP__SIGNING_KEY=\K.*' "${APP_DIR}/.env" 2>/dev/null || grep -oP '^APP_KEY=\K.*' "${APP_DIR}/.env" 2>/dev/null || true)"
+    EXISTING_CRYPT_KEY="$(grep -oP '^CRYPT__KEY=\K.*' "${APP_DIR}/.env" 2>/dev/null || true)"
+    EXISTING_APP_ENV="$(grep -oP '^APP__ENVIRONMENT=\K.*' "${APP_DIR}/.env" 2>/dev/null || grep -oP '^APP_ENV=\K.*' "${APP_DIR}/.env" 2>/dev/null || true)"
+    EXISTING_SERVER_PORT="$(grep -oP '^SERVER__PORT=\K.*' "${APP_DIR}/.env" 2>/dev/null || true)"
+    EXISTING_WS_PORT="$(grep -oP '^WEBSOCKET__PORT=\K.*' "${APP_DIR}/.env" 2>/dev/null || true)"
+    EXISTING_DEPLOY_BUCKET="$(grep -oP '^DEPLOY_BUCKET=\K.*' "${APP_DIR}/.env" 2>/dev/null || true)"
+    EXISTING_DEPLOY_REGION="$(grep -oP '^DEPLOY_REGION=\K.*' "${APP_DIR}/.env" 2>/dev/null || true)"
+    EXISTING_DEPLOY_ENDPOINT="$(grep -oP '^DEPLOY_ENDPOINT=\K.*' "${APP_DIR}/.env" 2>/dev/null || true)"
 
     # Extract DB user/name/pass from existing DATABASE_URL for PostgreSQL prompts
     # Format: postgres://user:pass@host:port/dbname
@@ -171,6 +186,9 @@ fi
 
 if [[ -f "${APP_DIR}/config/deploy.conf" ]]; then
     EXISTING_POLL_INTERVAL="$(grep -oP '^POLL_INTERVAL="\K[^"]+' "${APP_DIR}/config/deploy.conf" 2>/dev/null || true)"
+    EXISTING_DEPLOY_BUCKET="${EXISTING_DEPLOY_BUCKET:-$(grep -oP '^DEPLOY_BUCKET="\K[^"]+' "${APP_DIR}/config/deploy.conf" 2>/dev/null || true)}"
+    EXISTING_DEPLOY_REGION="${EXISTING_DEPLOY_REGION:-$(grep -oP '^DEPLOY_REGION="\K[^"]+' "${APP_DIR}/config/deploy.conf" 2>/dev/null || true)}"
+    EXISTING_DEPLOY_ENDPOINT="${EXISTING_DEPLOY_ENDPOINT:-$(grep -oP '^DEPLOY_ENDPOINT="\K[^"]+' "${APP_DIR}/config/deploy.conf" 2>/dev/null || true)}"
 fi
 
 echo ""
@@ -391,8 +409,10 @@ if [[ -n "${DOMAIN}" ]]; then
     if [[ -f "${NGINX_CONF}" ]]; then
         ok "Nginx config already exists: ${NGINX_CONF}"
     else
-        HTTP_PORT="$(ask "HTTP port for this app" "3000")"
-        WS_PORT="$(ask "WebSocket port for this app" "3010")"
+        HTTP_PORT="$(ask "HTTP port for this app" "${EXISTING_SERVER_PORT:-3000}")"
+        WS_PORT="$(ask "WebSocket port for this app" "${EXISTING_WS_PORT:-3010}")"
+        SUMMARY_HTTP_PORT="${HTTP_PORT}"
+        SUMMARY_WS_PORT="${WS_PORT}"
 
         cat > "${NGINX_CONF}" <<NGINX
 server {
@@ -524,47 +544,34 @@ if [[ -f "${DEPLOY_POLL_SRC}" ]]; then
     ok "deploy-poll.sh copied."
 fi
 
-# Check if storage is configured for deploy polling
-STORAGE_TOML="${PROJECT_ROOT}/config/storage.toml"
-if [[ -n "${PROJECT_ROOT}" && -f "${STORAGE_TOML}" ]]; then
-    DEFAULT_DISK="$(grep -oP '^\s*default\s*=\s*"\K[^"]+' "${STORAGE_TOML}" | head -1)"
-    DISK_BUCKET=""
-    if [[ -n "${DEFAULT_DISK}" ]]; then
-        DISK_BUCKET="$(grep -A20 "^\[storage\.disks\.${DEFAULT_DISK}\]" "${STORAGE_TOML}" | grep '^\s*bucket' | head -1 | sed 's/.*=\s*"\(.*\)"/\1/')"
-    fi
+# Deploy polling bucket config. This is intentionally separate from app .env
+# uploads: the bucket only stores artifact zips and VERSION, never secrets.
+DEPLOY_CONF="${APP_DIR}/config/deploy.conf"
+DEPLOY_BUCKET="$(ask "Deploy artifact bucket" "${EXISTING_DEPLOY_BUCKET}")"
+DEPLOY_REGION="$(ask "Deploy artifact region (auto for R2)" "${EXISTING_DEPLOY_REGION:-auto}")"
+DEPLOY_ENDPOINT="$(ask "Deploy artifact endpoint (blank for AWS S3)" "${EXISTING_DEPLOY_ENDPOINT}")"
+DEPLOY_POLL_INTERVAL="$(ask "Poll interval in seconds" "${EXISTING_POLL_INTERVAL:-30}")"
 
-    if [[ -z "${DISK_BUCKET}" ]]; then
-        warn "Storage bucket is empty in config/storage.toml [storage.disks.${DEFAULT_DISK:-?}]"
-        warn "Deploy polling will NOT work until the bucket is configured."
-        SKIP_DEPLOY_POLL=true
-    else
-        ok "Storage bucket: ${DISK_BUCKET} (from config/storage.toml)"
-    fi
-
-    # Copy storage.toml so deploy-poll can read it before first artifact deploy
-    cp "${STORAGE_TOML}" "${APP_DIR}/config/storage.toml"
-    chown "${SYS_USER}:${SYS_USER}" "${APP_DIR}/config/storage.toml"
-    ok "storage.toml copied to ${APP_DIR}/config/"
-else
-    warn "config/storage.toml not found. Deploy polling requires it."
+if [[ -z "${DEPLOY_BUCKET}" ]]; then
+    warn "Deploy artifact bucket is empty. Deploy polling will be disabled."
     SKIP_DEPLOY_POLL=true
 fi
-
-# deploy.conf — always update (identity + poll interval only, S3 comes from storage.toml)
-DEPLOY_CONF="${APP_DIR}/config/deploy.conf"
-DEPLOY_POLL_INTERVAL="$(ask "Poll interval in seconds" "${EXISTING_POLL_INTERVAL:-30}")"
 
 cat > "${DEPLOY_CONF}" <<CONF
 # Deployment Configuration — ${APP_NAME} (${ENVIRONMENT})
 # Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
-# R2/S3 config is read from config/storage.toml (default disk)
+# Bucket is for deployment artifacts only. Do not upload .env files.
 
 APP_NAME="${APP_NAME}"
 ENVIRONMENT="${ENVIRONMENT}"
 APP_ID="${APP_ID}"
 APP_DIR="${APP_DIR}"
 BINARY_NAME="${BINARY_NAME}"
+RUN_USER="${SYS_USER}"
 POLL_INTERVAL="${DEPLOY_POLL_INTERVAL}"
+DEPLOY_BUCKET="${DEPLOY_BUCKET}"
+DEPLOY_REGION="${DEPLOY_REGION}"
+DEPLOY_ENDPOINT="${DEPLOY_ENDPOINT}"
 CONF
 ok "deploy.conf written."
 
@@ -580,18 +587,27 @@ if [[ -f "${ENV_FILE}" ]]; then
     info "Review and confirm each value below."
 fi
 
-# APP_KEY: preserve existing real key, generate if placeholder or missing
+# APP__SIGNING_KEY / CRYPT__KEY: preserve existing real keys, generate if placeholder or missing.
     if [[ -n "${EXISTING_APP_KEY}" && "${EXISTING_APP_KEY}" != "base64:change-me"* && "${EXISTING_APP_KEY}" != "base64:generate-me"* ]]; then
         SUMMARY_APP_KEY="${EXISTING_APP_KEY}"
-        info "Preserving existing APP_KEY."
+        info "Preserving existing APP__SIGNING_KEY."
     else
-        SUMMARY_APP_KEY="base64:$(openssl rand -base64 32)"
-        info "Generated new APP_KEY."
+        SUMMARY_APP_KEY="$(openssl rand -base64 32)"
+        info "Generated new APP__SIGNING_KEY."
+    fi
+    if [[ -n "${EXISTING_CRYPT_KEY}" && "${EXISTING_CRYPT_KEY}" != "change-me"* ]]; then
+        SUMMARY_CRYPT_KEY="${EXISTING_CRYPT_KEY}"
+        info "Preserving existing CRYPT__KEY."
+    else
+        SUMMARY_CRYPT_KEY="$(openssl rand -base64 32)"
+        info "Generated new CRYPT__KEY."
     fi
 
     # Use existing values as defaults (from .env on re-run, or from PG setup on first run)
     DEFAULT_DB_URL="${EXISTING_DATABASE_URL:-${SUMMARY_DATABASE_URL}}"
     DEFAULT_REDIS_URL="${EXISTING_REDIS_URL:-${SUMMARY_REDIS_URL}}"
+    SUMMARY_HTTP_PORT="${EXISTING_SERVER_PORT:-${SUMMARY_HTTP_PORT}}"
+    SUMMARY_WS_PORT="${EXISTING_WS_PORT:-${SUMMARY_WS_PORT}}"
 
 FINAL_DATABASE_URL="$(ask "DATABASE_URL" "${DEFAULT_DB_URL}")"
 FINAL_REDIS_URL="$(ask "REDIS_URL" "${DEFAULT_REDIS_URL}")"
@@ -600,11 +616,19 @@ SUMMARY_DATABASE_URL="${FINAL_DATABASE_URL}"
 SUMMARY_REDIS_URL="${FINAL_REDIS_URL}"
 
 cat > "${ENV_FILE}" <<ENV
-APP_ENV=${ENVIRONMENT}
-APP_KEY=${SUMMARY_APP_KEY}
+APP__NAME=${APP_NAME}
+APP__ENVIRONMENT=${ENVIRONMENT}
+APP__SIGNING_KEY=${SUMMARY_APP_KEY}
+CRYPT__KEY=${SUMMARY_CRYPT_KEY}
 
-DATABASE_URL=${SUMMARY_DATABASE_URL}
-REDIS_URL=${SUMMARY_REDIS_URL}
+SERVER__HOST=127.0.0.1
+SERVER__PORT=${SUMMARY_HTTP_PORT}
+WEBSOCKET__HOST=127.0.0.1
+WEBSOCKET__PORT=${SUMMARY_WS_PORT}
+
+DATABASE__URL=${SUMMARY_DATABASE_URL}
+REDIS__URL=${SUMMARY_REDIS_URL}
+REDIS__NAMESPACE=${REDIS_NAMESPACE}
 ENV
 
 chmod 600 "${ENV_FILE}"
@@ -688,15 +712,15 @@ for service_name in "${!SERVICE_MAP[@]}"; do
     SERVICES+=("${service_name}")
 done
 
-# Deploy-poll — only if storage is configured
+# Deploy-poll — only if deploy bucket is configured
 DEPLOY_POLL_SVC="${APP_ID}-deploy-poll"
 if [[ "${SKIP_DEPLOY_POLL}" == false ]]; then
     generate_deploy_poll_unit "${DEPLOY_POLL_SVC}"
     ok "Generated ${DEPLOY_POLL_SVC}.service"
     SERVICES+=("${DEPLOY_POLL_SVC}")
 else
-    warn "Skipping deploy-poll service (storage bucket not configured)."
-    warn "Configure config/storage.toml, re-run setup to enable."
+    warn "Skipping deploy-poll service (deploy bucket not configured)."
+    warn "Set DEPLOY_BUCKET in deploy.conf or .env, then re-run setup to enable."
 fi
 
 systemctl daemon-reload
@@ -734,7 +758,7 @@ for svc in "${SERVICES[@]}"; do
 done
 if [[ "${SKIP_DEPLOY_POLL}" == true ]]; then
     echo -e "${GREEN}│${NC}"
-    echo -e "${YELLOW}│  WARNING: deploy-poll disabled — configure storage bucket${NC}"
+    echo -e "${YELLOW}│  WARNING: deploy-poll disabled — configure deploy bucket${NC}"
 fi
 if [[ -n "${SUMMARY_DOMAIN}" ]]; then
     echo -e "${GREEN}│${NC}"

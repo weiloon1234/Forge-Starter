@@ -1,0 +1,16 @@
+.git
+.DS_Store
+
+.env
+.env.*
+!frontend/**/.env.production.local
+
+target
+logs
+node_modules
+frontend/**/node_modules
+
+scripts/.build.conf
+public
+storage
+tmp

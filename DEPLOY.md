@@ -1,122 +1,139 @@
 # Deployment Guide
 
-Step-by-step from a fresh Ubuntu server to a running application.
+This guide matches the current deployment scripts:
 
-**Example values:** app name `my-saas`, environment `staging`, domain `staging.my-saas.com`, server IP `203.0.113.50`.
+- `scripts/setup.sh` provisions an Ubuntu 24.04+ server.
+- `scripts/build.sh` builds locally in Docker and uploads an artifact to S3/R2.
+- `scripts/deploy-poll.sh` runs on the server, watches the bucket, deploys new versions, and runs migrations.
 
----
+Example values used below:
 
-## Prerequisites
+| Value | Example |
+|---|---|
+| App name | `my-saas` |
+| Environment | `staging` |
+| App ID | `my-saas-staging` |
+| Domain | `staging.my-saas.com` |
+| Server IP | `203.0.113.50` |
+| Repository | `git@github.com:your-org/my-saas.git` |
 
-| What | Where | Required |
-|------|-------|----------|
-| Ubuntu 24.04+ server | Cloud provider | Yes |
-| Docker Desktop | Local machine | Yes |
-| AWS CLI v2 | Local machine | Yes |
-| Git | Both | Yes |
-| Cloudflare R2 bucket | Cloudflare | Yes |
-| Domain with DNS access | DNS provider | Recommended |
+`APP_NAME` and `ENVIRONMENT` are important. The scripts derive paths and service names from them:
 
----
-
-## Part 1: Configure Storage (R2)
-
-The project uses one R2 bucket for both app storage and deployment artifacts. No separate "deploy bucket" needed.
-
-### 1.1 Create R2 Bucket
-
-1. [Cloudflare Dashboard](https://dash.cloudflare.com) > **R2 Object Storage** > **Create bucket**
-2. Name: `my-saas` (or any name)
-3. Click **Create bucket**
-
-### 1.2 Create R2 API Token
-
-1. **R2** > **Overview** > **Manage R2 API Tokens** > **Create API token**
-   - Token name: `deploy`
-   - Permissions: **Object Read & Write**
-   - Specify bucket: select your bucket
-2. **Save these values** (shown once):
-   ```
-   Access Key ID:     xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-   Secret Access Key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-   Endpoint:          https://<account-id>.r2.cloudflarestorage.com
-   ```
-
-### 1.3 Update config/storage.toml
-
-In your local project, fill in the R2 credentials:
-
-```toml
-[storage]
-default = "r2"
-
-[storage.disks.r2]
-driver = "s3"
-key = "your-access-key-id"
-secret = "your-secret-access-key"
-region = "auto"
-bucket = "my-saas"
-endpoint = "https://<account-id>.r2.cloudflarestorage.com"
-visibility = "private"
+```text
+APP_ID          = {APP_NAME}-{ENVIRONMENT}
+App directory   = /opt/{APP_ID}
+Artifact prefix = s3://{DEPLOY_BUCKET}/_deployments/{APP_NAME}/{ENVIRONMENT}
+Binary name     = app
+Services        = {APP_ID}-http, -worker, -scheduler, -websocket, -deploy-poll
 ```
 
-This file is read by both `build.sh` (local) and `deploy-poll.sh` (server) — one config, shared bucket.
+Use the same app name when running `scripts/setup.sh` on the server and `scripts/build.sh` locally. On the first run, type the app name explicitly instead of relying on the prompt default.
 
 ---
 
-## Part 2: Server Setup
+## 1. Prerequisites
 
-### 2.1 SSH into Your Server
+### Local machine
+
+- Git.
+- Docker Desktop or Docker daemon running.
+- AWS CLI v2 configured with credentials that can write to your S3/R2 deploy bucket.
+- A local `.env.staging` or `.env.production` file for deploy settings and public frontend build variables.
+
+### Server
+
+- Ubuntu 24.04+.
+- Root SSH access or a sudo-capable user.
+- DNS access if you want Nginx + Let's Encrypt SSL.
+- Git read access to this repository, usually through a GitHub deploy key.
+- AWS/R2 credentials that can read from the deploy bucket.
+
+### Deploy bucket
+
+Cloudflare R2 works well. The bucket stores only deployment artifacts:
+
+```text
+_deployments/{APP_NAME}/{ENVIRONMENT}/VERSION
+_deployments/{APP_NAME}/{ENVIRONMENT}/app-{version}.zip
+```
+
+Do not upload `.env` files to the bucket.
+
+---
+
+## 2. Create R2 Credentials
+
+In Cloudflare:
+
+1. Go to **R2 Object Storage**.
+2. Create or choose a bucket, for example `my-saas`.
+3. Create an R2 API token with **Object Read & Write** for that bucket.
+4. Save:
+   - Access Key ID
+   - Secret Access Key
+   - Endpoint, for example `https://<account-id>.r2.cloudflarestorage.com`
+
+Configure AWS CLI on your local machine:
+
+```bash
+aws configure
+```
+
+For R2, use the R2 access key and secret. The scripts pass the endpoint from `DEPLOY_ENDPOINT`; `DEPLOY_REGION=auto` is fine.
+
+You can verify access with:
+
+```bash
+aws s3 ls s3://my-saas --endpoint-url https://<account-id>.r2.cloudflarestorage.com
+```
+
+---
+
+## 3. Prepare the Server
+
+SSH into the server:
 
 ```bash
 ssh root@203.0.113.50
 ```
 
-### 2.2 Point DNS to Server
-
-Before proceeding, point your domain to the server IP:
+Point DNS at the server before requesting SSL:
 
 | Type | Name | Value |
-|------|------|-------|
-| A | staging.my-saas.com | 203.0.113.50 |
+|---|---|---|
+| A | `staging.my-saas.com` | `203.0.113.50` |
 
-DNS propagation may take a few minutes.
-
-### 2.3 Generate Deploy Key
+Create a read-only deploy key:
 
 ```bash
-ssh-keygen -t ed25519 -C "deploy@my-saas-staging" -f ~/.ssh/deploy_key -N ""
-cat ~/.ssh/deploy_key.pub
+ssh-keygen -t ed25519 -C "deploy@my-saas-staging" -f ~/.ssh/my_saas_deploy -N ""
+cat ~/.ssh/my_saas_deploy.pub
 ```
 
-Copy the public key output.
+Add the public key in GitHub:
 
-### 2.4 Add Deploy Key to GitHub
+```text
+Repository -> Settings -> Deploy keys -> Add deploy key
+```
 
-1. Repo > **Settings** > **Deploy keys** > **Add deploy key**
-   - Title: `my-saas-staging`
-   - Key: paste the public key
-   - Allow write access: **No**
+Leave write access disabled.
 
-### 2.5 Configure SSH for GitHub
+Configure SSH for GitHub:
 
 ```bash
 cat >> ~/.ssh/config <<'EOF'
 Host github.com
     HostName github.com
     User git
-    IdentityFile ~/.ssh/deploy_key
+    IdentityFile ~/.ssh/my_saas_deploy
     IdentitiesOnly yes
 EOF
-chmod 600 ~/.ssh/config
-```
 
-Test:
-```bash
+chmod 600 ~/.ssh/config
 ssh -T git@github.com
 ```
 
-### 2.6 Clone the Repo
+Clone the repository to a temporary location:
 
 ```bash
 cd /tmp
@@ -124,99 +141,126 @@ git clone git@github.com:your-org/my-saas.git
 cd my-saas
 ```
 
-### 2.7 Run Setup Script
+---
+
+## 4. Run Server Setup
+
+Run setup as root:
 
 ```bash
 sudo bash scripts/setup.sh
 ```
 
-The script installs everything and walks you through configuration:
+The script supports Ubuntu 24.04+ only. It installs and configures:
 
-```
-=== App Identity ===
-[?] App name [my-saas]:                              ← Enter
-[?] Environment (staging/production) [production]: staging
-[?] Domain for this app (e.g. staging.my-saas.com): staging.my-saas.com
+- Base packages: `build-essential`, `curl`, `wget`, `unzip`, `jq`, `openssl`, `ca-certificates`, `gnupg`.
+- System user: `forge`.
+- PostgreSQL 16 from the official PostgreSQL apt repository.
+- Redis.
+- AWS CLI v2.
+- Nginx.
+- Certbot with the Nginx plugin.
+- `/opt/{APP_ID}` app directory.
+- `/opt/{APP_ID}/config/deploy.conf`.
+- `/opt/{APP_ID}/.env`.
+- Dynamic systemd units for HTTP, worker, scheduler, websocket, and deploy polling.
 
-=== PostgreSQL 16 ===
-[?] PostgreSQL username [my_saas]:                    ← Enter
-[?] Database name [my_saas_staging]:                  ← Enter
-[?] Password for 'my_saas' (empty = auto-generate):  ← Enter (auto-generates)
-[INFO]  Auto-generated password: K7xm9Rp2...         ← note this
+Use values like:
 
-=== Redis ===
-[OK]    Redis installed.
-
-=== AWS CLI v2 ===
-[OK]    AWS CLI v2 installed.
-[?] Configure AWS credentials now? (y/N): y
-
-    AWS Access Key ID:     ← paste R2 access key
-    AWS Secret Access Key: ← paste R2 secret key
-    Default region name:   auto
-    Default output format: json
-
-=== Nginx ===
-[OK]    Nginx installed.
-[?] HTTP port for this app [3000]:                    ← Enter
-[?] WebSocket port for this app [3010]:               ← Enter
-[OK]    Nginx config written: /etc/nginx/sites-available/my-saas-staging
-
-=== SSL Certificate (Certbot) ===
-[?] Obtain SSL certificate for staging.my-saas.com now? (Y/n): y
-[?] Email for Let's Encrypt notifications: admin@my-saas.com
-[OK]    SSL certificate obtained and Nginx configured for HTTPS.
-
-=== Application Directory ===
-[OK]    Storage bucket: my-saas (from config/storage.toml)
-[?] Poll interval in seconds [30]:                    ← Enter
-
-=== .env Setup ===
-[?] DATABASE_URL [postgres://my_saas:K7xm...]:       ← Enter
-[?] REDIS_URL [redis://127.0.0.1:6379]:              ← Enter
-[OK]    .env written.
-
-=== Systemd Services ===
-[OK]    Generated my-saas-staging-http.service
-[OK]    Generated my-saas-staging-worker.service
-[OK]    Generated my-saas-staging-scheduler.service
-[OK]    Generated my-saas-staging-websocket.service
-[OK]    Generated my-saas-staging-deploy-poll.service
+```text
+App name: my-saas
+Environment (staging/production): staging
+Domain for this app: staging.my-saas.com
+PostgreSQL username: my_saas
+Database name: my_saas_staging
+Password for 'my_saas': leave blank to auto-generate
+Configure AWS credentials now: y
+HTTP port for this app: 3000
+WebSocket port for this app: 3010
+Obtain SSL certificate: y
+Deploy artifact bucket: my-saas
+Deploy artifact region: auto
+Deploy artifact endpoint: https://<account-id>.r2.cloudflarestorage.com
+Poll interval in seconds: 30
 ```
 
-### 2.8 Re-running Setup (Safe)
+The app name must match the app name you use later with `make deploy`. If the setup prompt has no default, enter `my-saas` explicitly.
 
-The setup script is safe to run multiple times. On re-run:
+Setup enables the generated systemd units but leaves them stopped. The first successful deployment starts the HTTP, worker, scheduler, and websocket services.
 
-- **Existing .env values are loaded as defaults** — just press Enter to keep them
-- **APP_KEY is preserved** (never regenerated if already set)
-- **PostgreSQL user/database creation is skipped** if they already exist
-- **Packages are not reinstalled** if already present
-- **Nginx config is not overwritten** if it already exists
-- **SSL certificate is not re-requested** if already obtained
-- **deploy.conf is updated** with current identity values
-
-This means you can re-run setup to change the poll interval, update after a config change, or fix a missed step — without losing any existing configuration.
-
-### 2.9 Start Deploy Polling
+Setup writes runtime config to:
 
 ```bash
-sudo systemctl start my-saas-staging-deploy-poll
+/opt/my-saas-staging/.env
 ```
 
-The server is now watching your R2 bucket for new deployments.
+It generates values like:
 
-### 2.10 Clean Up
+```env
+APP__NAME=my-saas
+APP__ENVIRONMENT=staging
+APP__SIGNING_KEY=...
+CRYPT__KEY=...
+SERVER__HOST=127.0.0.1
+SERVER__PORT=3000
+WEBSOCKET__HOST=127.0.0.1
+WEBSOCKET__PORT=3010
+DATABASE__URL=postgres://...
+REDIS__URL=redis://127.0.0.1:6379
+REDIS__NAMESPACE=my_saas_staging
+```
+
+Add production secrets and integration settings to this server `.env`, not to the deploy bucket:
 
 ```bash
-rm -rf /tmp/my-saas
+sudo nano /opt/my-saas-staging/.env
 ```
+
+Common additions:
+
+```env
+STORAGE__DISKS__R2__KEY=...
+STORAGE__DISKS__R2__SECRET=...
+STORAGE__DISKS__R2__BUCKET=...
+STORAGE__DISKS__R2__ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+STORAGE__DISKS__R2__URL=https://assets.example.com
+
+INTEGRATIONS__OPENROUTER__API_KEY=...
+INTEGRATIONS__FAL_AI__API_KEY=...
+
+INTEGRATIONS__STRIPE__SECRET_KEY=...
+INTEGRATIONS__STRIPE__PUBLIC_KEY=...
+INTEGRATIONS__STRIPE__WEBHOOK_SECRET=...
+INTEGRATIONS__STRIPE__APP_BASE_URL=https://staging.my-saas.com
+```
+
+Keep the file private:
+
+```bash
+sudo chmod 600 /opt/my-saas-staging/.env
+sudo chown forge:forge /opt/my-saas-staging/.env
+```
+
+### Re-running setup
+
+`scripts/setup.sh` is intended to be re-runnable.
+
+On later runs it:
+
+- Loads existing `/opt/{APP_ID}/.env` values as defaults.
+- Preserves `APP__SIGNING_KEY` and `CRYPT__KEY` when they already exist.
+- Reuses existing PostgreSQL users and databases.
+- Reuses existing Nginx and SSL config when present.
+- Rewrites `config/deploy.conf`.
+- Regenerates and enables the systemd units.
+
+If you left the deploy bucket blank, setup skips the deploy-poll service. Configure the bucket and re-run setup to generate it.
 
 ---
 
-## Part 3: Environment Files (Local)
+## 5. Prepare Local Deploy Env
 
-On your **local machine**:
+On your local machine:
 
 ```bash
 cp .env.staging.example .env.staging
@@ -225,338 +269,407 @@ cp .env.staging.example .env.staging
 Edit `.env.staging`:
 
 ```env
-# Server config (pulled by server from R2 bucket on deploy)
-APP_ENV=staging
-APP_KEY=base64:generate-me
-DATABASE_URL=postgres://my_saas:K7xm9Rp2...@127.0.0.1:5432/my_saas_staging
-REDIS_URL=redis://127.0.0.1:6379
+DEPLOY_BUCKET=my-saas
+DEPLOY_REGION=auto
+DEPLOY_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
 
-# Frontend build-time variables (baked into React during Docker build)
-VITE_API_URL=https://staging.my-saas.com
 VITE_APP_NAME=My SaaS (Staging)
+VITE_APP_ENV=staging
+VITE_APP_URL=https://staging.my-saas.com
+VITE_API_URL=https://staging.my-saas.com
+VITE_WS_URL=wss://staging.my-saas.com/ws
+VITE_STORAGE_URL=https://assets-staging.my-saas.com
 ```
+
+`scripts/build.sh` reads this file locally only:
+
+- `DEPLOY_*` chooses where to upload the artifact.
+- `VITE_*` values are public and are baked into the frontend bundles.
+
+Runtime secrets in `/opt/{APP_ID}/.env` are never uploaded by `scripts/build.sh`.
+
+The build script also accepts these deploy bucket keys if you prefer to reuse storage config names:
+
+```env
+STORAGE__DISKS__R2__BUCKET=my-saas
+STORAGE__DISKS__R2__REGION=auto
+STORAGE__DISKS__R2__ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+```
+
+Explicit `DEPLOY_*` values are simpler and recommended for deployment.
 
 ---
 
-## Part 4: First Build & Deploy
+## 6. Build and Upload
 
-On your **local machine**:
+On your local machine:
+
+```bash
+make deploy
+```
+
+or:
 
 ```bash
 bash scripts/build.sh
 ```
 
-```
-[OK]    aws CLI found
-[OK]    Docker is running
-[OK]    Disk: r2 (from config/storage.toml)
-[OK]    Bucket: my-saas
-[OK]    Endpoint: https://...r2.cloudflarestorage.com
+When prompted:
 
-App name [my-saas]:                        ← Enter
-Environment (staging/production) [staging]: ← Enter
-
-[INFO]  Reading VITE_* vars from .env.staging
-[OK]    VITE_API_URL=https://staging.my-saas.com
-[OK]    VITE_APP_NAME=My SaaS (Staging)
-
-[INFO]  Version: a1b2c3d-20260414120000
-[INFO]  Starting Docker build...
-... (first build takes several minutes)
-[OK]    Docker build completed in 312s
-[OK]    Archive created: 8.2M
-[OK]    Artifact uploaded
-[OK]    VERSION uploaded
-
-Upload .env.staging to bucket? (y/N): y     ← first deploy: upload .env
-[OK]    .env uploaded
+```text
+App name [forge-starter]: my-saas
+Environment (staging/production) [staging]: staging
 ```
 
-### Watch It Deploy (on server)
+The default app name can come from local config or the previous `scripts/.build.conf`. Type the same app name used during server setup if the default is different.
+
+The script:
+
+1. Checks `aws` and Docker.
+2. Saves app name and environment in `scripts/.build.conf` for next time.
+3. Copies public `VITE_*` values into temporary `frontend/*/.env.production.local` files.
+4. Builds every frontend portal directory that exists under `frontend/` (for example `admin` and `user`; projects may also add `website` or `team`).
+5. Builds the Rust release binary named `app`.
+6. Generates API docs.
+7. Extracts:
+   - `app`
+   - `public/`
+   - `config/`
+   - `locales/`
+   - `templates/`
+   - `docs/`
+8. Creates `app-{git-hash}-{timestamp}.zip`.
+9. Uploads the zip and `VERSION` file to:
+
+```text
+s3://my-saas/_deployments/my-saas/staging/
+```
+
+---
+
+## 7. Start Deployment Polling
+
+On the server:
 
 ```bash
-journalctl -u my-saas-staging-deploy-poll -f
+sudo systemctl start my-saas-staging-deploy-poll
+sudo journalctl -u my-saas-staging-deploy-poll -f
 ```
 
-Within 30 seconds:
+The poller checks the bucket immediately on startup, then every `POLL_INTERVAL` seconds.
 
-```
-[my-saas-staging] INFO  New version detected: a1b2c3d-20260414120000
-[my-saas-staging] INFO  Downloading artifact...
-[my-saas-staging] INFO  Deployed public assets.
-[my-saas-staging] INFO  my-saas-staging-http is running. Deployment successful.
-[my-saas-staging] INFO  Deployment complete: a1b2c3d-20260414120000
-```
+For each new version it:
 
-### Verify
+1. Downloads `VERSION`.
+2. Downloads `app-{version}.zip`.
+3. Verifies the zip.
+4. Backs up the current binary to `/opt/{APP_ID}/bin/app.bak`.
+5. Stops app services: HTTP, worker, scheduler, websocket.
+6. Extracts the new binary and assets.
+7. Copies `config/*.toml` while preserving `config/deploy.conf`.
+8. Copies `locales/`, `templates/`, and `docs/`.
+9. Runs `PROCESS=cli ./bin/app db:migrate`.
+10. Starts app services.
+11. Verifies the HTTP service is active.
+12. Writes `/opt/{APP_ID}/VERSION` on success.
+13. Restores the previous binary if HTTP startup fails.
+
+Migrations are automatic during deploy. You normally do not need to run them manually after each release.
+
+Verify the app:
 
 ```bash
 curl https://staging.my-saas.com/health
-# {"status":"ok"}
+```
+
+Expected response:
+
+```json
+{"status":"ok"}
 ```
 
 ---
 
-## Part 5: Database Migrations
+## 8. Subsequent Deployments
+
+Local machine:
+
+```bash
+make deploy
+```
+
+The build script remembers the previous app name and environment in `scripts/.build.conf`. Press Enter through the prompts if they are still correct.
+
+Server:
+
+```bash
+sudo journalctl -u my-saas-staging-deploy-poll -f
+```
+
+The server deploys automatically when the uploaded `VERSION` changes.
+
+---
+
+## 9. Production on the Same Server
+
+Run setup again with a different environment and different ports:
 
 ```bash
 ssh root@203.0.113.50
-cd /opt/my-saas-staging
-sudo -u forge PROCESS=cli ./bin/app db:migrate
-```
-
----
-
-## Part 6: Subsequent Deployments
-
-```bash
-# Make changes, commit, push
-bash scripts/build.sh
-# Press Enter through prompts (remembers previous values)
-# Server deploys automatically within 30 seconds
-```
-
----
-
-## Part 7: Production on Same Server
-
-Run setup.sh again:
-
-```bash
-ssh root@203.0.113.50
-cd /tmp && git clone git@github.com:your-org/my-saas.git && cd my-saas
+cd /tmp
+git clone git@github.com:your-org/my-saas.git my-saas-production-setup
+cd my-saas-production-setup
 sudo bash scripts/setup.sh
-# App name: my-saas
-# Environment: production
-# Domain: my-saas.com
-# HTTP port: 3001         ← different port!
-# WebSocket port: 3011
 ```
 
-| | Staging | Production |
+Example production values:
+
+```text
+App name: my-saas
+Environment: production
+Domain: my-saas.com
+HTTP port: 3001
+WebSocket port: 3011
+Deploy artifact bucket: my-saas
+Deploy artifact region: auto
+Deploy artifact endpoint: https://<account-id>.r2.cloudflarestorage.com
+```
+
+The two environments can share one deploy bucket because artifact paths include the environment.
+
+| Item | Staging | Production |
 |---|---|---|
-| Directory | `/opt/my-saas-staging/` | `/opt/my-saas-production/` |
+| App ID | `my-saas-staging` | `my-saas-production` |
+| Directory | `/opt/my-saas-staging` | `/opt/my-saas-production` |
 | Database | `my_saas_staging` | `my_saas_production` |
 | Domain | `staging.my-saas.com` | `my-saas.com` |
-| HTTP port | 3000 | 3001 |
-| Services | `my-saas-staging-*` | `my-saas-production-*` |
-| R2 path | `_deployments/my-saas/staging/` | `_deployments/my-saas/production/` |
+| HTTP port | `3000` | `3001` |
+| WebSocket port | `3010` | `3011` |
+| Artifact path | `_deployments/my-saas/staging/` | `_deployments/my-saas/production/` |
+
+Create `.env.production` locally and run:
+
+```bash
+make deploy
+```
+
+Choose `production` at the prompt.
 
 ---
 
-## Part 8: Useful Commands
+## 10. Useful Commands
 
-Replace `my-saas-staging` with your actual `{APP_NAME}-{ENVIRONMENT}`.
+Replace `my-saas-staging` with your actual `APP_ID`.
 
-### Deploy
+### Deployment
 
 ```bash
-# Check current deployed version
+# Current deployed version
 cat /opt/my-saas-staging/VERSION
 
-# Check what version is in R2 (what deploy-poll will pick up next)
+# Remote version in R2
 aws s3 cp s3://my-saas/_deployments/my-saas/staging/VERSION - \
     --endpoint-url https://<account-id>.r2.cloudflarestorage.com
 
-# Force deploy NOW (don't wait for poll interval)
+# Wake the poller immediately
 sudo systemctl restart my-saas-staging-deploy-poll
-# deploy-poll checks immediately on startup, then resumes normal polling
+
+# Pause deployments
+sudo systemctl stop my-saas-staging-deploy-poll
+
+# Resume deployments
+sudo systemctl start my-saas-staging-deploy-poll
 ```
 
 ### Logs
 
 ```bash
-# Tail logs (live) — pick the process you need
 sudo journalctl -u my-saas-staging-http -f
 sudo journalctl -u my-saas-staging-worker -f
 sudo journalctl -u my-saas-staging-scheduler -f
 sudo journalctl -u my-saas-staging-websocket -f
 sudo journalctl -u my-saas-staging-deploy-poll -f
 
-# Tail ALL app logs at once
 sudo journalctl -u 'my-saas-staging-*' -f
-
-# Logs from last 10 minutes
 sudo journalctl -u my-saas-staging-http --since "10 minutes ago"
-
-# Logs since last boot
-sudo journalctl -u my-saas-staging-http -b
-
-# Search for errors
-sudo journalctl -u my-saas-staging-http --since today | grep -i error
-
-# Last 100 lines
 sudo journalctl -u my-saas-staging-worker -n 100 --no-pager
 ```
 
-### Service Management
+### Services
 
 ```bash
-# Status of all services for this app
 systemctl list-units 'my-saas-staging-*'
-
-# Status of a specific service
 systemctl status my-saas-staging-http
 
-# Restart a single process
 sudo systemctl restart my-saas-staging-http
 sudo systemctl restart my-saas-staging-worker
 sudo systemctl restart my-saas-staging-scheduler
 sudo systemctl restart my-saas-staging-websocket
 
-# Restart ALL app processes (not deploy-poll)
 for svc in http worker scheduler websocket; do
     sudo systemctl restart my-saas-staging-$svc
 done
-
-# Stop a single process
-sudo systemctl stop my-saas-staging-worker
-
-# Start a single process
-sudo systemctl start my-saas-staging-worker
-
-# Stop ALL (maintenance)
-for svc in http worker scheduler websocket; do
-    sudo systemctl stop my-saas-staging-$svc
-done
-
-# Start ALL
-for svc in http worker scheduler websocket; do
-    sudo systemctl start my-saas-staging-$svc
-done
-
-# Stop deploy polling (pause deployments)
-sudo systemctl stop my-saas-staging-deploy-poll
-
-# Resume deploy polling
-sudo systemctl start my-saas-staging-deploy-poll
 ```
 
-### Database & CLI
+### CLI and Database
 
 ```bash
 cd /opt/my-saas-staging
 
-# Migrations
 sudo -u forge PROCESS=cli ./bin/app db:migrate
 sudo -u forge PROCESS=cli ./bin/app db:rollback
 sudo -u forge PROCESS=cli ./bin/app db:seed
-
-# List all routes
 sudo -u forge PROCESS=cli ./bin/app routes:list
-
-# Any CLI command
 sudo -u forge PROCESS=cli ./bin/app <command>
 ```
 
-### Nginx & SSL
+### Nginx and SSL
 
 ```bash
-# Test Nginx config (always test before reload)
 sudo nginx -t
-
-# Reload Nginx (apply config changes)
 sudo nginx -t && sudo systemctl reload nginx
 
-# Check SSL certificate status
 sudo certbot certificates
-
-# Renew SSL (automatic via timer, manual if needed)
 sudo certbot renew
 
-# Force SSL renewal
-sudo certbot renew --force-renewal
-
-# Edit Nginx config for this app
 sudo nano /etc/nginx/sites-available/my-saas-staging
 ```
 
 ---
 
-## Part 9: Troubleshooting
+## 11. Troubleshooting
 
-### Deploy-poll not working
+### Deploy-poll service is missing
+
+Setup skips deploy-poll if the deploy bucket prompt is blank.
+
+Fix:
 
 ```bash
-# Check status
-systemctl status my-saas-staging-deploy-poll
-journalctl -u my-saas-staging-deploy-poll --since "5 minutes ago"
-
-# Common causes:
-# 1. AWS/R2 credentials not configured → aws configure
-# 2. Bucket empty in storage.toml → fill in config/storage.toml, re-run setup
-# 3. Lock stuck → rm /opt/my-saas-staging/deploy-poll.lock
+cd /tmp/my-saas
+sudo bash scripts/setup.sh
 ```
 
-### Service won't start
+Enter `DEPLOY_BUCKET`, `DEPLOY_REGION`, and `DEPLOY_ENDPOINT` when prompted.
+
+### Deploy-poll cannot read the bucket
+
+Check logs:
 
 ```bash
-journalctl -u my-saas-staging-http --since "2 minutes ago"
-
-# Port in use → ss -tlnp | grep 3000
-# Database down → systemctl status postgresql
-# Redis down → systemctl status redis-server
-# Binary missing → ls -la /opt/my-saas-staging/bin/app
+sudo journalctl -u my-saas-staging-deploy-poll --since "5 minutes ago"
 ```
 
-### SSL issues
+Common fixes:
 
 ```bash
-# Check certificate
-sudo certbot certificates
+sudo aws configure
+sudo cat /opt/my-saas-staging/config/deploy.conf
+```
 
-# Force renewal
-sudo certbot renew --force-renewal
+`my-saas-staging-deploy-poll` runs as root, so `sudo aws configure` configures the credentials the service actually uses.
 
-# Check Nginx config
-sudo nginx -t
+Confirm:
+
+- `DEPLOY_BUCKET` is set.
+- `DEPLOY_ENDPOINT` is set for R2.
+- The server AWS credentials can read the bucket.
+
+### Deployment keeps retrying
+
+The poller retries on the next interval if deploy fails.
+
+Check:
+
+```bash
+sudo journalctl -u my-saas-staging-deploy-poll -f
+sudo journalctl -u my-saas-staging-http --since "10 minutes ago"
+```
+
+Common causes:
+
+- Artifact zip was interrupted or corrupted.
+- Runtime `.env` is missing required secrets.
+- Database migration failed.
+- HTTP service failed to start.
+- A port is already in use.
+
+Useful checks:
+
+```bash
+sudo ss -tlnp | grep -E '3000|3010'
+sudo systemctl status postgresql
+sudo systemctl status redis-server
+ls -la /opt/my-saas-staging/bin/app
 ```
 
 ### Manual rollback
 
+`deploy-poll.sh` automatically restores `bin/app.bak` if the HTTP service does not start after deployment. If you need to roll back manually:
+
 ```bash
-# Stop services
 for svc in http worker scheduler websocket; do
     sudo systemctl stop my-saas-staging-$svc
 done
 
-# Restore previous binary
-cp /opt/my-saas-staging/bin/app.bak /opt/my-saas-staging/bin/app
+sudo cp /opt/my-saas-staging/bin/app.bak /opt/my-saas-staging/bin/app
+sudo chmod +x /opt/my-saas-staging/bin/app
 
-# Start services
 for svc in http worker scheduler websocket; do
     sudo systemctl start my-saas-staging-$svc
 done
 ```
 
+If `app.bak` has already been removed after a successful deploy, upload and deploy an older artifact by writing that version to the remote `VERSION` file.
+
 ---
 
-## Architecture
+## 12. Architecture
 
-```
-Local Machine                        R2 Bucket (shared)                    Server
-─────────────                        ──────────────────                    ──────
+```text
+Local machine
+  .env.staging or .env.production
+    - DEPLOY_* bucket settings
+    - public VITE_* frontend settings
 
-config/storage.toml ──── credentials ────────────────────── config/storage.toml
-        │                                                          │
-bash scripts/build.sh                                       deploy-poll.sh
-  │ Docker build                  _deployments/               │ polls every 30s
-  │ Frontend (Vite+React)           my-saas/staging/          │
-  │ Backend (Rust)                    VERSION        ◄────────┤ compare
-  │ Zip + Upload ──────────────►      app-{ver}.zip  ◄────────┤ download
-  │                                   .env           ◄────────┤ download
-  ▼                                                            ▼
-                                                         /opt/my-saas-staging/
-                                                           bin/app
-                                                           public/
-                                                           config/
-                                                           .env
-                                                               │
-                                                           Nginx (SSL) ← :443
-                                                               │
-                                                           systemd services
-                                                             my-saas-staging-http
-                                                             my-saas-staging-worker
-                                                             my-saas-staging-scheduler
-                                                             my-saas-staging-websocket
+  make deploy
+    -> scripts/build.sh
+    -> Docker builds frontend portals found under frontend/
+    -> Docker builds Rust binary: app
+    -> Docker generates docs/api
+    -> uploads app-{version}.zip
+    -> uploads VERSION
+
+S3/R2 bucket
+  _deployments/my-saas/staging/
+    VERSION
+    app-{version}.zip
+
+Ubuntu 24.04+ server
+  /opt/my-saas-staging/
+    .env                 server-only runtime config and secrets
+    VERSION              last successful deployed version
+    bin/app              current binary
+    config/deploy.conf   deploy poller config
+    config/*.toml        app config from artifact
+    public/              frontend assets from artifact
+    locales/             translations from artifact
+    templates/           templates from artifact
+    docs/                API docs from artifact
+
+  systemd
+    my-saas-staging-deploy-poll
+      -> polls S3/R2
+      -> deploys artifact
+      -> runs db:migrate
+      -> restarts app services
+
+    my-saas-staging-http
+    my-saas-staging-worker
+    my-saas-staging-scheduler
+    my-saas-staging-websocket
+
+  Nginx
+    https://staging.my-saas.com -> 127.0.0.1:3000
+    wss://staging.my-saas.com/ws -> 127.0.0.1:3010
 ```
