@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::PathBuf;
 
 use async_trait::async_trait;
 use forge::prelude::*;
@@ -9,14 +9,30 @@ const PAGE_COVER_COLLECTION: &str = "cover";
 
 pub struct Entry;
 
+#[derive(Clone, Copy)]
+struct SeededCoverAsset {
+    name: &'static str,
+    bytes: &'static [u8],
+}
+
 struct SeededPage<'a> {
     slug: &'a str,
-    cover_asset: &'a str,
+    cover_asset: SeededCoverAsset,
     title_en: &'a str,
     title_zh: &'a str,
     content_en: &'a str,
     content_zh: &'a str,
 }
+
+const PRIVACY_POLICY_COVER: SeededCoverAsset = SeededCoverAsset {
+    name: "privacy-policy-cover.svg",
+    bytes: include_bytes!("assets/pages/privacy-policy-cover.svg"),
+};
+
+const TERMS_AND_CONDITIONS_COVER: SeededCoverAsset = SeededCoverAsset {
+    name: "terms-and-conditions-cover.svg",
+    bytes: include_bytes!("assets/pages/terms-and-conditions-cover.svg"),
+};
 
 #[async_trait]
 impl SeederFile for Entry {
@@ -38,7 +54,7 @@ fn seeded_pages() -> Vec<SeededPage<'static>> {
     vec![
         SeededPage {
             slug: "privacy-policy",
-            cover_asset: "database/seeders/assets/pages/privacy-policy-cover.svg",
+            cover_asset: PRIVACY_POLICY_COVER,
             title_en: "Privacy Policy",
             title_zh: "隐私政策",
             content_en: r#"
@@ -76,7 +92,7 @@ fn seeded_pages() -> Vec<SeededPage<'static>> {
         },
         SeededPage {
             slug: "terms-and-conditions",
-            cover_asset: "database/seeders/assets/pages/terms-and-conditions-cover.svg",
+            cover_asset: TERMS_AND_CONDITIONS_COVER,
             title_en: "Terms and Conditions",
             title_zh: "条款与条件",
             content_en: r#"
@@ -172,31 +188,41 @@ async fn ensure_translation(
     Ok(())
 }
 
-async fn ensure_cover(app: &AppContext, page: &Page, relative_asset_path: &str) -> Result<()> {
+async fn ensure_cover(app: &AppContext, page: &Page, cover: SeededCoverAsset) -> Result<()> {
     if page.attachment(app, PAGE_COVER_COLLECTION).await?.is_some() {
         return Ok(());
     }
 
-    let asset_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(relative_asset_path);
-    let metadata = tokio::fs::metadata(&asset_path).await.map_err(Error::other)?;
-    let original_name = asset_path
-        .file_name()
-        .and_then(|name| name.to_str())
-        .unwrap_or("cover.svg")
-        .to_string();
+    let temp_path = seeded_cover_temp_path(page, cover);
+    tokio::fs::write(&temp_path, cover.bytes)
+        .await
+        .map_err(Error::other)?;
 
-    page.attach(
-        app,
-        PAGE_COVER_COLLECTION,
-        UploadedFile {
-            field_name: "cover".to_string(),
-            original_name: Some(original_name),
-            content_type: Some("image/svg+xml".to_string()),
-            size: metadata.len(),
-            temp_path: asset_path,
-        },
-    )
-    .await?;
+    let attach_result = page
+        .attach(
+            app,
+            PAGE_COVER_COLLECTION,
+            UploadedFile {
+                field_name: "cover".to_string(),
+                original_name: Some(cover.name.to_string()),
+                content_type: Some("image/svg+xml".to_string()),
+                size: cover.bytes.len() as u64,
+                temp_path: temp_path.clone(),
+            },
+        )
+        .await;
+
+    let _ = tokio::fs::remove_file(&temp_path).await;
+    attach_result?;
 
     Ok(())
+}
+
+fn seeded_cover_temp_path(page: &Page, cover: SeededCoverAsset) -> PathBuf {
+    std::env::temp_dir().join(format!(
+        "forge-seed-page-cover-{}-{}-{}",
+        std::process::id(),
+        page.id,
+        UploadedFile::normalize_name(cover.name)
+    ))
 }

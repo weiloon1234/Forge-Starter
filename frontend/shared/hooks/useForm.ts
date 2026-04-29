@@ -5,7 +5,7 @@ import type {
 } from "@shared/types/form";
 import axios from "axios";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@shared/toast";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -29,6 +29,20 @@ function extractErrorMap(error: unknown): Record<string, string[]> | null {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Something went wrong";
+}
+
+function axiosErrorMessage(error: unknown): string {
+  if (!axios.isAxiosError(error)) {
+    return errorMessage(error);
+  }
+
+  const data = error.response?.data;
+  if (isRecord(data) && typeof data.message === "string") {
+    const message = data.message.trim();
+    if (message) return message;
+  }
+
+  return error.message || "Something went wrong";
 }
 
 export function useForm<T extends Record<string, unknown>>(
@@ -92,6 +106,8 @@ export function useForm<T extends Record<string, unknown>>(
       }
       if (busy) return;
 
+      clearErrors();
+
       if (validateRef.current) {
         const validationErrors = validateRef.current(values);
         const hasErrors = Object.values(validationErrors).some(
@@ -103,7 +119,6 @@ export function useForm<T extends Record<string, unknown>>(
         }
       }
 
-      clearErrors();
       setBusy(true);
 
       try {
@@ -125,7 +140,9 @@ export function useForm<T extends Record<string, unknown>>(
 
           setErrorsState(fieldErrs);
           setFormErrors(orphan);
-        } else if (!axios.isAxiosError(err)) {
+        } else if (axios.isAxiosError(err)) {
+          setFormErrors([axiosErrorMessage(err)]);
+        } else {
           toast.error(errorMessage(err));
         }
       } finally {
@@ -147,6 +164,7 @@ export function useForm<T extends Record<string, unknown>>(
           delete next[name];
           return next;
         });
+        setFormErrors([]);
       },
       onBlur: () => {
         setTouched((prev) => ({ ...prev, [name]: true }));

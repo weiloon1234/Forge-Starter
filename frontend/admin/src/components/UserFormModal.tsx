@@ -14,7 +14,7 @@ import type {
 import { Pencil } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { toast } from "@shared/toast";
 import { api } from "@/api";
 import { auth } from "@/auth";
 import { ChangeUserIntroducerModal } from "@/components/ChangeUserIntroducerModal";

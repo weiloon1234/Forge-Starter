@@ -11,7 +11,7 @@ import { CreditTypeOptions } from "@shared/types/generated";
 import { enumLabel } from "@shared/utils";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { toast } from "@shared/toast";
 import { api } from "@/api";
 import {
   balanceForCreditType,

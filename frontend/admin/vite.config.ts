@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   base: "/admin/",
   resolve: {
-    dedupe: ["react", "react-dom", "i18next", "react-i18next"],
+    dedupe: ["react", "react-dom", "i18next", "react-i18next", "sonner"],
     alias: {
       "@": path.resolve(__dirname, "src"),
       "@shared": path.resolve(__dirname, "../shared"),

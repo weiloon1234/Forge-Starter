@@ -3,7 +3,7 @@ import { ModalProvider } from "@shared/modal";
 import type { BadgeCountsResponse } from "@shared/types/generated";
 import { useEffect } from "react";
 import { RouterProvider } from "react-router-dom";
-import { Toaster } from "sonner";
+import { Toaster } from "@shared/toast";
 import { api } from "@/api";
 import { auth } from "@/auth";
 import { LoginPage } from "@/pages/LoginPage";

@@ -309,6 +309,12 @@ VITE_WS_URL=wss://staging.my-saas.com/ws
 VITE_STORAGE_URL=https://assets-staging.my-saas.com
 ```
 
+`VITE_WS_URL` must be a public browser URL (`wss://...` for HTTPS sites), not
+`ws://127.0.0.1:3010/ws`. If it is omitted, the frontend derives
+`wss://<current-host>/ws` on production HTTPS pages. The server-side
+`WEBSOCKET__HOST=127.0.0.1` and `WEBSOCKET__PORT=3010` stay private; Nginx
+proxies the public `/ws` path to that local process.
+
 `scripts/build.sh` reads this file locally only:
 
 - `DEPLOY_*` chooses where to upload the artifact.
@@ -636,6 +642,21 @@ sudo certbot certificates
 sudo certbot renew
 
 sudo nano /etc/nginx/sites-available/my-saas-staging
+```
+
+For websocket production traffic, the Nginx site must include:
+
+```nginx
+location /ws {
+    proxy_pass http://127.0.0.1:3010;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
 ```
 
 ---

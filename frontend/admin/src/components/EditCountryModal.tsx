@@ -8,7 +8,7 @@ import type {
 import { CountryStatusOptions } from "@shared/types/generated";
 import { enumOptions } from "@shared/utils/enumOptions";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { toast } from "@shared/toast";
 import { api } from "@/api";
 
 interface EditCountryModalProps {

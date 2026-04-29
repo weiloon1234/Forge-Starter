@@ -3,7 +3,7 @@ import { useForm } from "@shared/hooks";
 import { ModalBody, ModalFooter } from "@shared/modal";
 import type { ChangeAdminPasswordRequest } from "@shared/types/generated";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { toast } from "@shared/toast";
 import { api } from "@/api";
 
 interface ChangePasswordModalProps {

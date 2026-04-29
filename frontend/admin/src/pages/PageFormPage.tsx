@@ -11,7 +11,7 @@ import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { toast } from "sonner";
+import { toast } from "@shared/toast";
 import { api } from "@/api";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { ConfirmDeletePageModal } from "@/components/ConfirmDeletePageModal";

@@ -1,7 +1,7 @@
 import { localeStore } from "@shared/i18n/localeStore";
 import { getBrowserTimezone } from "@shared/utils";
 import axios, { type AxiosError, type AxiosInstance } from "axios";
-import { toast } from "sonner";
+import { toast } from "@shared/toast";
 
 // ── Types ──────────────────────────────────────────────
 

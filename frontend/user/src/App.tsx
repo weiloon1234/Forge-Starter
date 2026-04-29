@@ -1,7 +1,7 @@
 import { ModalProvider } from "@shared/modal";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Toaster } from "sonner";
+import { Toaster } from "@shared/toast";
 import { auth } from "@/auth";
 
 export default function App() {

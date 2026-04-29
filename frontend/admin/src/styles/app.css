@@ -288,12 +288,6 @@ body {
     color: var(--color-text-muted);
 }
 
-.sf-login-error {
-    @apply text-sm text-center px-3 py-2 rounded-lg mb-4;
-    color: var(--color-text-error);
-    background: var(--color-danger-light);
-}
-
 .sf-login-form {
     @apply space-y-1;
 }

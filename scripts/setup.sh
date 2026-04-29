@@ -651,6 +651,9 @@ if [[ -n "${DOMAIN}" ]]; then
 
     if [[ -f "${NGINX_CONF}" ]]; then
         ok "Nginx config already exists: ${NGINX_CONF}"
+        if ! grep -qE 'location[[:space:]]+/ws([[:space:]]|\\{|$)' "${NGINX_CONF}"; then
+            warn "Nginx config is missing a /ws websocket proxy. Add it manually so browsers can connect to wss://${DOMAIN}/ws."
+        fi
     else
         HTTP_PORT="$(ask "HTTP port for this app" "${EXISTING_SERVER_PORT:-3000}")"
         WS_PORT="$(ask "WebSocket port for this app" "${EXISTING_WS_PORT:-3010}")"

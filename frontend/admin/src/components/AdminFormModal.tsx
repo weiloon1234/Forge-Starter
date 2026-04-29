@@ -13,7 +13,7 @@ import { enumOptions } from "@shared/utils";
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { toast } from "@shared/toast";
 import { adminFormModeForTarget, canDeleteAdminTarget } from "@/adminAccess";
 import {
   type AdminFormValues,
