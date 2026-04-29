@@ -15,7 +15,6 @@ Example values used below:
 | App ID | `my-saas-staging` |
 | Domain | `staging.my-saas.com` |
 | Server IP | `203.0.113.50` |
-| Repository | `git@github.com:your-org/my-saas.git` |
 
 `APP_NAME` and `ENVIRONMENT` are important. The scripts derive paths and service names from them:
 
@@ -24,10 +23,10 @@ APP_ID          = {APP_NAME}-{ENVIRONMENT}
 App directory   = /opt/{APP_ID}
 Artifact prefix = s3://{DEPLOY_BUCKET}/_deployments/{APP_NAME}/{ENVIRONMENT}
 Binary name     = app
-Services        = {APP_ID}-http, -worker, -scheduler, -websocket, -deploy-poll
+Services        = {APP_ID}-http, {APP_ID}-worker, {APP_ID}-scheduler, {APP_ID}-websocket, {APP_ID}-deploy-poll
 ```
 
-Use the same app name when running `scripts/setup.sh` on the server and `scripts/build.sh` locally. On the first run, type the app name explicitly instead of relying on the prompt default.
+Use the same app name when running `scripts/setup.sh` on the server and `scripts/build.sh` locally. On the first run, type the app name explicitly instead of relying on the prompt default. A lowercase slug like `my-saas` is recommended because the value is used directly in paths and systemd unit names.
 
 ---
 
@@ -45,7 +44,7 @@ Use the same app name when running `scripts/setup.sh` on the server and `scripts
 - Ubuntu 24.04+.
 - Root SSH access or a sudo-capable user.
 - DNS access if you want Nginx + Let's Encrypt SSL.
-- Git read access to this repository, usually through a GitHub deploy key.
+- A temporary copy of `scripts/setup.sh` and `scripts/deploy-poll.sh`.
 - AWS/R2 credentials that can read from the deploy bucket.
 
 ### Deploy bucket
@@ -58,6 +57,8 @@ _deployments/{APP_NAME}/{ENVIRONMENT}/app-{version}.zip
 ```
 
 Do not upload `.env` files to the bucket.
+
+The build script keeps the newest 5 `app-*.zip` files per app/environment prefix by default and deletes older matching ZIP files after a successful upload. The `VERSION` file is never removed by retention cleanup.
 
 ---
 
@@ -79,7 +80,16 @@ Configure AWS CLI on your local machine:
 aws configure
 ```
 
-For R2, use the R2 access key and secret. The scripts pass the endpoint from `DEPLOY_ENDPOINT`; `DEPLOY_REGION=auto` is fine.
+The AWS CLI is used because R2 speaks the S3-compatible API. For R2, enter:
+
+```text
+AWS Access Key ID:     your R2 Access Key ID
+AWS Secret Access Key: your R2 Secret Access Key
+Default region name:   auto
+Default output format: json
+```
+
+The secret access key is different from the access key ID. `Default output format` only controls how AWS CLI command output is printed (`json`, `text`, or `table`); `json` is a good default. The scripts pass the endpoint from `DEPLOY_ENDPOINT`; `DEPLOY_REGION=auto` is fine for R2.
 
 You can verify access with:
 
@@ -91,55 +101,21 @@ aws s3 ls s3://my-saas --endpoint-url https://<account-id>.r2.cloudflarestorage.
 
 ## 3. Prepare the Server
 
-SSH into the server:
-
-```bash
-ssh root@203.0.113.50
-```
-
 Point DNS at the server before requesting SSL:
 
 | Type | Name | Value |
 |---|---|---|
 | A | `staging.my-saas.com` | `203.0.113.50` |
 
-Create a read-only deploy key:
+Copy only the setup scripts to a temporary server directory:
 
 ```bash
-ssh-keygen -t ed25519 -C "deploy@my-saas-staging" -f ~/.ssh/my_saas_deploy -N ""
-cat ~/.ssh/my_saas_deploy.pub
+# Run locally from the project root
+ssh root@203.0.113.50 'rm -rf /tmp/my-saas-setup && mkdir -p /tmp/my-saas-setup/scripts'
+scp scripts/setup.sh scripts/deploy-poll.sh root@203.0.113.50:/tmp/my-saas-setup/scripts/
 ```
 
-Add the public key in GitHub:
-
-```text
-Repository -> Settings -> Deploy keys -> Add deploy key
-```
-
-Leave write access disabled.
-
-Configure SSH for GitHub:
-
-```bash
-cat >> ~/.ssh/config <<'EOF'
-Host github.com
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/my_saas_deploy
-    IdentitiesOnly yes
-EOF
-
-chmod 600 ~/.ssh/config
-ssh -T git@github.com
-```
-
-Clone the repository to a temporary location:
-
-```bash
-cd /tmp
-git clone git@github.com:your-org/my-saas.git
-cd my-saas
-```
+Then SSH into the server and run setup from that temporary directory. The server does not need a permanent source checkout.
 
 ---
 
@@ -148,6 +124,8 @@ cd my-saas
 Run setup as root:
 
 ```bash
+ssh root@203.0.113.50
+cd /tmp/my-saas-setup
 sudo bash scripts/setup.sh
 ```
 
@@ -163,6 +141,7 @@ The script supports Ubuntu 24.04+ only. It installs and configures:
 - `/opt/{APP_ID}` app directory.
 - `/opt/{APP_ID}/config/deploy.conf`.
 - `/opt/{APP_ID}/.env`.
+- `/opt/{APP_ID}/Makefile` helper commands.
 - Dynamic systemd units for HTTP, worker, scheduler, websocket, and deploy polling.
 
 Use values like:
@@ -174,7 +153,11 @@ Domain for this app: staging.my-saas.com
 PostgreSQL username: my_saas
 Database name: my_saas_staging
 Password for 'my_saas': leave blank to auto-generate
-Configure AWS credentials now: y
+Configure S3-compatible credentials now: y
+S3-compatible Access Key ID: <R2 Access Key ID>
+S3-compatible Secret Access Key: <R2 Secret Access Key>
+Default region: auto
+Default output format: json
 HTTP port for this app: 3000
 WebSocket port for this app: 3010
 Obtain SSL certificate: y
@@ -185,6 +168,10 @@ Poll interval in seconds: 30
 ```
 
 The app name must match the app name you use later with `make deploy`. If the setup prompt has no default, enter `my-saas` explicitly.
+
+PostgreSQL usernames, database names, and Redis namespaces are normalized to lowercase SQL-safe identifiers by default. For example, app name `MediaForge` with environment `production` defaults to PostgreSQL user `mediaforge` and database `mediaforge_production`.
+
+Setup also installs the PostgreSQL runtime primitives the starter migrations need, including `pgcrypto` and a `uuidv7()` fallback for PostgreSQL 16.
 
 Setup enables the generated systemd units but leaves them stopped. The first successful deployment starts the HTTP, worker, scheduler, and websocket services.
 
@@ -256,6 +243,42 @@ On later runs it:
 
 If you left the deploy bucket blank, setup skips the deploy-poll service. Configure the bucket and re-run setup to generate it.
 
+After setup finishes, remove the temporary setup copy:
+
+```bash
+rm -rf /tmp/my-saas-setup
+```
+
+The long-lived server app directory should be `/opt/{APP_ID}` only. It contains runtime files, compiled artifacts, config, assets, and helper scripts, not the project source tree.
+
+### Server cleanup checklist
+
+After setup or manual deploy-helper testing, remove temporary source or script copies from the server:
+
+```bash
+# Temporary setup folder from this guide
+rm -rf /tmp/my-saas-setup
+
+# If you temporarily cloned or pulled the full source on the server, remove it too
+rm -rf /tmp/my-saas
+rm -rf /tmp/mediaforge
+
+# If you copied helper scripts through /tmp during debugging
+rm -f /tmp/deploy-poll.sh /tmp/setup.sh
+```
+
+Useful checks:
+
+```bash
+# /opt should not contain a project source checkout
+find /opt -maxdepth 3 \( -name .git -o -name Cargo.toml -o -name package.json \) -print
+
+# /tmp should not keep old full project checkouts
+find /tmp -maxdepth 1 -type d \( -iname '*my-saas*' -o -iname '*mediaforge*' -o -iname '*daily-deal*' \) -print
+```
+
+Do not delete `/opt/{APP_ID}/.env`, `/opt/{APP_ID}/config/deploy.conf`, `/opt/{APP_ID}/scripts/deploy-poll.sh`, `/opt/{APP_ID}/Makefile`, or `/root/.aws`; those are runtime/deploy files the server still needs.
+
 ---
 
 ## 5. Prepare Local Deploy Env
@@ -272,6 +295,11 @@ Edit `.env.staging`:
 DEPLOY_BUCKET=my-saas
 DEPLOY_REGION=auto
 DEPLOY_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+DEPLOY_ACCESS_KEY_ID=<R2 Access Key ID>
+DEPLOY_SECRET_ACCESS_KEY=<R2 Secret Access Key>
+DEPLOY_RETAIN_RELEASES=5
+DEPLOY_DOCKER_CLEANUP=aggressive
+DEPLOY_DOCKER_PLATFORM=linux/amd64
 
 VITE_APP_NAME=My SaaS (Staging)
 VITE_APP_ENV=staging
@@ -284,6 +312,10 @@ VITE_STORAGE_URL=https://assets-staging.my-saas.com
 `scripts/build.sh` reads this file locally only:
 
 - `DEPLOY_*` chooses where to upload the artifact.
+- `DEPLOY_ACCESS_KEY_ID` and `DEPLOY_SECRET_ACCESS_KEY` authenticate the upload. They are exported only for the local `aws s3 cp` commands and are not printed or uploaded.
+- `DEPLOY_RETAIN_RELEASES` keeps only the newest matching `app-*.zip` files in this app/environment bucket prefix.
+- `DEPLOY_DOCKER_CLEANUP` controls local Docker cleanup after successful deploy: `aggressive`, `balanced`, `conservative`, or `off`.
+- `DEPLOY_DOCKER_PLATFORM` controls the Linux platform used for the Docker build. Keep `linux/amd64` for typical x86_64 Ubuntu servers, especially when building from Apple Silicon.
 - `VITE_*` values are public and are baked into the frontend bundles.
 
 Runtime secrets in `/opt/{APP_ID}/.env` are never uploaded by `scripts/build.sh`.
@@ -294,6 +326,8 @@ The build script also accepts these deploy bucket keys if you prefer to reuse st
 STORAGE__DISKS__R2__BUCKET=my-saas
 STORAGE__DISKS__R2__REGION=auto
 STORAGE__DISKS__R2__ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+STORAGE__DISKS__R2__KEY=<R2 Access Key ID>
+STORAGE__DISKS__R2__SECRET=<R2 Secret Access Key>
 ```
 
 Explicit `DEPLOY_*` values are simpler and recommended for deployment.
@@ -329,15 +363,15 @@ The script:
 2. Saves app name and environment in `scripts/.build.conf` for next time.
 3. Copies public `VITE_*` values into temporary `frontend/*/.env.production.local` files.
 4. Builds every frontend portal directory that exists under `frontend/` (for example `admin` and `user`; projects may also add `website` or `team`).
-5. Builds the Rust release binary named `app`.
-6. Generates API docs.
-7. Extracts:
+5. Builds the Rust release binary named `app` for `DEPLOY_DOCKER_PLATFORM` (`linux/amd64` by default).
+6. Extracts:
    - `app`
    - `public/`
-   - `config/`
+   - `config/*.toml`
    - `locales/`
    - `templates/`
-   - `docs/`
+   - `docs/` placeholder
+7. Verifies the zip contains runtime files only. It aborts before upload if it finds `.env`, source folders, Cargo manifests, `.git`, `node_modules`, `target`, `scripts`, `database`, or tests.
 8. Creates `app-{git-hash}-{timestamp}.zip`.
 9. Uploads the zip and `VERSION` file to:
 
@@ -345,11 +379,64 @@ The script:
 s3://my-saas/_deployments/my-saas/staging/
 ```
 
+10. Deletes older `app-*.zip` files in that prefix, keeping the newest 5 by default.
+11. Runs local Docker cleanup. The default is `aggressive`, which removes the deploy image and prunes Docker build cache.
+
+API docs are not generated inside deploy Docker builds because the Forge CLI bootstrap opens runtime services such as the database. Run `make api-docs` locally when you need developer docs.
+
 ---
 
 ## 7. Start Deployment Polling
 
-On the server:
+On the server, start the deploy-poll systemd service for your real `APP_ID`.
+
+The name is not literally `my-saas-staging-deploy-poll` unless you used:
+
+```text
+App name: my-saas
+Environment: staging
+```
+
+The mapping is:
+
+```text
+APP_ID = {APP_NAME}-{ENVIRONMENT}
+App directory = /opt/{APP_ID}
+Deploy poll service = {APP_ID}-deploy-poll.service
+```
+
+Use the exact `APP_ID` casing from `/opt/{APP_ID}` or `/opt/{APP_ID}/config/deploy.conf`. Linux paths and systemd unit names are case-sensitive, so `MediaForge-production-deploy-poll` and `Mediaforge-production-deploy-poll` are different names.
+
+Examples:
+
+| App name | Environment | Deploy poll service |
+|---|---|---|
+| `my-saas` | `staging` | `my-saas-staging-deploy-poll.service` |
+| `mediaforge-new` | `production` | `mediaforge-new-production-deploy-poll.service` |
+| `daily-deal` | `staging` | `daily-deal-staging-deploy-poll.service` |
+
+Use these commands to discover what setup actually generated:
+
+```bash
+# Similar to `supervisorctl status`: list this app's loaded systemd services
+sudo systemctl list-units --type=service --all 'my-saas-staging-*'
+
+# List installed unit files, including services that have not started yet
+sudo systemctl list-unit-files 'my-saas-staging-*'
+
+# Find all Forge deploy-poll service files on the server
+sudo find /etc/systemd/system -maxdepth 1 -name '*deploy-poll.service' -printf '%f\n'
+
+# Show APP_ID values from installed app deploy configs
+sudo grep -R '^APP_ID=' /opt/*/config/deploy.conf
+
+# For one app directory, print the exact commands to use
+APP_ID="$(sudo grep '^APP_ID=' /opt/MediaForge-production/config/deploy.conf | cut -d= -f2 | tr -d '\"')"
+echo "sudo systemctl start ${APP_ID}-deploy-poll"
+echo "sudo journalctl -u ${APP_ID}-deploy-poll -f"
+```
+
+Then start and follow the matching service:
 
 ```bash
 sudo systemctl start my-saas-staging-deploy-poll
@@ -369,10 +456,11 @@ For each new version it:
 7. Copies `config/*.toml` while preserving `config/deploy.conf`.
 8. Copies `locales/`, `templates/`, and `docs/`.
 9. Runs `PROCESS=cli ./bin/app db:migrate`.
-10. Starts app services.
-11. Verifies the HTTP service is active.
-12. Writes `/opt/{APP_ID}/VERSION` on success.
-13. Restores the previous binary if HTTP startup fails.
+10. Restores the previous binary and leaves `/opt/{APP_ID}/VERSION` unchanged if migrations fail.
+11. Starts app services.
+12. Verifies the HTTP service is active.
+13. Writes `/opt/{APP_ID}/VERSION` on success.
+14. Restores the previous binary if HTTP startup fails.
 
 Migrations are automatic during deploy. You normally do not need to run them manually after each release.
 
@@ -415,11 +503,14 @@ The server deploys automatically when the uploaded `VERSION` changes.
 Run setup again with a different environment and different ports:
 
 ```bash
+# Run locally from the project root
+ssh root@203.0.113.50 'rm -rf /tmp/my-saas-production-setup && mkdir -p /tmp/my-saas-production-setup/scripts'
+scp scripts/setup.sh scripts/deploy-poll.sh root@203.0.113.50:/tmp/my-saas-production-setup/scripts/
+
 ssh root@203.0.113.50
-cd /tmp
-git clone git@github.com:your-org/my-saas.git my-saas-production-setup
-cd my-saas-production-setup
+cd /tmp/my-saas-production-setup
 sudo bash scripts/setup.sh
+rm -rf /tmp/my-saas-production-setup
 ```
 
 Example production values:
@@ -464,31 +555,45 @@ Replace `my-saas-staging` with your actual `APP_ID`.
 ### Deployment
 
 ```bash
+cd /opt/my-saas-staging
+
 # Current deployed version
 cat /opt/my-saas-staging/VERSION
+
+# Show current deployed version, latest remote version, and bucket versions
+sudo make versions
+
+# Deploy the current remote VERSION immediately, then resume polling
+sudo make pull
+
+# Deploy a specific artifact version and leave poll stopped
+sudo make pull VERSION=2e3c3df-20260429071844
+
+# Deploy a specific artifact version and resume polling after
+sudo make pull VERSION=2e3c3df-20260429071844 RESUME_POLL=1
 
 # Remote version in R2
 aws s3 cp s3://my-saas/_deployments/my-saas/staging/VERSION - \
     --endpoint-url https://<account-id>.r2.cloudflarestorage.com
 
-# Wake the poller immediately
-sudo systemctl restart my-saas-staging-deploy-poll
-
 # Pause deployments
-sudo systemctl stop my-saas-staging-deploy-poll
+sudo make stop SERVICE=poll
 
 # Resume deployments
-sudo systemctl start my-saas-staging-deploy-poll
+sudo make start SERVICE=poll
 ```
 
 ### Logs
 
 ```bash
-sudo journalctl -u my-saas-staging-http -f
-sudo journalctl -u my-saas-staging-worker -f
-sudo journalctl -u my-saas-staging-scheduler -f
-sudo journalctl -u my-saas-staging-websocket -f
-sudo journalctl -u my-saas-staging-deploy-poll -f
+cd /opt/my-saas-staging
+
+sudo make logs SERVICE=http
+sudo make logs SERVICE=worker
+sudo make logs SERVICE=scheduler
+sudo make logs SERVICE=websocket
+sudo make logs SERVICE=poll
+sudo make logs SERVICE=all
 
 sudo journalctl -u 'my-saas-staging-*' -f
 sudo journalctl -u my-saas-staging-http --since "10 minutes ago"
@@ -498,17 +603,15 @@ sudo journalctl -u my-saas-staging-worker -n 100 --no-pager
 ### Services
 
 ```bash
-systemctl list-units 'my-saas-staging-*'
-systemctl status my-saas-staging-http
+cd /opt/my-saas-staging
 
-sudo systemctl restart my-saas-staging-http
-sudo systemctl restart my-saas-staging-worker
-sudo systemctl restart my-saas-staging-scheduler
-sudo systemctl restart my-saas-staging-websocket
-
-for svc in http worker scheduler websocket; do
-    sudo systemctl restart my-saas-staging-$svc
-done
+sudo make status
+sudo make restart SERVICE=http
+sudo make restart SERVICE=worker
+sudo make restart SERVICE=scheduler
+sudo make restart SERVICE=websocket
+sudo make restart SERVICE=poll
+sudo make restart SERVICE=all
 ```
 
 ### CLI and Database
@@ -543,6 +646,14 @@ sudo nano /etc/nginx/sites-available/my-saas-staging
 
 Setup skips deploy-poll if the deploy bucket prompt is blank.
 
+First confirm the real service name:
+
+```bash
+sudo systemctl list-unit-files '*deploy-poll.service'
+sudo find /etc/systemd/system -maxdepth 1 -name '*deploy-poll.service' -printf '%f\n'
+sudo grep -R '^APP_ID=' /opt/*/config/deploy.conf
+```
+
 Fix:
 
 ```bash
@@ -563,11 +674,32 @@ sudo journalctl -u my-saas-staging-deploy-poll --since "5 minutes ago"
 Common fixes:
 
 ```bash
-sudo aws configure
+# deploy-poll runs as root, so credentials must exist under /root/.aws
+sudo install -d -m 700 /root/.aws
+sudo nano /root/.aws/credentials
+sudo nano /root/.aws/config
+sudo chmod 600 /root/.aws/credentials /root/.aws/config
+
 sudo cat /opt/my-saas-staging/config/deploy.conf
 ```
 
-`my-saas-staging-deploy-poll` runs as root, so `sudo aws configure` configures the credentials the service actually uses.
+`/root/.aws/credentials` should look like:
+
+```ini
+[default]
+aws_access_key_id = <R2 Access Key ID>
+aws_secret_access_key = <R2 Secret Access Key>
+```
+
+`/root/.aws/config` should look like:
+
+```ini
+[default]
+region = auto
+output = json
+```
+
+`my-saas-staging-deploy-poll` runs as root, so `/root/.aws/...` is the credential location the service uses. You can also run `sudo -H aws configure`, but the raw AWS prompt is easier to misread for R2.
 
 Confirm:
 
@@ -594,6 +726,8 @@ Common causes:
 - HTTP service failed to start.
 - A port is already in use.
 
+If migration output says `function uuidv7() does not exist`, the database was created before the setup script installed the starter PostgreSQL primitives. Run the repair SQL shown below for the app database, then retry `make pull`.
+
 Useful checks:
 
 ```bash
@@ -601,6 +735,36 @@ sudo ss -tlnp | grep -E '3000|3010'
 sudo systemctl status postgresql
 sudo systemctl status redis-server
 ls -la /opt/my-saas-staging/bin/app
+```
+
+Repair missing PostgreSQL primitives:
+
+```bash
+sudo -u postgres psql -v ON_ERROR_STOP=1 -d my_saas_staging <<'SQL'
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE OR REPLACE FUNCTION uuidv7()
+RETURNS uuid
+LANGUAGE sql
+VOLATILE
+AS $$
+    WITH value AS (
+        SELECT
+            (EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint AS unix_ts_ms,
+            gen_random_bytes(10) AS rand_bytes
+    )
+    SELECT encode(
+        decode(lpad(to_hex(unix_ts_ms), 12, '0'), 'hex')
+        || set_byte(substring(rand_bytes from 1 for 2), 0, (get_byte(rand_bytes, 0) & 15) | 112)
+        || set_byte(substring(rand_bytes from 3 for 8), 0, (get_byte(rand_bytes, 2) & 63) | 128),
+        'hex'
+    )::uuid
+    FROM value
+$$;
+
+ALTER FUNCTION public.uuidv7() OWNER TO my_saas;
+GRANT EXECUTE ON FUNCTION public.uuidv7() TO my_saas;
+SQL
 ```
 
 ### Manual rollback
@@ -620,7 +784,7 @@ for svc in http worker scheduler websocket; do
 done
 ```
 
-If `app.bak` has already been removed after a successful deploy, upload and deploy an older artifact by writing that version to the remote `VERSION` file.
+If `app.bak` has already been removed after a successful deploy, use `sudo make versions` to find an older artifact and `sudo make pull VERSION=<version>` to deploy it once. For a persistent rollback, write that older version to the remote `VERSION` file, then resume the poller so future polling does not replace it with the newer remote version.
 
 ---
 
@@ -636,9 +800,12 @@ Local machine
     -> scripts/build.sh
     -> Docker builds frontend portals found under frontend/
     -> Docker builds Rust binary: app
-    -> Docker generates docs/api
+    -> Docker includes a docs/api placeholder
+    -> verifies runtime-only artifact contents
     -> uploads app-{version}.zip
     -> uploads VERSION
+    -> keeps the newest 5 app-*.zip artifacts by default
+    -> prunes local Docker deploy image/build cache by default
 
 S3/R2 bucket
   _deployments/my-saas/staging/
@@ -649,6 +816,7 @@ Ubuntu 24.04+ server
   /opt/my-saas-staging/
     .env                 server-only runtime config and secrets
     VERSION              last successful deployed version
+    Makefile             server helper commands
     bin/app              current binary
     config/deploy.conf   deploy poller config
     config/*.toml        app config from artifact

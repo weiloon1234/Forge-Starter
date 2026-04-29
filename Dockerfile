@@ -39,7 +39,6 @@ COPY . /build/app/
 COPY --from=frontend /app/public/ /build/app/public/
 
 RUN cargo build --release
-RUN cargo run --release -- docs:api
 
 # =============================================================================
 # Stage 3: Artifact collection
@@ -50,9 +49,11 @@ ARG BINARY_NAME=app
 
 COPY --from=backend /build/app/target/release/${BINARY_NAME} /artifact/${BINARY_NAME}
 COPY --from=backend /build/app/public/ /artifact/public/
-COPY --from=backend /build/app/config/ /artifact/config/
+RUN mkdir -p /artifact/config
+COPY --from=backend /build/app/config/*.toml /artifact/config/
 COPY --from=backend /build/app/locales/ /artifact/locales/
 COPY --from=backend /build/app/templates/ /artifact/templates/
-COPY --from=backend /build/app/docs/api/ /artifact/docs/api/
+RUN mkdir -p /artifact/docs/api
+RUN find /artifact -name '.DS_Store' -delete
 
 CMD ["echo", "Build artifact ready"]

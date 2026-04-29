@@ -60,6 +60,55 @@ ask_yn() {
     [[ "${reply}" =~ ^[Yy] ]]
 }
 
+configure_s3_credentials() {
+    local access_key secret_key region output_format aws_dir
+
+    info "Cloudflare R2 uses S3-compatible credentials."
+    info "Use the R2 Access Key ID for the first value, and the R2 Secret Access Key for the hidden secret value."
+    info "These credentials are written for root because deploy-poll runs as root."
+
+    access_key="$(ask "S3-compatible Access Key ID (R2: Access Key ID)" "")"
+    if [[ -z "${access_key}" ]]; then
+        warn "Access key ID is empty. Skipping credential configuration."
+        return 0
+    fi
+
+    secret_key="$(ask_secret "S3-compatible Secret Access Key (R2: Secret Access Key; hidden)")"
+    if [[ -z "${secret_key}" ]]; then
+        warn "Secret access key is empty. Skipping credential configuration."
+        return 0
+    fi
+
+    if [[ "${access_key}" == "${secret_key}" ]]; then
+        warn "Access key ID and secret access key are identical. For R2/S3 this is usually a copy-paste mistake."
+    fi
+
+    region="$(ask "Default region (R2: auto; AWS S3: bucket region)" "auto")"
+    output_format="$(ask "Default output format (json/text/table)" "json")"
+    output_format="${output_format:-json}"
+
+    aws_dir="${HOME}/.aws"
+    mkdir -p "${aws_dir}"
+    chmod 700 "${aws_dir}"
+
+    cat > "${aws_dir}/credentials" <<CREDENTIALS
+[default]
+aws_access_key_id = ${access_key}
+aws_secret_access_key = ${secret_key}
+CREDENTIALS
+    chmod 600 "${aws_dir}/credentials"
+
+    cat > "${aws_dir}/config" <<CONFIG
+[default]
+region = ${region}
+output = ${output_format}
+CONFIG
+    chmod 600 "${aws_dir}/config"
+
+    ok "S3-compatible credentials written to ${aws_dir}/credentials."
+    ok "AWS CLI default region/output written to ${aws_dir}/config."
+}
+
 is_installed() { command -v "$1" &>/dev/null; }
 is_service_active() { systemctl is-active --quiet "$1" 2>/dev/null; }
 is_service_enabled() { systemctl is-enabled --quiet "$1" 2>/dev/null; }
@@ -70,7 +119,199 @@ header() {
     echo ""
 }
 
-to_underscore() { echo "${1//-/_}"; }
+to_identifier() {
+    local value="$1"
+    value="$(printf '%s' "${value}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/_/g; s/^_+//; s/_+$//; s/_+/_/g')"
+    if [[ -z "${value}" ]]; then
+        value="app"
+    fi
+    if [[ ! "${value}" =~ ^[a-z_] ]]; then
+        value="app_${value}"
+    fi
+    printf '%s' "${value}"
+}
+
+sql_ident() {
+    local value="$1"
+    value="${value//\"/\"\"}"
+    printf '"%s"' "${value}"
+}
+
+sql_literal() {
+    local value="$1"
+    value="$(printf '%s' "${value}" | sed "s/'/''/g")"
+    printf "'%s'" "${value}"
+}
+
+ensure_database_access() {
+    local db_name="$1"
+    local db_user="$2"
+
+    sudo -u postgres psql -v ON_ERROR_STOP=1 \
+        -c "ALTER DATABASE $(sql_ident "${db_name}") OWNER TO $(sql_ident "${db_user}");" >/dev/null
+    sudo -u postgres psql -v ON_ERROR_STOP=1 -d "${db_name}" \
+        -c "GRANT ALL ON SCHEMA public TO $(sql_ident "${db_user}");" >/dev/null
+}
+
+ensure_database_primitives() {
+    local db_name="$1"
+    local db_user="$2"
+
+    info "Ensuring PostgreSQL runtime functions in '${db_name}'..."
+    sudo -u postgres psql -v ON_ERROR_STOP=1 -v db_user="${db_user}" -d "${db_name}" <<'SQL' >/dev/null
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE OR REPLACE FUNCTION public.uuidv7()
+RETURNS uuid
+LANGUAGE sql
+VOLATILE
+AS $$
+    WITH value AS (
+        SELECT
+            (EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint AS unix_ts_ms,
+            gen_random_bytes(10) AS rand_bytes
+    )
+    SELECT encode(
+        decode(lpad(to_hex(unix_ts_ms), 12, '0'), 'hex')
+        || set_byte(
+            substring(rand_bytes from 1 for 2),
+            0,
+            (get_byte(rand_bytes, 0) & 15) | 112
+        )
+        || set_byte(
+            substring(rand_bytes from 3 for 8),
+            0,
+            (get_byte(rand_bytes, 2) & 63) | 128
+        ),
+        'hex'
+    )::uuid
+    FROM value
+$$;
+
+ALTER FUNCTION public.uuidv7() OWNER TO :"db_user";
+GRANT EXECUTE ON FUNCTION public.uuidv7() TO :"db_user";
+SQL
+    ok "PostgreSQL runtime functions ready."
+}
+
+write_server_makefile() {
+    local makefile="${APP_DIR}/Makefile"
+
+    cat > "${makefile}" <<'MAKEFILE'
+SHELL := /bin/bash
+
+APP_ID := __APP_ID__
+APP_DIR := __APP_DIR__
+DEPLOY_CONF := $(APP_DIR)/config/deploy.conf
+DEPLOY_SCRIPT := $(APP_DIR)/scripts/deploy-poll.sh
+SUDO ?= sudo
+SERVICE ?= all
+VERSION ?=
+RESUME_POLL ?= 0
+
+APP_SERVICES := http worker scheduler websocket
+ALL_SERVICES := http worker scheduler websocket poll
+
+.PHONY: help status start stop restart logs versions pull
+
+help:
+	@echo ""
+	@echo "  make status                  List this app's systemd units"
+	@echo "  make restart SERVICE=http    Restart http, worker, scheduler, websocket, poll, or all"
+	@echo "  make start SERVICE=http      Start http, worker, scheduler, websocket, poll, or all"
+	@echo "  make stop SERVICE=http       Stop http, worker, scheduler, websocket, poll, or all"
+	@echo "  make logs SERVICE=http       Follow logs for one service, or SERVICE=all"
+	@echo "  make versions                Show current/latest and bucket artifact versions"
+	@echo "  make pull                    Deploy the current remote VERSION now, then resume poll"
+	@echo "  make pull VERSION=<version>  Deploy an exact version and leave poll stopped"
+	@echo "  make pull VERSION=<version> RESUME_POLL=1"
+	@echo ""
+
+status:
+	@$(SUDO) systemctl list-units --type=service --all '$(APP_ID)-*'
+	@$(SUDO) systemctl list-unit-files '$(APP_ID)-*'
+
+start stop restart:
+	@set -euo pipefail; \
+	action="$@"; \
+	selected="$(SERVICE)"; \
+	if [[ "$$selected" == "all" ]]; then services=($(ALL_SERVICES)); else services=("$$selected"); fi; \
+	for service in "$${services[@]}"; do \
+		case "$$service" in \
+			http|worker|scheduler|websocket) unit="$(APP_ID)-$$service" ;; \
+			poll) unit="$(APP_ID)-deploy-poll" ;; \
+			*) echo "Unknown SERVICE=$$service" >&2; exit 1 ;; \
+		esac; \
+		echo "$$action $$unit"; \
+		$(SUDO) systemctl "$$action" "$$unit"; \
+	done
+
+logs:
+	@set -euo pipefail; \
+	selected="$(SERVICE)"; \
+	if [[ "$$selected" == "all" ]]; then services=($(ALL_SERVICES)); else services=("$$selected"); fi; \
+	units=(); \
+	for service in "$${services[@]}"; do \
+		case "$$service" in \
+			http|worker|scheduler|websocket) unit="$(APP_ID)-$$service" ;; \
+			poll) unit="$(APP_ID)-deploy-poll" ;; \
+			*) echo "Unknown SERVICE=$$service" >&2; exit 1 ;; \
+		esac; \
+		units+=("-u" "$$unit"); \
+	done; \
+	$(SUDO) journalctl "$${units[@]}" -f
+
+versions:
+	@set -euo pipefail; \
+	current=""; \
+	if [[ -f "$(APP_DIR)/VERSION" ]]; then current="$$(tr -d '[:space:]' < "$(APP_DIR)/VERSION")"; fi; \
+	versions_output="$$($(SUDO) env DEPLOY_CONF="$(DEPLOY_CONF)" "$(DEPLOY_SCRIPT)" versions)"; \
+	latest="$$(printf '%s\n' "$$versions_output" | awk 'NF >= 3 { latest=$$3 } END { print latest }')"; \
+	echo "Current: $${current:-<none>}"; \
+	echo "Latest:  $${latest:-<none>}"; \
+	if [[ -z "$$latest" ]]; then \
+		echo "Status:  no remote versions found"; \
+	elif [[ -z "$$current" ]]; then \
+		echo "Status:  not deployed yet"; \
+	elif [[ "$$current" == "$$latest" ]]; then \
+		echo "Status:  current is latest"; \
+	else \
+		echo "Status:  update available"; \
+	fi; \
+	echo ""; \
+	echo "Available versions:"; \
+	if [[ -n "$$versions_output" ]]; then \
+		printf '%s\n' "$$versions_output" | awk -v current="$$current" -v latest="$$latest" 'NF >= 3 { labels = ""; if ($$3 == current) labels = "current"; if ($$3 == latest) labels = (labels == "" ? "latest" : labels ", latest"); marker = ($$3 == current ? "*" : " "); suffix = (labels == "" ? "" : " [" labels "]"); printf "%s %s %s %s%s\n", marker, $$1, $$2, $$3, suffix }'; \
+	else \
+		echo "  <none>"; \
+	fi
+
+pull:
+	@set -euo pipefail; \
+	poll_unit="$(APP_ID)-deploy-poll"; \
+	$(SUDO) systemctl stop "$$poll_unit" || true; \
+	status=0; \
+	if [[ -n "$(VERSION)" ]]; then \
+		$(SUDO) env DEPLOY_CONF="$(DEPLOY_CONF)" "$(DEPLOY_SCRIPT)" deploy-once "$(VERSION)" || status=$$?; \
+		if [[ "$(RESUME_POLL)" == "1" ]]; then \
+			$(SUDO) systemctl start "$$poll_unit" || true; \
+		else \
+			echo "Poller remains stopped after exact-version deploy. Run 'make start SERVICE=poll' when ready."; \
+		fi; \
+	else \
+		$(SUDO) env DEPLOY_CONF="$(DEPLOY_CONF)" "$(DEPLOY_SCRIPT)" deploy-once || status=$$?; \
+		$(SUDO) systemctl start "$$poll_unit" || true; \
+	fi; \
+	exit "$$status"
+MAKEFILE
+
+    sed -i \
+        -e "s|__APP_ID__|${APP_ID}|g" \
+        -e "s|__APP_DIR__|${APP_DIR}|g" \
+        "${makefile}"
+    chmod 644 "${makefile}"
+    ok "Server Makefile written."
+}
 
 # ---------------------------------------------------------------------------
 # Collected state
@@ -144,9 +385,9 @@ SUMMARY_DOMAIN="${DOMAIN}"
 APP_ID="${APP_NAME}-${ENVIRONMENT}"
 APP_DIR="/opt/${APP_ID}"
 BINARY_NAME="app"
-DB_USER="$(to_underscore "${APP_NAME}")"
-DB_NAME="$(to_underscore "${APP_NAME}")_${ENVIRONMENT}"
-REDIS_NAMESPACE="$(to_underscore "${APP_NAME}")_${ENVIRONMENT}"
+DB_USER="$(to_identifier "${APP_NAME}")"
+DB_NAME="$(to_identifier "${APP_NAME}")_$(to_identifier "${ENVIRONMENT}")"
+REDIS_NAMESPACE="${DB_NAME}"
 
 # ---------------------------------------------------------------------------
 # Load existing config as defaults (for re-runs)
@@ -274,21 +515,21 @@ if [[ -n "${EXISTING_DATABASE_URL}" ]]; then
     SUMMARY_DATABASE_URL="${EXISTING_DATABASE_URL}"
 
     # Still create user/db if they don't exist (idempotent)
-    USER_EXISTS=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='${DB_USER}'" 2>/dev/null || true)
+    USER_EXISTS=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname=$(sql_literal "${DB_USER}")" 2>/dev/null || true)
     if [[ "${USER_EXISTS}" == "1" ]]; then
         ok "User '${DB_USER}' exists."
     else
         info "User '${DB_USER}' not found — creating from DATABASE_URL."
         DB_PASS="$(echo "${EXISTING_DATABASE_URL}" | sed -n 's|postgres://[^:]*:\([^@]*\)@.*|\1|p')"
-        sudo -u postgres psql -c "CREATE ROLE ${DB_USER} WITH LOGIN PASSWORD '${DB_PASS}';" >/dev/null
+        sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE ROLE $(sql_ident "${DB_USER}") WITH LOGIN PASSWORD $(sql_literal "${DB_PASS}");" >/dev/null
         ok "User '${DB_USER}' created."
     fi
 
-    DB_EXISTS=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'" 2>/dev/null || true)
+    DB_EXISTS=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname=$(sql_literal "${DB_NAME}")" 2>/dev/null || true)
     if [[ "${DB_EXISTS}" == "1" ]]; then
         ok "Database '${DB_NAME}' exists."
     else
-        sudo -u postgres psql -c "CREATE DATABASE ${DB_NAME} OWNER ${DB_USER};" >/dev/null
+        sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE DATABASE $(sql_ident "${DB_NAME}") OWNER $(sql_ident "${DB_USER}");" >/dev/null
         ok "Database '${DB_NAME}' created."
     fi
 else
@@ -296,7 +537,7 @@ else
     DB_USER="$(ask "PostgreSQL username" "${DB_USER}")"
     DB_NAME="$(ask "Database name" "${DB_NAME}")"
 
-    USER_EXISTS=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='${DB_USER}'" 2>/dev/null || true)
+    USER_EXISTS=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname=$(sql_literal "${DB_USER}")" 2>/dev/null || true)
 
     if [[ "${USER_EXISTS}" == "1" ]]; then
         ok "User '${DB_USER}' exists."
@@ -307,20 +548,23 @@ else
             DB_PASS="$(openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 32)"
             info "Auto-generated password: ${DB_PASS}"
         fi
-        sudo -u postgres psql -c "CREATE ROLE ${DB_USER} WITH LOGIN PASSWORD '${DB_PASS}';" >/dev/null
+        sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE ROLE $(sql_ident "${DB_USER}") WITH LOGIN PASSWORD $(sql_literal "${DB_PASS}");" >/dev/null
         ok "User '${DB_USER}' created."
     fi
 
-    DB_EXISTS=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'" 2>/dev/null || true)
+    DB_EXISTS=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname=$(sql_literal "${DB_NAME}")" 2>/dev/null || true)
     if [[ "${DB_EXISTS}" == "1" ]]; then
         ok "Database '${DB_NAME}' exists."
     else
-        sudo -u postgres psql -c "CREATE DATABASE ${DB_NAME} OWNER ${DB_USER};" >/dev/null
+        sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE DATABASE $(sql_ident "${DB_NAME}") OWNER $(sql_ident "${DB_USER}");" >/dev/null
         ok "Database '${DB_NAME}' created."
     fi
 
     SUMMARY_DATABASE_URL="postgres://${DB_USER}:${DB_PASS}@127.0.0.1:5432/${DB_NAME}"
 fi
+
+ensure_database_access "${DB_NAME}" "${DB_USER}"
+ensure_database_primitives "${DB_NAME}" "${DB_USER}"
 
 info "DATABASE_URL: ${SUMMARY_DATABASE_URL}"
 
@@ -374,11 +618,10 @@ else
     ok "AWS CLI v2 installed."
 fi
 
-if ask_yn "Configure AWS credentials now? (needed for R2/S3 deploy)" "n"; then
-    aws configure
-    ok "AWS credentials configured."
+if ask_yn "Configure S3-compatible credentials now? (Cloudflare R2 / AWS S3 deploy)" "n"; then
+    configure_s3_credentials
 else
-    warn "Skipped. Run 'aws configure' later before starting deploy-poll."
+    warn "Skipped. Configure /root/.aws/credentials later before starting deploy-poll."
 fi
 
 # =============================================================================
@@ -574,6 +817,7 @@ DEPLOY_REGION="${DEPLOY_REGION}"
 DEPLOY_ENDPOINT="${DEPLOY_ENDPOINT}"
 CONF
 ok "deploy.conf written."
+write_server_makefile
 
 # =============================================================================
 # 11. .env setup

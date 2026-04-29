@@ -6,7 +6,7 @@ set -euo pipefail
 # Builds inside Docker, uploads artifact zip + VERSION file.
 #
 # Sensitive .env files are never uploaded. The selected .env.{environment} file
-# is read locally only for DEPLOY_* settings and public VITE_* frontend values.
+# is read locally only for deploy upload settings and public VITE_* frontend values.
 # =============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -199,6 +199,231 @@ prepare_vite_env_files() {
     done < <(frontend_portals)
 }
 
+configure_upload_credentials() {
+    local env_file="$1"
+    local access_key secret_key session_token profile
+
+    access_key="$(first_config_value "$env_file" DEPLOY_ACCESS_KEY_ID AWS_ACCESS_KEY_ID STORAGE__DISKS__R2__KEY STORAGE__DISKS__S3__KEY || true)"
+    secret_key="$(first_config_value "$env_file" DEPLOY_SECRET_ACCESS_KEY AWS_SECRET_ACCESS_KEY STORAGE__DISKS__R2__SECRET STORAGE__DISKS__S3__SECRET || true)"
+    session_token="$(first_config_value "$env_file" DEPLOY_SESSION_TOKEN AWS_SESSION_TOKEN || true)"
+    profile="$(first_config_value "$env_file" DEPLOY_PROFILE AWS_PROFILE || true)"
+
+    if [[ -n "$access_key" || -n "$secret_key" ]]; then
+        if [[ -z "$access_key" || -z "$secret_key" ]]; then
+            error "Deploy upload credentials are incomplete."
+            error "Set both DEPLOY_ACCESS_KEY_ID and DEPLOY_SECRET_ACCESS_KEY in $env_file, or configure your local AWS CLI profile."
+            exit 1
+        fi
+
+        if [[ "$access_key" == "$secret_key" ]]; then
+            warn "DEPLOY_ACCESS_KEY_ID and DEPLOY_SECRET_ACCESS_KEY are identical. For R2/S3 this is usually a copy-paste mistake."
+        fi
+
+        export AWS_ACCESS_KEY_ID="$access_key"
+        export AWS_SECRET_ACCESS_KEY="$secret_key"
+        if [[ -n "$session_token" ]]; then
+            export AWS_SESSION_TOKEN="$session_token"
+        fi
+        ok "Deploy upload credentials loaded from $env_file"
+        return 0
+    fi
+
+    if [[ -n "$profile" ]]; then
+        export AWS_PROFILE="$profile"
+        ok "Deploy upload will use AWS profile: $profile"
+        return 0
+    fi
+
+    warn "No deploy upload credentials found in $env_file."
+    warn "AWS CLI will use your local AWS config, if available."
+}
+
+validate_deploy_options() {
+    if ! [[ "$DEPLOY_RETAIN_RELEASES" =~ ^[0-9]+$ ]] || (( DEPLOY_RETAIN_RELEASES < 1 )); then
+        warn "Invalid DEPLOY_RETAIN_RELEASES='$DEPLOY_RETAIN_RELEASES'. Using 5."
+        DEPLOY_RETAIN_RELEASES=5
+    fi
+
+    case "$DEPLOY_DOCKER_CLEANUP" in
+        aggressive|balanced|conservative|off) ;;
+        *)
+            warn "Invalid DEPLOY_DOCKER_CLEANUP='$DEPLOY_DOCKER_CLEANUP'. Using aggressive."
+            DEPLOY_DOCKER_CLEANUP="aggressive"
+            ;;
+    esac
+}
+
+artifact_entry_allowed() {
+    local entry="$1"
+
+    if [[ "$entry" == config/*.toml && "${entry#config/}" != */* ]]; then
+        return 0
+    fi
+
+    case "$entry" in
+        "$BINARY_NAME"|public/|public/*|config/|locales/|locales/*|templates/|templates/*|docs/|docs/*)
+            return 0
+            ;;
+    esac
+
+    return 1
+}
+
+artifact_entry_forbidden() {
+    local entry="$1"
+
+    case "$entry" in
+        .DS_Store|*/.DS_Store)
+            return 0
+            ;;
+        .env|.env.*|*/.env|*/.env.*|Cargo.toml|Cargo.lock|*/Cargo.toml|*/Cargo.lock)
+            return 0
+            ;;
+        .git|.git/*|*/.git|*/.git/*|node_modules|node_modules/*|*/node_modules|*/node_modules/*)
+            return 0
+            ;;
+        target|target/*|*/target|*/target/*|scripts|scripts/*|*/scripts|*/scripts/*)
+            return 0
+            ;;
+        database|database/*|*/database|*/database/*|tests|tests/*|*/tests|*/tests/*)
+            return 0
+            ;;
+        src|src/*|*/src|*/src/*|frontend|frontend/*|*/frontend|*/frontend/*)
+            return 0
+            ;;
+    esac
+
+    return 1
+}
+
+verify_artifact_zip() {
+    local zip_path="$1"
+    local entry
+    local has_binary=false
+    local unsafe_entries=()
+
+    info "Verifying artifact contents..."
+
+    while IFS= read -r entry; do
+        [[ -z "$entry" ]] && continue
+        if [[ "$entry" == "$BINARY_NAME" ]]; then
+            has_binary=true
+        fi
+        if ! artifact_entry_allowed "$entry" || artifact_entry_forbidden "$entry"; then
+            unsafe_entries+=("$entry")
+        fi
+    done < <(unzip -Z -1 "$zip_path")
+
+    if [[ "$has_binary" != true ]]; then
+        error "Artifact is missing the compiled binary: $BINARY_NAME"
+        exit 1
+    fi
+
+    if [[ ${#unsafe_entries[@]} -gt 0 ]]; then
+        error "Artifact contains forbidden or non-runtime paths:"
+        printf '  %s\n' "${unsafe_entries[@]:0:25}"
+        if [[ ${#unsafe_entries[@]} -gt 25 ]]; then
+            error "...and $(( ${#unsafe_entries[@]} - 25 )) more."
+        fi
+        error "Deploy aborted before upload."
+        exit 1
+    fi
+
+    ok "Artifact contains runtime files only."
+}
+
+prune_artifact_config() {
+    if [[ -d "$TEMP_DIR/config" ]]; then
+        find "$TEMP_DIR/config" -mindepth 1 -maxdepth 1 ! -name '*.toml' -exec rm -rf {} +
+    fi
+}
+
+prune_artifact_junk() {
+    find "$TEMP_DIR" -name '.DS_Store' -delete
+}
+
+aws_s3() {
+    local args=("s3")
+
+    if [[ -n "$S3_REGION" ]]; then
+        args+=(--region "$S3_REGION")
+    fi
+    if [[ -n "$S3_ENDPOINT" ]]; then
+        args+=(--endpoint-url "$S3_ENDPOINT")
+    fi
+
+    aws "${args[@]}" "$@"
+}
+
+prune_bucket_releases() {
+    local retain="$1"
+    local listing
+    local old_files=()
+    local file
+
+    info "Applying bucket retention: keeping newest ${retain} artifact zip(s)."
+    if ! listing="$(aws_s3 ls "${S3_BASE}/" 2>/dev/null)"; then
+        warn "Could not list bucket artifacts for retention cleanup."
+        return 0
+    fi
+
+    while IFS= read -r file; do
+        [[ -n "$file" ]] && old_files+=("$file")
+    done < <(
+        printf '%s\n' "$listing" \
+            | awk -v binary="$BINARY_NAME" '$4 ~ "^" binary "-.*\\.zip$" { print $1 "T" $2 " " $4 }' \
+            | sort -r \
+            | tail -n +"$(( retain + 1 ))" \
+            | awk '{ print $2 }'
+    )
+
+    if [[ ${#old_files[@]} -eq 0 ]]; then
+        ok "No old bucket artifacts to remove."
+        return 0
+    fi
+
+    for file in "${old_files[@]}"; do
+        info "Removing old bucket artifact: $file"
+        if ! aws_s3 rm "${S3_BASE}/${file}"; then
+            warn "Failed to remove old bucket artifact: $file"
+        fi
+    done
+}
+
+cleanup_docker_after_success() {
+    local mode="$1"
+
+    if [[ "$mode" == "off" ]]; then
+        ok "Docker cleanup skipped."
+        return 0
+    fi
+
+    info "Cleaning local Docker deploy artifacts (${mode})."
+
+    if [[ -n "$TEMP_CONTAINER" ]]; then
+        docker rm "$TEMP_CONTAINER" &>/dev/null || true
+        TEMP_CONTAINER=""
+    fi
+
+    if [[ "$mode" == "aggressive" || "$mode" == "balanced" || "$mode" == "conservative" ]]; then
+        docker image rm "${BINARY_NAME}-build" &>/dev/null || true
+    fi
+
+    if [[ "$mode" == "aggressive" ]]; then
+        if docker builder prune --all --force; then
+            ok "Docker build cache pruned."
+        else
+            warn "Docker build cache prune failed."
+        fi
+    elif [[ "$mode" == "balanced" ]]; then
+        if docker builder prune --force --filter until=168h; then
+            ok "Docker build cache older than 7 days pruned."
+        else
+            warn "Docker build cache prune failed."
+        fi
+    fi
+}
+
 # ---------------------------------------------------------------------------
 # Prerequisites
 # ---------------------------------------------------------------------------
@@ -209,6 +434,12 @@ if ! command -v aws &>/dev/null; then
     exit 1
 fi
 ok "aws CLI found"
+
+if ! command -v zip &>/dev/null || ! command -v unzip &>/dev/null; then
+    error "'zip' and 'unzip' are required to create and verify deploy artifacts."
+    exit 1
+fi
+ok "zip/unzip found"
 
 if ! docker info &>/dev/null 2>&1; then
     error "Docker is not running. Start Docker Desktop and try again."
@@ -257,8 +488,17 @@ ENV_FILE="$PROJECT_DIR/.env.$DEPLOY_ENV"
 S3_BUCKET="$(first_config_value "$ENV_FILE" DEPLOY_BUCKET STORAGE__DISKS__R2__BUCKET STORAGE__DISKS__S3__BUCKET || true)"
 S3_REGION="$(first_config_value "$ENV_FILE" DEPLOY_REGION STORAGE__DISKS__R2__REGION STORAGE__DISKS__S3__REGION || true)"
 S3_ENDPOINT="$(first_config_value "$ENV_FILE" DEPLOY_ENDPOINT STORAGE__DISKS__R2__ENDPOINT STORAGE__DISKS__S3__ENDPOINT || true)"
+DEPLOY_RETAIN_RELEASES="$(first_config_value "$ENV_FILE" DEPLOY_RETAIN_RELEASES || true)"
+DEPLOY_DOCKER_CLEANUP="$(first_config_value "$ENV_FILE" DEPLOY_DOCKER_CLEANUP || true)"
+DEPLOY_DOCKER_PLATFORM="$(first_config_value "$ENV_FILE" DEPLOY_DOCKER_PLATFORM || true)"
 : "${S3_REGION:=auto}"
 : "${S3_ENDPOINT:=}"
+: "${DEPLOY_RETAIN_RELEASES:=5}"
+: "${DEPLOY_DOCKER_CLEANUP:=aggressive}"
+: "${DEPLOY_DOCKER_PLATFORM:=linux/amd64}"
+export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-$S3_REGION}"
+configure_upload_credentials "$ENV_FILE"
+validate_deploy_options
 
 if [[ -z "$S3_BUCKET" ]]; then
     error "Deploy bucket is not configured."
@@ -273,6 +513,9 @@ ok "Environment:  $DEPLOY_ENV"
 ok "Bucket:       $S3_BUCKET"
 ok "Region:       $S3_REGION"
 ok "Endpoint:     ${S3_ENDPOINT:-<none>}"
+ok "Retention:    keep newest ${DEPLOY_RETAIN_RELEASES} zip(s)"
+ok "Docker clean: $DEPLOY_DOCKER_CLEANUP"
+ok "Platform:     $DEPLOY_DOCKER_PLATFORM"
 echo ""
 
 # ---------------------------------------------------------------------------
@@ -306,6 +549,7 @@ info "Starting Docker build..."
 BUILD_START=$(date +%s)
 
 docker build \
+    --platform "$DEPLOY_DOCKER_PLATFORM" \
     -f "$PROJECT_DIR/Dockerfile" \
     --build-arg "BINARY_NAME=${BINARY_NAME}" \
     -t "${BINARY_NAME}-build" \
@@ -328,6 +572,8 @@ docker cp "$TEMP_CONTAINER:/artifact/config"          "$TEMP_DIR/config"
 docker cp "$TEMP_CONTAINER:/artifact/locales"         "$TEMP_DIR/locales"
 docker cp "$TEMP_CONTAINER:/artifact/templates"       "$TEMP_DIR/templates"
 docker cp "$TEMP_CONTAINER:/artifact/docs"            "$TEMP_DIR/docs"
+prune_artifact_config
+prune_artifact_junk
 
 ok "Artifacts extracted"
 
@@ -342,6 +588,7 @@ info "Creating archive: $ZIP_NAME"
 
 ZIP_SIZE=$(du -h "$ZIP_PATH" | cut -f1)
 ok "Archive created: $ZIP_SIZE"
+verify_artifact_zip "$ZIP_PATH"
 
 # ---------------------------------------------------------------------------
 # S3/R2 upload helper
@@ -349,16 +596,8 @@ ok "Archive created: $ZIP_SIZE"
 s3_cp() {
     local src="$1"
     local dest="$2"
-    local extra_args=()
 
-    if [[ "$S3_REGION" != "auto" ]]; then
-        extra_args+=(--region "$S3_REGION")
-    fi
-    if [[ -n "$S3_ENDPOINT" ]]; then
-        extra_args+=(--endpoint-url "$S3_ENDPOINT")
-    fi
-
-    aws s3 cp "$src" "$dest" "${extra_args[@]}"
+    aws_s3 cp "$src" "$dest"
 }
 
 # S3 path: s3://{bucket}/_deployments/{app_name}/{environment}/
@@ -385,7 +624,12 @@ ok "VERSION uploaded"
 
 UPLOAD_END=$(date +%s)
 UPLOAD_DURATION=$(( UPLOAD_END - UPLOAD_START ))
-TOTAL_DURATION=$(( UPLOAD_END - BUILD_START ))
+
+prune_bucket_releases "$DEPLOY_RETAIN_RELEASES"
+cleanup_docker_after_success "$DEPLOY_DOCKER_CLEANUP"
+
+TOTAL_END=$(date +%s)
+TOTAL_DURATION=$(( TOTAL_END - BUILD_START ))
 
 # ---------------------------------------------------------------------------
 # Summary

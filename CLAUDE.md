@@ -96,7 +96,7 @@ PROCESS=cli cargo run -- make:job       --name <PascalName>    # src/domain/jobs
 PROCESS=cli cargo run -- make:command   --name <PascalName>    # src/commands/<snake>.rs
 ```
 
-Files under `database/migrations/` and `database/seeders/` whose prefix is `000000000001_` through `000000000011_` are **Forge-published baselines** (schema foundation: personal_access_tokens, notifications, metadata, attachments, model_translations, countries, settings, users, admins) written into the project by `migrate:publish` / `seed:publish`. Don't hand-edit them, don't mimic their numeric-prefix naming — your app migrations / seeders always come from the scaffolders above.
+Files under `database/migrations/` whose prefix is `000000000000_` through `000000000011_`, and files under `database/seeders/` whose prefix starts with `000000000001_`, are **Forge-published baselines** (schema foundation: database primitives, personal_access_tokens, notifications, metadata, attachments, model_translations, countries, settings, users, admins) written into the project by `migrate:publish` / `seed:publish`. Don't hand-edit them, don't mimic their numeric-prefix naming — your app migrations / seeders always come from the scaffolders above.
 
 ## Config + .env Override
 

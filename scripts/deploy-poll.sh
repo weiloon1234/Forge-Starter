@@ -188,7 +188,7 @@ aws_s3() {
     if [[ -n "$S3_ENDPOINT" ]]; then
         args+=(--endpoint-url "$S3_ENDPOINT")
     fi
-    if [[ "$S3_REGION" != "auto" ]]; then
+    if [[ -n "$S3_REGION" ]]; then
         args+=(--region "$S3_REGION")
     fi
     aws "${args[@]}" "$@"
@@ -198,6 +198,82 @@ s3_download() {
     local remote_path="$1"
     local local_path="$2"
     aws_s3 cp "$remote_path" "$local_path" --quiet 2>/dev/null
+}
+
+artifact_entry_allowed() {
+    local entry="$1"
+
+    if [[ "$entry" == config/*.toml && "${entry#config/}" != */* ]]; then
+        return 0
+    fi
+
+    case "$entry" in
+        "$BINARY_NAME"|public/|public/*|config/|locales/|locales/*|templates/|templates/*|docs/|docs/*)
+            return 0
+            ;;
+    esac
+
+    return 1
+}
+
+artifact_entry_forbidden() {
+    local entry="$1"
+
+    case "$entry" in
+        .DS_Store|*/.DS_Store)
+            return 0
+            ;;
+        .env|.env.*|*/.env|*/.env.*|Cargo.toml|Cargo.lock|*/Cargo.toml|*/Cargo.lock)
+            return 0
+            ;;
+        .git|.git/*|*/.git|*/.git/*|node_modules|node_modules/*|*/node_modules|*/node_modules/*)
+            return 0
+            ;;
+        target|target/*|*/target|*/target/*|scripts|scripts/*|*/scripts|*/scripts/*)
+            return 0
+            ;;
+        database|database/*|*/database|*/database/*|tests|tests/*|*/tests|*/tests/*)
+            return 0
+            ;;
+        src|src/*|*/src|*/src/*|frontend|frontend/*|*/frontend|*/frontend/*)
+            return 0
+            ;;
+    esac
+
+    return 1
+}
+
+verify_artifact_zip() {
+    local zip_path="$1"
+    local entry
+    local has_binary=false
+    local unsafe_entries=()
+
+    while IFS= read -r entry; do
+        [[ -z "$entry" ]] && continue
+        if [[ "$entry" == "$BINARY_NAME" ]]; then
+            has_binary=true
+        fi
+        if ! artifact_entry_allowed "$entry" || artifact_entry_forbidden "$entry"; then
+            unsafe_entries+=("$entry")
+        fi
+    done < <(unzip -Z -1 "$zip_path")
+
+    if [[ "$has_binary" != true ]]; then
+        log_error "Artifact is missing the compiled binary: $BINARY_NAME"
+        return 1
+    fi
+
+    if [[ ${#unsafe_entries[@]} -gt 0 ]]; then
+        log_error "Artifact contains forbidden or non-runtime paths:"
+        printf '  %s\n' "${unsafe_entries[@]:0:25}" >&2
+        if [[ ${#unsafe_entries[@]} -gt 25 ]]; then
+            log_error "...and $(( ${#unsafe_entries[@]} - 25 )) more."
+        fi
+        return 1
+    fi
+
+    return 0
 }
 
 # -----------------------------------------------------------------------------
@@ -283,6 +359,11 @@ deploy_version() {
             return 1
         fi
     fi
+    if ! verify_artifact_zip "$zip_file"; then
+        log_error "Artifact failed runtime-only safety checks."
+        rm -rf "$tmp_dir"
+        return 1
+    fi
 
     # Backup current binary
     if [[ -f "$BINARY" ]]; then
@@ -347,23 +428,27 @@ deploy_version() {
 
     # Run database migrations before starting services
     log_info "Running database migrations..."
+    local migrations_ok=false
     if sudo -u "$RUN_USER" PROCESS=cli "$BINARY" db:migrate 2>&1; then
+        migrations_ok=true
         log_info "Migrations complete."
     else
-        log_error "Migration failed. Starting services with current schema."
+        log_error "Migration failed. Rolling back before starting services."
     fi
 
-    # Start services
-    start_services
+    if [[ "$migrations_ok" = true ]]; then
+        # Start services
+        start_services
 
-    # Verify at least the HTTP service started
-    sleep 2
-    local http_svc="${APP_ID}-http"
-    if systemctl is-active --quiet "$http_svc" 2>/dev/null; then
-        success=true
-        log_info "$http_svc is running. Deployment successful."
-    else
-        log_error "$http_svc failed to start after deployment."
+        # Verify at least the HTTP service started
+        sleep 2
+        local http_svc="${APP_ID}-http"
+        if systemctl is-active --quiet "$http_svc" 2>/dev/null; then
+            success=true
+            log_info "$http_svc is running. Deployment successful."
+        else
+            log_error "$http_svc failed to start after deployment."
+        fi
     fi
 
     if [[ "$success" = true ]]; then
@@ -375,9 +460,12 @@ deploy_version() {
         if [[ -f "${BINARY}.bak" ]]; then
             cp "${BINARY}.bak" "$BINARY"
             chmod +x "$BINARY"
+            chown "$RUN_USER:$RUN_USER" "$BINARY"
+            start_services
+            log_warn "Rollback complete. Continuing to poll."
+        else
+            log_error "No previous binary backup exists; services were left stopped."
         fi
-        start_services
-        log_warn "Rollback complete. Continuing to poll."
     fi
 
     rm -rf "$tmp_dir"
@@ -391,6 +479,7 @@ deploy_version() {
 main() {
     load_config
     acquire_lock
+    trap release_lock EXIT
 
     log_info "Starting deploy-poll daemon."
     log_info "App:           $APP_ID"
@@ -433,4 +522,73 @@ main() {
     done
 }
 
-main
+deploy_once() {
+    local version="${1:-}"
+
+    load_config
+    acquire_lock
+    trap release_lock EXIT
+
+    if [[ -z "$version" ]]; then
+        log_info "Fetching remote VERSION for one-shot deploy."
+        if ! version=$(get_remote_version); then
+            log_error "Could not read remote VERSION."
+            return 1
+        fi
+    fi
+
+    version=$(echo "$version" | tr -d '[:space:]')
+    if [[ -z "$version" ]]; then
+        log_error "Version is empty."
+        return 1
+    fi
+
+    log_info "Starting one-shot deploy for version: $version"
+    if deploy_version "$version"; then
+        log_info "One-shot deploy complete: $version"
+        return 0
+    fi
+
+    log_error "One-shot deploy failed: $version"
+    return 1
+}
+
+list_versions() {
+    load_config
+    aws_s3 ls "${S3_PREFIX}/" \
+        | awk -v binary="$BINARY_NAME" '$4 ~ "^" binary "-.*\\.zip$" {
+            name = $4
+            sub("^" binary "-", "", name)
+            sub("\\.zip$", "", name)
+            print $1, $2, name
+        }'
+}
+
+usage() {
+    cat <<USAGE
+Usage:
+  $0                 Poll forever for systemd.
+  $0 poll            Poll forever for systemd.
+  $0 deploy-once     Deploy the current remote VERSION immediately.
+  $0 deploy-once <version>
+                     Deploy a specific artifact version immediately.
+  $0 versions        List artifact versions in the deploy bucket.
+USAGE
+}
+
+case "${1:-poll}" in
+    poll)
+        main
+        ;;
+    deploy-once)
+        shift
+        deploy_once "${1:-}"
+        ;;
+    versions)
+        list_versions
+        ;;
+    *)
+        usage >&2
+        exit 1
+        ;;
+esac
