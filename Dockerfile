@@ -20,6 +20,7 @@ RUN cd /app/frontend/user && npm install
 COPY frontend/shared/ /app/frontend/shared/
 COPY frontend/admin/ /app/frontend/admin/
 COPY frontend/user/ /app/frontend/user/
+COPY locales/ /app/locales/
 
 RUN mkdir -p /app/public/admin /app/public/user
 

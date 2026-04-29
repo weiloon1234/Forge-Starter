@@ -61,6 +61,7 @@ export function initI18n(
     lng: localeStore.locale,
     fallbackLng: defaultLocale,
     defaultNS,
+    initAsync: false,
     interpolation: {
       escapeValue: false, // React already escapes
       // {{variable}} syntax — matches Forge backend
@@ -75,7 +76,7 @@ export function initI18n(
   // Sync locale store → i18next (when localeStore.setLocale is called)
   localeStoreRaw.subscribe(() => {
     const { locale } = localeStoreRaw.getState();
-    if (i18n.language !== locale) {
+    if (i18n.isInitialized && i18n.language !== locale) {
       i18n.changeLanguage(locale);
     }
   });

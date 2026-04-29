@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use serde::Serialize;
 
 use forge::prelude::*;
@@ -5,8 +6,10 @@ use forge::prelude::*;
 use crate::domain::models::Country;
 use crate::ids::guards::Guard;
 
+pub struct UserLifecycle;
+
 #[derive(Serialize, forge::Model)]
-#[forge(model = "users", soft_deletes = true)]
+#[forge(model = "users", soft_deletes = true, lifecycle = UserLifecycle)]
 pub struct User {
     pub id: ModelId<Self>,
     pub username: Option<String>,
@@ -44,6 +47,50 @@ impl User {
 
     async fn hash_secret(ctx: &ModelHookContext<'_>, value: String) -> Result<String> {
         ctx.app().hash()?.hash(&value)
+    }
+
+    async fn assign_default_introducer(
+        ctx: &ModelHookContext<'_>,
+        draft: &mut CreateDraft<Self>,
+    ) -> Result<()> {
+        if draft.assigned_columns().contains(&"introducer_user_id") {
+            return Ok(());
+        }
+
+        if draft
+            .pending_record()
+            .optional_text("username")
+            .as_deref()
+            .is_some_and(|username| username.eq_ignore_ascii_case(Self::ORIGIN_USERNAME))
+        {
+            return Ok(());
+        }
+
+        let mut introducer = Self::model_query()
+            .where_(Condition::and([
+                Self::USERNAME.ieq(Self::ORIGIN_USERNAME),
+                Self::INTRODUCER_USER_ID.is_null(),
+            ]))
+            .order_by(Self::CREATED_AT.asc())
+            .first(ctx.transaction())
+            .await?;
+
+        if introducer.is_none() {
+            introducer = Self::model_query()
+                .where_(Self::INTRODUCER_USER_ID.is_null())
+                .order_by(Self::CREATED_AT.asc())
+                .first(ctx.transaction())
+                .await?;
+        }
+
+        let Some(introducer) = introducer else {
+            return Err(Error::message(
+                "origin user must exist before creating introduced users",
+            ));
+        };
+
+        draft.set(Self::INTRODUCER_USER_ID, Some(introducer.id));
+        Ok(())
     }
 
     pub async fn find_active_by_login<E>(executor: &E, login: &str) -> Result<Option<Self>>
@@ -98,6 +145,13 @@ impl User {
             |user, country| user.contact_country = Loaded::new(country),
         )
         .named("contact_country")
+    }
+}
+
+#[async_trait]
+impl ModelLifecycle<User> for UserLifecycle {
+    async fn creating(ctx: &ModelHookContext<'_>, draft: &mut CreateDraft<User>) -> Result<()> {
+        User::assign_default_introducer(ctx, draft).await
     }
 }
 

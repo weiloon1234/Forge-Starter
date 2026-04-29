@@ -192,6 +192,7 @@ driver = "log"
 target = "email.outbound"
 
 # [email.mailers.smtp]
+# driver = "smtp"
 # host = "smtp.example.com"
 # port = 587
 # username = ""
@@ -200,17 +201,21 @@ target = "email.outbound"
 # timeout_secs = 30
 
 # [email.mailers.ses]
+# driver = "ses"
 # key = ""
 # secret = ""
 # region = "us-east-1"
 
 # [email.mailers.postmark]
+# driver = "postmark"
 # server_token = ""
 
 # [email.mailers.resend]
+# driver = "resend"
 # api_key = ""
 
 # [email.mailers.mailgun]
+# driver = "mailgun"
 # domain = ""
 # api_key = ""
 # region = "us"
