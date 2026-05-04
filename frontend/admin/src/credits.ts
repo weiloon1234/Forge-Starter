@@ -144,8 +144,6 @@ export function buildCreateCreditAdjustmentPayload(
     amount: String(values.amount ?? "").trim(),
     explanation_overrides: explanationOverrides,
     remark: optionalTrimmed(values.remark) ?? null,
-    related_key: null,
-    related_type: null,
     context: {},
   };
 }

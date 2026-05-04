@@ -1,3 +1,4 @@
+use axum::http::Uri;
 use axum::response::Html;
 use forge::prelude::*;
 use std::sync::OnceLock;
@@ -69,7 +70,31 @@ fn inject_config(html: &str, config: &str) -> String {
     html.replace("</head>", &format!("{config}\n</head>"))
 }
 
-pub async fn admin_spa(State(app): State<AppContext>) -> Result<Html<String>> {
+fn is_blocked_dotfile_path(path: &str) -> bool {
+    path.split('/').any(is_blocked_dotfile_segment)
+}
+
+fn is_blocked_dotfile_segment(segment: &str) -> bool {
+    let name = if let Some(name) = segment.strip_prefix('.') {
+        name
+    } else if segment
+        .as_bytes()
+        .get(..3)
+        .is_some_and(|prefix| prefix.eq_ignore_ascii_case(b"%2e"))
+    {
+        &segment[3..]
+    } else {
+        return false;
+    };
+
+    !name.eq_ignore_ascii_case("well-known")
+}
+
+fn is_framework_miss(path: &str) -> bool {
+    path.starts_with("/api/") || path.starts_with("/_forge/")
+}
+
+async fn admin_spa_html(app: &AppContext) -> Result<Html<String>> {
     let config = config_script(&app).await?;
 
     if is_dev(&app) {
@@ -87,7 +112,15 @@ pub async fn admin_spa(State(app): State<AppContext>) -> Result<Html<String>> {
     }
 }
 
-pub async fn user_spa(State(app): State<AppContext>) -> Result<Html<String>> {
+pub async fn admin_spa(State(app): State<AppContext>, uri: Uri) -> Result<Response> {
+    if is_blocked_dotfile_path(uri.path()) {
+        return Ok(StatusCode::NOT_FOUND.into_response());
+    }
+
+    Ok(admin_spa_html(&app).await?.into_response())
+}
+
+async fn user_spa_html(app: &AppContext) -> Result<Html<String>> {
     let config = config_script(&app).await?;
 
     if is_dev(&app) {
@@ -99,5 +132,40 @@ pub async fn user_spa(State(app): State<AppContext>) -> Result<Html<String>> {
         )))
     } else {
         Ok(Html(inject_config(&prod_html("user", &USER_HTML), &config)))
+    }
+}
+
+/// User-portal SPA fallback: any unmatched path serves the user SPA HTML so
+/// React Router can handle deep links. API and framework prefixes are excluded
+/// so misses there return a real 404 instead of HTML.
+pub async fn user_spa_fallback(State(app): State<AppContext>, uri: Uri) -> Result<Response> {
+    let path = uri.path();
+    if is_framework_miss(path) || is_blocked_dotfile_path(path) {
+        return Ok(StatusCode::NOT_FOUND.into_response());
+    }
+    Ok(user_spa_html(&app).await?.into_response())
+}
+
+pub async fn user_spa(State(app): State<AppContext>, uri: Uri) -> Result<Response> {
+    if is_blocked_dotfile_path(uri.path()) {
+        return Ok(StatusCode::NOT_FOUND.into_response());
+    }
+
+    Ok(user_spa_html(&app).await?.into_response())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_blocked_dotfile_path;
+
+    #[test]
+    fn blocks_dotfile_spa_paths() {
+        assert!(is_blocked_dotfile_path("/.env"));
+        assert!(is_blocked_dotfile_path("/admin/.env.production"));
+        assert!(is_blocked_dotfile_path("/%2eenv"));
+        assert!(!is_blocked_dotfile_path(
+            "/.well-known/acme-challenge/token"
+        ));
+        assert!(!is_blocked_dotfile_path("/login"));
     }
 }

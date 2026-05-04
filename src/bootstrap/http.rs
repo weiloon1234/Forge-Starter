@@ -13,14 +13,9 @@ pub fn builder() -> AppBuilder {
         .register_middleware(TrustedProxy::new().build())
         .register_middleware(Compression.build())
         .register_middleware(Cors::new().allow_any_origin().build())
+        .register_middleware(SecurityHeaders::new().build())
         .middleware_group("api", vec![RateLimit::new(1000).per_hour().build()])
-        .middleware_group(
-            "web",
-            vec![
-                Csrf::new().exclude("/api").build(),
-                SecurityHeaders::new().build(),
-            ],
-        )
+        .middleware_group("web", vec![Csrf::new().exclude("/api").build()])
         .enable_observability_with(
             ObservabilityOptions::new()
                 .guard(Guard::Admin)

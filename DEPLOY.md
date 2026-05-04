@@ -15,6 +15,7 @@ Example values used below:
 | App ID | `my-saas-staging` |
 | Domain | `staging.my-saas.com` |
 | Server IP | `203.0.113.50` |
+| Repository | `git@github.com:your-org/my-saas.git` |
 
 `APP_NAME` and `ENVIRONMENT` are important. The scripts derive paths and service names from them:
 
@@ -44,7 +45,7 @@ Use the same app name when running `scripts/setup.sh` on the server and `scripts
 - Ubuntu 24.04+.
 - Root SSH access or a sudo-capable user.
 - DNS access if you want Nginx + Let's Encrypt SSL.
-- A temporary copy of `scripts/setup.sh` and `scripts/deploy-poll.sh`.
+- Git read access to this repository, usually through a GitHub deploy key.
 - AWS/R2 credentials that can read from the deploy bucket.
 
 ### Deploy bucket
@@ -101,31 +102,66 @@ aws s3 ls s3://my-saas --endpoint-url https://<account-id>.r2.cloudflarestorage.
 
 ## 3. Prepare the Server
 
+SSH into the server:
+
+```bash
+ssh root@203.0.113.50
+```
+
 Point DNS at the server before requesting SSL:
 
 | Type | Name | Value |
 |---|---|---|
 | A | `staging.my-saas.com` | `203.0.113.50` |
 
-Copy only the setup scripts to a temporary server directory:
+Create a read-only deploy key on the server:
 
 ```bash
-# Run locally from the project root
-ssh root@203.0.113.50 'rm -rf /tmp/my-saas-setup && mkdir -p /tmp/my-saas-setup/scripts'
-scp scripts/setup.sh scripts/deploy-poll.sh root@203.0.113.50:/tmp/my-saas-setup/scripts/
+ssh-keygen -t ed25519 -C "deploy@my-saas-staging" -f ~/.ssh/my_saas_deploy -N ""
+cat ~/.ssh/my_saas_deploy.pub
 ```
 
-Then SSH into the server and run setup from that temporary directory. The server does not need a permanent source checkout.
+Add the public key in GitHub:
+
+```text
+Repository -> Settings -> Deploy keys -> Add deploy key
+```
+
+Paste the printed public key. Leave **Allow write access** disabled — the server only needs to read the repository.
+
+Configure SSH on the server so `git` uses that deploy key when talking to GitHub:
+
+```bash
+cat >> ~/.ssh/config <<'EOF'
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/my_saas_deploy
+    IdentitiesOnly yes
+EOF
+
+chmod 600 ~/.ssh/config
+ssh -T git@github.com
+```
+
+The last command should print `Hi your-org/my-saas! You've successfully authenticated...`.
+
+Clone the repository to a temporary location. The server only needs the source long enough to run `scripts/setup.sh`; it is not a permanent checkout.
+
+```bash
+cd /tmp
+git clone git@github.com:your-org/my-saas.git
+cd my-saas
+```
 
 ---
 
 ## 4. Run Server Setup
 
-Run setup as root:
+Run setup as root from the temporary clone:
 
 ```bash
-ssh root@203.0.113.50
-cd /tmp/my-saas-setup
+cd /tmp/my-saas
 sudo bash scripts/setup.sh
 ```
 
@@ -243,10 +279,11 @@ On later runs it:
 
 If you left the deploy bucket blank, setup skips the deploy-poll service. Configure the bucket and re-run setup to generate it.
 
-After setup finishes, remove the temporary setup copy:
+After setup finishes, remove the temporary clone:
 
 ```bash
-rm -rf /tmp/my-saas-setup
+cd ~
+rm -rf /tmp/my-saas
 ```
 
 The long-lived server app directory should be `/opt/{APP_ID}` only. It contains runtime files, compiled artifacts, config, assets, and helper scripts, not the project source tree.
@@ -256,12 +293,12 @@ The long-lived server app directory should be `/opt/{APP_ID}` only. It contains 
 After setup or manual deploy-helper testing, remove temporary source or script copies from the server:
 
 ```bash
-# Temporary setup folder from this guide
-rm -rf /tmp/my-saas-setup
-
-# If you temporarily cloned or pulled the full source on the server, remove it too
+# The temporary clone from this guide
 rm -rf /tmp/my-saas
+
+# Any other temporary clones you experimented with
 rm -rf /tmp/mediaforge
+rm -rf /tmp/daily-deal
 
 # If you copied helper scripts through /tmp during debugging
 rm -f /tmp/deploy-poll.sh /tmp/setup.sh
@@ -506,17 +543,16 @@ The server deploys automatically when the uploaded `VERSION` changes.
 
 ## 9. Production on the Same Server
 
-Run setup again with a different environment and different ports:
+Run setup again with a different environment and different ports. Reuse the same deploy key and SSH config from staging — one server clone is enough for both environments:
 
 ```bash
-# Run locally from the project root
-ssh root@203.0.113.50 'rm -rf /tmp/my-saas-production-setup && mkdir -p /tmp/my-saas-production-setup/scripts'
-scp scripts/setup.sh scripts/deploy-poll.sh root@203.0.113.50:/tmp/my-saas-production-setup/scripts/
-
 ssh root@203.0.113.50
-cd /tmp/my-saas-production-setup
+cd /tmp
+git clone git@github.com:your-org/my-saas.git my-saas-production
+cd my-saas-production
 sudo bash scripts/setup.sh
-rm -rf /tmp/my-saas-production-setup
+cd ~
+rm -rf /tmp/my-saas-production
 ```
 
 Example production values:
@@ -675,11 +711,15 @@ sudo find /etc/systemd/system -maxdepth 1 -name '*deploy-poll.service' -printf '
 sudo grep -R '^APP_ID=' /opt/*/config/deploy.conf
 ```
 
-Fix:
+Fix by re-running setup from a fresh clone:
 
 ```bash
-cd /tmp/my-saas
+cd /tmp
+git clone git@github.com:your-org/my-saas.git
+cd my-saas
 sudo bash scripts/setup.sh
+cd ~
+rm -rf /tmp/my-saas
 ```
 
 Enter `DEPLOY_BUCKET`, `DEPLOY_REGION`, and `DEPLOY_ENDPOINT` when prompted.

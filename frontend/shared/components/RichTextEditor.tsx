@@ -19,13 +19,12 @@ let froalaEditorPromise: Promise<ComponentType<FroalaEditorProps>> | null =
 async function loadFroalaEditor() {
   if (!froalaEditorPromise) {
     froalaEditorPromise = Promise.all([
-      import("font-awesome/css/font-awesome.css"),
       import("froala-editor/css/froala_editor.pkgd.min.css"),
       import("froala-editor/css/froala_style.min.css"),
       import("froala-editor/js/froala_editor.pkgd.min.js"),
       import("react-froala-wysiwyg"),
     ]).then(
-      ([, , , , module]) => module.default as ComponentType<FroalaEditorProps>,
+      ([, , , module]) => module.default as ComponentType<FroalaEditorProps>,
     );
   }
 
@@ -46,6 +45,7 @@ export function RichTextEditor({
   className,
   uploadEndpoint,
   uploadFolder,
+  tokenKey,
 }: RichTextEditorProps) {
   const { t, i18n } = useTranslation();
   const [Editor, setEditor] = useState<ComponentType<FroalaEditorProps> | null>(
@@ -73,14 +73,14 @@ export function RichTextEditor({
   }, [t]);
 
   const requestHeaders = useMemo(() => {
-    const token = getToken();
+    const token = getToken(tokenKey);
 
     return {
       Accept: "application/json",
       "Accept-Language": i18n.language,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
-  }, [i18n.language]);
+  }, [i18n.language, tokenKey]);
 
   const config = useMemo(
     () => ({
@@ -100,6 +100,7 @@ export function RichTextEditor({
         kind: "image",
       },
       imageUploadURL: uploadEndpoint,
+      iconsTemplate: "svg",
       placeholderText: placeholder,
       requestHeaders,
       toolbarSticky: false,

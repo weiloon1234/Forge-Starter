@@ -10,6 +10,40 @@ interface TokenPairResponse {
   token_type: string;
 }
 
+const DEFAULT_AUTH_TOKEN_KEY = "auth_token";
+const REFRESH_TOKEN_SUFFIX = ":refresh";
+const REFRESH_RETRY_DELAY_MS = 60_000;
+
+function getRefreshTokenKey(tokenKey?: string): string {
+  return `${tokenKey ?? DEFAULT_AUTH_TOKEN_KEY}${REFRESH_TOKEN_SUFFIX}`;
+}
+
+function setStoredRefreshToken(token: string | null, tokenKey?: string) {
+  try {
+    const key = getRefreshTokenKey(tokenKey);
+    if (token) {
+      localStorage.setItem(key, token);
+    } else {
+      localStorage.removeItem(key);
+    }
+  } catch {
+    // SSR or no localStorage
+  }
+}
+
+function getStoredRefreshToken(tokenKey?: string): string | null {
+  try {
+    return localStorage.getItem(getRefreshTokenKey(tokenKey));
+  } catch {
+    return null;
+  }
+}
+
+function isAuthRejection(error: unknown): boolean {
+  const status = (error as AxiosError | undefined)?.response?.status;
+  return status === 400 || status === 401 || status === 403;
+}
+
 /**
  * Create an auth actor for a portal.
  *
@@ -21,7 +55,7 @@ interface TokenPairResponse {
  *   });
  */
 export function createAuth<TUser>(config: AuthConfig): AuthActor<TUser> {
-  const { api, mode, paths } = config;
+  const { api, mode, paths, tokenKey } = config;
 
   // ── State ──────────────────────────────────────────
 
@@ -31,9 +65,9 @@ export function createAuth<TUser>(config: AuthConfig): AuthActor<TUser> {
     busy: true, // true until initial check() completes
   });
 
-  // Refresh token: memory only (not persisted — more secure against XSS)
-  // Access token: localStorage (via setToken in createApi.ts)
-  let refreshToken: string | null = null;
+  // Access + refresh tokens are localStorage-backed so deploy asset reloads do
+  // not force a login when the server-side refresh token is still valid.
+  let refreshToken: string | null = getStoredRefreshToken(tokenKey);
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
 
   // ── Token management (token mode only) ─────────────
@@ -45,10 +79,7 @@ export function createAuth<TUser>(config: AuthConfig): AuthActor<TUser> {
     // Refresh 60 seconds before expiry (minimum 10s)
     const delay = Math.max((expiresIn - 60) * 1000, 10_000);
     refreshTimer = setTimeout(() => {
-      refresh().catch(() => {
-        // Refresh failed — force logout
-        clearAuth();
-      });
+      refresh().catch(handleRefreshFailure);
     }, delay);
   }
 
@@ -59,16 +90,41 @@ export function createAuth<TUser>(config: AuthConfig): AuthActor<TUser> {
     }
   }
 
+  function currentRefreshToken(): string | null {
+    refreshToken ??= getStoredRefreshToken(tokenKey);
+    return refreshToken;
+  }
+
+  function scheduleRefreshRetry() {
+    clearRefresh();
+    if (mode !== "token" || !paths.refresh || !currentRefreshToken()) return;
+
+    refreshTimer = setTimeout(() => {
+      refresh().catch(handleRefreshFailure);
+    }, REFRESH_RETRY_DELAY_MS);
+  }
+
+  function handleRefreshFailure(error: unknown) {
+    if (isAuthRejection(error)) {
+      clearAuth();
+      return;
+    }
+
+    scheduleRefreshRetry();
+  }
+
   function storeTokens(tokens: TokenPairResponse) {
-    setToken(tokens.access_token);
+    setToken(tokens.access_token, tokenKey);
     refreshToken = tokens.refresh_token;
+    setStoredRefreshToken(tokens.refresh_token, tokenKey);
     scheduleRefresh(tokens.expires_in);
   }
 
   function clearAuth() {
     clearRefresh();
-    setToken(null);
+    setToken(null, tokenKey);
     refreshToken = null;
+    setStoredRefreshToken(null, tokenKey);
     store.setState({ user: null, authenticated: false, busy: false });
   }
 
@@ -96,7 +152,7 @@ export function createAuth<TUser>(config: AuthConfig): AuthActor<TUser> {
     }
 
     // Token mode: try refresh before giving up
-    if (mode === "token" && refreshToken && paths.refresh) {
+    if (mode === "token" && currentRefreshToken() && paths.refresh) {
       const requestToRetry = originalRequest;
 
       if (isRefreshing) {
@@ -124,13 +180,17 @@ export function createAuth<TUser>(config: AuthConfig): AuthActor<TUser> {
         // Retry with fresh token (clear stale header so interceptor re-attaches)
         delete requestToRetry.headers?.Authorization;
         return api(requestToRetry);
-      } catch {
+      } catch (refreshError) {
         isRefreshing = false;
         pendingRequests.forEach(({ reject }) => {
           reject(error);
         });
         pendingRequests = [];
-        clearAuth();
+        if (isAuthRejection(refreshError)) {
+          clearAuth();
+        } else {
+          scheduleRefreshRetry();
+        }
         return Promise.reject(error);
       }
     }
@@ -158,6 +218,17 @@ export function createAuth<TUser>(config: AuthConfig): AuthActor<TUser> {
     return user;
   }
 
+  async function acceptTokens(tokens: TokenPairResponse): Promise<TUser> {
+    if (mode === "token") {
+      storeTokens(tokens);
+    }
+
+    const user = await fetchMe();
+    if (!user) throw new Error("Failed to fetch user profile");
+
+    return user;
+  }
+
   async function logout(): Promise<void> {
     try {
       if (paths.logout) {
@@ -169,12 +240,13 @@ export function createAuth<TUser>(config: AuthConfig): AuthActor<TUser> {
   }
 
   async function refresh(): Promise<void> {
-    if (mode !== "token" || !paths.refresh || !refreshToken) {
+    const token = currentRefreshToken();
+    if (mode !== "token" || !paths.refresh || !token) {
       return;
     }
 
     const { data } = await api.post<TokenPairResponse>(paths.refresh, {
-      refresh_token: refreshToken,
+      refresh_token: token,
     });
 
     storeTokens(data);
@@ -225,10 +297,24 @@ export function createAuth<TUser>(config: AuthConfig): AuthActor<TUser> {
     store.setState({ busy: true });
 
     if (mode === "token") {
-      const token = getToken();
+      const token = getToken(tokenKey);
       if (!token) {
-        store.setState({ user: null, authenticated: false, busy: false });
-        return;
+        if (!currentRefreshToken()) {
+          store.setState({ user: null, authenticated: false, busy: false });
+          return;
+        }
+
+        try {
+          await refresh();
+        } catch (error) {
+          if (isAuthRejection(error)) {
+            clearAuth();
+          } else {
+            store.setState({ user: null, authenticated: false, busy: false });
+            scheduleRefreshRetry();
+          }
+          return;
+        }
       }
     }
 
@@ -237,6 +323,7 @@ export function createAuth<TUser>(config: AuthConfig): AuthActor<TUser> {
 
   return {
     login,
+    acceptTokens,
     logout,
     refresh,
     fetchMe,

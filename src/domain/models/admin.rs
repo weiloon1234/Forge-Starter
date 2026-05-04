@@ -9,6 +9,7 @@ use crate::ids::guards::Guard;
 #[forge(model = "admins", soft_deletes = true)]
 pub struct Admin {
     pub id: ModelId<Self>,
+    #[forge(write_mutator = "normalize_username")]
     pub username: String,
     pub email: String,
     pub name: String,
@@ -25,6 +26,10 @@ pub struct Admin {
 impl Admin {
     async fn hash_password(ctx: &ModelHookContext<'_>, value: String) -> Result<String> {
         ctx.app().hash()?.hash(&value)
+    }
+
+    async fn normalize_username(_ctx: &ModelHookContext<'_>, value: String) -> Result<String> {
+        Ok(value.trim().to_lowercase())
     }
 }
 

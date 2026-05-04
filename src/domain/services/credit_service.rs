@@ -34,13 +34,6 @@ pub async fn admin_adjust(
         })?;
     let context = normalized_object(&req.context)
         .map_err(|_| Error::http(422, forge::t!(i18n, "admin.credits.errors.invalid_context")))?;
-    let related_key = normalized_related_key(req.related_key.as_deref()).map_err(|_| {
-        Error::http(
-            422,
-            forge::t!(i18n, "admin.credits.errors.invalid_related_key"),
-        )
-    })?;
-    let related_type = trimmed_string(req.related_type.as_deref());
     let remark = trimmed_string(req.remark.as_deref());
     let signed_delta = amount.apply(req.operation);
     let transaction_type = match req.operation {
@@ -78,10 +71,8 @@ pub async fn admin_adjust(
         .save(&transaction)
         .await?;
 
-    let persisted_related_key = related_key.unwrap_or_else(ModelId::<CreditRelatedKey>::generate);
-    let persisted_related_type = related_type
-        .clone()
-        .or_else(|| Some(DEFAULT_RELATED_TYPE.to_string()));
+    let persisted_related_key = ModelId::<CreditRelatedKey>::generate();
+    let persisted_related_type = Some(DEFAULT_RELATED_TYPE.to_string());
     let explanation_overrides_value =
         serde_json::to_value(&explanation_overrides).map_err(Error::other)?;
 
@@ -151,8 +142,6 @@ pub async fn admin_adjust(
             &Value::Object(Default::default()),
             &serde_json::to_value(&explanation_overrides).map_err(Error::other)?,
         ),
-        related_key: Some(persisted_related_key.to_string()),
-        related_type: persisted_related_type,
         context,
         admin_id: admin.id.to_string(),
         admin_label: admin_label(admin),
@@ -236,15 +225,6 @@ fn normalized_object(value: &Option<Value>) -> Result<Value> {
         Some(Value::Object(_)) => Ok(value.clone().unwrap_or(Value::Object(Default::default()))),
         Some(_) => Err(Error::message("expected object")),
     }
-}
-
-fn normalized_related_key(value: Option<&str>) -> Result<Option<ModelId<CreditRelatedKey>>> {
-    let Some(value) = trimmed_string(value) else {
-        return Ok(None);
-    };
-
-    let parsed = ModelId::<CreditRelatedKey>::parse_str(&value).map_err(Error::other)?;
-    Ok(Some(parsed))
 }
 
 fn explanation_override<'a>(overrides: &'a Value, locale: &str) -> Option<&'a str> {

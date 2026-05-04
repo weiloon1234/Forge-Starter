@@ -104,6 +104,7 @@ export function CreditAdjustmentsPage() {
                 },
                 {
                   title: t("admin.credits.create_title"),
+                  containerClassName: "sf-modal-container--credit-adjustment",
                 },
               )
             }

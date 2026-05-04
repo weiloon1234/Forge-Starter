@@ -600,6 +600,16 @@
 
   .sf-modal-body {
     @apply min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sf-modal-container
+    > :not(.sf-modal-header):not(.sf-modal-body):not(.sf-modal-footer) {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .sf-modal-footer {

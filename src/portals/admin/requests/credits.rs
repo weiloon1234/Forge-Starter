@@ -17,8 +17,6 @@ pub struct CreateAdminCreditAdjustmentRequest {
     #[ts(type = "Record<string, string>")]
     pub explanation_overrides: Option<Value>,
     pub remark: Option<String>,
-    pub related_key: Option<String>,
-    pub related_type: Option<String>,
     #[ts(type = "Record<string, unknown>")]
     pub context: Option<Value>,
 }
@@ -32,7 +30,6 @@ impl RequestValidator for CreateAdminCreditAdjustmentRequest {
         validator.custom_attribute("credit_type", "admin.credits.fields.credit_type");
         validator.custom_attribute("operation", "admin.credits.fields.operation");
         validator.custom_attribute("amount", "admin.credits.fields.amount");
-        validator.custom_attribute("related_key", "admin.credits.fields.related_key");
 
         validator
             .field("user_id", &self.user_id)
@@ -66,15 +63,6 @@ impl RequestValidator for CreateAdminCreditAdjustmentRequest {
             .min_numeric(0.00000001)
             .apply()
             .await?;
-
-        if let Some(related_key) = self.related_key.as_deref() {
-            validator
-                .field("related_key", related_key)
-                .bail()
-                .uuid()
-                .apply()
-                .await?;
-        }
 
         if !value_is_string_map(&self.explanation_overrides) {
             validator.add_error("explanation_overrides", "invalid", &[]);

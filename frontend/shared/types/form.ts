@@ -127,6 +127,7 @@ export interface RichTextEditorProps extends FieldBase {
   placeholder?: string;
   uploadEndpoint: string;
   uploadFolder: EditorUploadFolder;
+  tokenKey?: string;
 }
 
 // ── Button ──────────────────────────────────────────────
@@ -250,6 +251,7 @@ export interface FieldConfig {
   // Rich text-specific
   uploadEndpoint?: string;
   uploadFolder?: EditorUploadFolder;
+  tokenKey?: string;
 }
 
 // ── DataTable ───────────────────────────────────────────

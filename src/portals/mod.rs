@@ -26,10 +26,14 @@ pub fn register_spa(r: &mut HttpRegistrar) -> Result<()> {
         .nest_service("/admin/assets", ServeDir::new("public/admin/assets"));
     r.merge(admin_assets);
 
-    // User portal: SPA handler as fallback + static assets
-    let user_assets =
-        Router::<AppContext>::new().nest_service("/assets", ServeDir::new("public/user/assets"));
-    r.merge(user_assets);
+    // User portal: assets + fallback SPA. Any path not matched by an explicit
+    // route, nested service, or another portal falls through to the user SPA.
+    // `/api/*` and `/_forge/*` are excluded inside `user_spa_fallback` so
+    // misses there return a real 404 instead of SPA HTML.
+    let user_router = Router::<AppContext>::new()
+        .nest_service("/assets", ServeDir::new("public/user/assets"))
+        .fallback(spa::user_spa_fallback);
+    r.merge(user_router);
 
     Ok(())
 }

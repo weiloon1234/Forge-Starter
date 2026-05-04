@@ -31,7 +31,7 @@ interface WebSocketConfig {
   autoReconnect?: boolean;
   /** Max reconnect delay in ms (default 30000) */
   maxReconnectDelay?: number;
-  /** Max reconnect attempts before giving up (default 5) */
+  /** Max reconnect attempts before giving up (default: keep trying) */
   maxReconnectAttempts?: number;
 }
 
@@ -63,7 +63,7 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
     getToken,
     autoReconnect = true,
     maxReconnectDelay = 30000,
-    maxReconnectAttempts = 5,
+    maxReconnectAttempts = Number.POSITIVE_INFINITY,
   } = config;
 
   const statusStore = createStore<{ status: ConnectionStatus }>({

@@ -22,8 +22,6 @@ pub struct CreditAdjustmentDatatableRow {
     admin_id: String,
     admin_label: String,
     remark: Option<String>,
-    related_key: Option<String>,
-    related_type: Option<String>,
     created_at: DateTime,
 }
 
@@ -121,14 +119,6 @@ impl Datatable for CreditAdjustmentDatatable {
                 ColumnRef::new(ADJUSTMENTS_TABLE, "remark"),
             )
             .select_field(
-                CreditAdjustmentDatatableRow::RELATED_KEY,
-                Expr::raw(r#""credit_transactions"."related_key"::text"#),
-            )
-            .select_field(
-                CreditAdjustmentDatatableRow::RELATED_TYPE,
-                ColumnRef::new(TRANSACTIONS_TABLE, "related_type"),
-            )
-            .select_field(
                 CreditAdjustmentDatatableRow::CREATED_AT,
                 ColumnRef::new(ADJUSTMENTS_TABLE, "created_at"),
             )
@@ -169,10 +159,6 @@ impl Datatable for CreditAdjustmentDatatable {
                 .sortable()
                 .filter_by(ColumnRef::new(ADJUSTMENTS_TABLE, "created_at"))
                 .exportable(),
-            DatatableColumn::field(CreditAdjustmentDatatableRow::RELATED_TYPE)
-                .filter_by(ColumnRef::new(TRANSACTIONS_TABLE, "related_type")),
-            DatatableColumn::field(CreditAdjustmentDatatableRow::RELATED_KEY)
-                .filter_by(Expr::raw(r#""credit_transactions"."related_key"::text"#)),
         ]
     }
 
@@ -199,15 +185,9 @@ impl Datatable for CreditAdjustmentDatatable {
                             CreditAdjustmentDatatableRow::TRANSACTION_TYPE,
                         ),
                         DatatableFieldRef::<Self::Row>::from(CreditAdjustmentDatatableRow::REMARK),
-                        DatatableFieldRef::<Self::Row>::from(
-                            CreditAdjustmentDatatableRow::RELATED_TYPE,
-                        ),
-                        DatatableFieldRef::<Self::Row>::from(
-                            CreditAdjustmentDatatableRow::RELATED_KEY,
-                        ),
                     ],
                 )
-                .placeholder("User, admin, type, remark, or trace..."),
+                .placeholder("User, admin, transaction type, or remark..."),
                 DatatableFilterField::select("credit_type", "Credit type")
                     .options(CreditType::options()),
             ),

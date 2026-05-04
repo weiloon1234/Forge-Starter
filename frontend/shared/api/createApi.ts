@@ -1,7 +1,7 @@
 import { localeStore } from "@shared/i18n/localeStore";
+import { toast } from "@shared/toast";
 import { getBrowserTimezone } from "@shared/utils";
 import axios, { type AxiosError, type AxiosInstance } from "axios";
-import { toast } from "@shared/toast";
 
 // ── Types ──────────────────────────────────────────────
 
@@ -9,6 +9,8 @@ interface ApiConfig {
   baseURL: string;
   /** URL paths that should never toast (auth probing endpoints). */
   silentPaths?: string[];
+  /** Optional per-portal token key for portals that can be open side-by-side. */
+  tokenKey?: string;
 }
 
 interface ApiErrorResponse {
@@ -46,21 +48,21 @@ function transformFieldErrors(
 
 const TOKEN_KEY = "auth_token";
 
-export function setToken(token: string | null) {
+export function setToken(token: string | null, tokenKey = TOKEN_KEY) {
   try {
     if (token) {
-      localStorage.setItem(TOKEN_KEY, token);
+      localStorage.setItem(tokenKey, token);
     } else {
-      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(tokenKey);
     }
   } catch {
     // SSR or no localStorage
   }
 }
 
-export function getToken(): string | null {
+export function getToken(tokenKey = TOKEN_KEY): string | null {
   try {
-    return localStorage.getItem(TOKEN_KEY);
+    return localStorage.getItem(tokenKey);
   } catch {
     return null;
   }
@@ -71,6 +73,7 @@ export function getToken(): string | null {
 export function createApi({
   baseURL,
   silentPaths = [],
+  tokenKey = TOKEN_KEY,
 }: ApiConfig): AxiosInstance {
   const instance = axios.create({
     baseURL,
@@ -79,7 +82,7 @@ export function createApi({
 
   // Request interceptor: attach auth token + locale
   instance.interceptors.request.use((config) => {
-    const token = getToken();
+    const token = getToken(tokenKey);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

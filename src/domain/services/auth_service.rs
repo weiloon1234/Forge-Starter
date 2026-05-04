@@ -53,19 +53,20 @@ pub async fn admin_login_with_token(
     username: &str,
     password: &str,
 ) -> Result<TokenPair> {
+    let username = username.trim().to_lowercase();
     let throttle = LoginThrottle::new(app)?;
-    throttle.before_attempt(username).await?;
+    throttle.before_attempt(&username).await?;
 
     let db = app.database()?;
 
     let admin = match Admin::model_query()
-        .where_(Admin::USERNAME.eq(username))
+        .where_(Admin::USERNAME.ieq(&username))
         .first(&*db)
         .await?
     {
         Some(admin) => admin,
         None => {
-            throttle.record_failure(username).await?;
+            throttle.record_failure(&username).await?;
             return Err(Error::http(
                 401,
                 forge::t!(i18n, "auth.invalid_credentials"),
@@ -75,14 +76,14 @@ pub async fn admin_login_with_token(
 
     let hash = app.hash()?;
     if !hash.check(password, &admin.password_hash)? {
-        throttle.record_failure(username).await?;
+        throttle.record_failure(&username).await?;
         return Err(Error::http(
             401,
             forge::t!(i18n, "auth.invalid_credentials"),
         ));
     }
 
-    throttle.record_success(username).await?;
+    throttle.record_success(&username).await?;
 
     let tokens = admin
         .create_token_with_abilities(

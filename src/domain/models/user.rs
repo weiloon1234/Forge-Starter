@@ -12,6 +12,7 @@ pub struct UserLifecycle;
 #[forge(model = "users", soft_deletes = true, lifecycle = UserLifecycle)]
 pub struct User {
     pub id: ModelId<Self>,
+    #[forge(write_mutator = "normalize_username")]
     pub username: Option<String>,
     pub name: Option<String>,
     pub email: Option<String>,
@@ -47,6 +48,20 @@ impl User {
 
     async fn hash_secret(ctx: &ModelHookContext<'_>, value: String) -> Result<String> {
         ctx.app().hash()?.hash(&value)
+    }
+
+    async fn normalize_username(
+        _ctx: &ModelHookContext<'_>,
+        value: Option<String>,
+    ) -> Result<Option<String>> {
+        Ok(value.and_then(|raw| {
+            let trimmed = raw.trim();
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed.to_lowercase())
+            }
+        }))
     }
 
     async fn assign_default_introducer(

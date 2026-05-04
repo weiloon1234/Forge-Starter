@@ -20,8 +20,6 @@ pub struct CreditTransactionDatatableRow {
     credit_type: String,
     transaction_type: String,
     amount: Numeric,
-    related_key: Option<String>,
-    related_type: Option<String>,
     created_at: DateTime,
 }
 
@@ -78,14 +76,6 @@ fn credit_transaction_query() -> ProjectionQuery<CreditTransactionDatatableRow> 
         .select_field(
             CreditTransactionDatatableRow::AMOUNT,
             ColumnRef::new(TRANSACTIONS_TABLE, "amount"),
-        )
-        .select_field(
-            CreditTransactionDatatableRow::RELATED_KEY,
-            Expr::raw(r#""credit_transactions"."related_key"::text"#),
-        )
-        .select_field(
-            CreditTransactionDatatableRow::RELATED_TYPE,
-            ColumnRef::new(TRANSACTIONS_TABLE, "related_type"),
         )
         .select_field(
             CreditTransactionDatatableRow::CREATED_AT,
@@ -167,10 +157,6 @@ fn credit_transaction_columns() -> Vec<DatatableColumn<CreditTransactionDatatabl
         DatatableColumn::field(CreditTransactionDatatableRow::USER_ID).filter_by(user_id_expr()),
         DatatableColumn::field(CreditTransactionDatatableRow::CREDIT_TYPE)
             .filter_by(ColumnRef::new(TRANSACTIONS_TABLE, "credit_type")),
-        DatatableColumn::field(CreditTransactionDatatableRow::RELATED_TYPE)
-            .filter_by(ColumnRef::new(TRANSACTIONS_TABLE, "related_type")),
-        DatatableColumn::field(CreditTransactionDatatableRow::RELATED_KEY)
-            .filter_by(Expr::raw(r#""credit_transactions"."related_key"::text"#)),
     ]
 }
 
@@ -193,10 +179,6 @@ fn user_credit_transaction_columns() -> Vec<DatatableColumn<CreditTransactionDat
         DatatableColumn::field(CreditTransactionDatatableRow::USER_ID).filter_by(user_id_expr()),
         DatatableColumn::field(CreditTransactionDatatableRow::CREDIT_TYPE)
             .filter_by(ColumnRef::new(TRANSACTIONS_TABLE, "credit_type")),
-        DatatableColumn::field(CreditTransactionDatatableRow::RELATED_TYPE)
-            .filter_by(ColumnRef::new(TRANSACTIONS_TABLE, "related_type")),
-        DatatableColumn::field(CreditTransactionDatatableRow::RELATED_KEY)
-            .filter_by(Expr::raw(r#""credit_transactions"."related_key"::text"#)),
     ]
 }
 
@@ -246,15 +228,9 @@ impl Datatable for CreditTransactionDatatable {
                         DatatableFieldRef::<Self::Row>::from(
                             CreditTransactionDatatableRow::USER_ID,
                         ),
-                        DatatableFieldRef::<Self::Row>::from(
-                            CreditTransactionDatatableRow::RELATED_TYPE,
-                        ),
-                        DatatableFieldRef::<Self::Row>::from(
-                            CreditTransactionDatatableRow::RELATED_KEY,
-                        ),
                     ],
                 )
-                .placeholder("User, email, user ID, related type, or related key..."),
+                .placeholder("User, email, or user ID..."),
                 DatatableFilterField::select("credit_type", "Credit type")
                     .options(CreditType::options()),
             ),
@@ -321,20 +297,7 @@ impl Datatable for UserCreditTransactionDatatable {
 
     async fn available_filters(_ctx: &DatatableContext) -> Result<Vec<DatatableFilterRow>> {
         Ok(vec![
-            DatatableFilterRow::pair(
-                DatatableFilterField::text_search_fields(
-                    "search",
-                    "Search",
-                    [
-                        DatatableFieldRef::<Self::Row>::from(
-                            CreditTransactionDatatableRow::RELATED_TYPE,
-                        ),
-                        DatatableFieldRef::<Self::Row>::from(
-                            CreditTransactionDatatableRow::RELATED_KEY,
-                        ),
-                    ],
-                )
-                .placeholder("Related type or key..."),
+            DatatableFilterRow::single(
                 DatatableFilterField::select("transaction_type", "Transaction type")
                     .options(CreditTransactionType::options()),
             ),

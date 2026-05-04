@@ -14,6 +14,8 @@ export interface AuthConfig {
   mode: "token" | "session";
   /** API paths relative to the portal's baseURL. */
   paths: AuthPaths;
+  /** Must match the createApi tokenKey when a portal needs isolated auth. */
+  tokenKey?: string;
 }
 
 export interface AuthState<TUser> {
@@ -25,6 +27,13 @@ export interface AuthState<TUser> {
 export interface AuthActor<TUser> {
   /** Login with credentials. Returns the user on success. */
   login(credentials: Record<string, string>): Promise<TUser>;
+  /** Seed auth state from an already-issued token pair and fetch the user profile. */
+  acceptTokens(tokens: {
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+    token_type: string;
+  }): Promise<TUser>;
   /** Logout — clears token/session + user store. */
   logout(): Promise<void>;
   /** Refresh token (token mode only). Auto-called before expiry. */

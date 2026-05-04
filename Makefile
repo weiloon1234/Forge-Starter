@@ -4,7 +4,7 @@
 # Run: make <target>
 # =============================================================================
 
-.PHONY: help setup dev dev\:api dev\:admin dev\:user build check lint lint\:rust lint\:frontend lint\:starter lint\:fix api-docs types migrate seed routes deploy clean
+.PHONY: help setup dev dev\:api dev\:admin dev\:user stop build check lint lint\:rust lint\:frontend lint\:starter lint\:fix api-docs types migrate seed routes deploy clean
 
 # Default: show help
 help:
@@ -15,6 +15,7 @@ help:
 	@echo "  make dev:api      Backend API only (:3000, Rust auto-restart)"
 	@echo "  make dev:admin    Admin frontend only (:5173)"
 	@echo "  make dev:user     User frontend only (:5174)"
+	@echo "  make stop         Kill leftover dev processes (use if Ctrl+C left ports bound)"
 	@echo ""
 	@echo "  make build        Build release binary + frontends"
 	@echo "  make check        Type-check without building"
@@ -40,15 +41,29 @@ setup:
 	@echo "Setup complete. Run 'make dev' to start."
 
 # Start everything — generate types, then all processes + frontend portals
+# On Ctrl+C: trap fires on EXIT/INT/TERM and kills the entire process group,
+# including grandchildren (cargo's target/debug/app binaries) that would
+# otherwise outlive their parent. The final command is NOT exec'd so the
+# trap survives until the recipe shell exits.
 dev: types
 	@echo "Starting backend (:3000) + websocket (:3010) + scheduler + admin (:5173) + user (:5174)..."
 	@echo "Visit http://localhost:5173/admin/ or http://localhost:5174/"
-	@trap 'kill 0' EXIT; \
+	@trap 'kill 0 2>/dev/null; wait 2>/dev/null' EXIT INT TERM; \
 	(cd frontend/admin && exec npm run dev) & \
 	(cd frontend/user && exec npm run dev) & \
-	(PROCESS=websocket exec bash scripts/watch-rust.sh cargo run) & \
-	(PROCESS=scheduler exec bash scripts/watch-rust.sh cargo run) & \
-	exec bash scripts/watch-rust.sh cargo run
+	bash scripts/watch-dev.sh http websocket scheduler
+
+# Safety net: kill any leftover dev processes still bound to dev ports.
+# Run after Ctrl+C if anything survived (`Address already in use` on next make dev).
+stop:
+	@echo "Stopping dev processes..."
+	-@pkill -TERM -f "target/debug/app" 2>/dev/null || true
+	-@pkill -TERM -f "scripts/watch-dev.sh" 2>/dev/null || true
+	-@pkill -TERM -f "scripts/watch-rust.sh" 2>/dev/null || true
+	-@pkill -TERM -f "node.*vite" 2>/dev/null || true
+	-@sleep 1
+	-@lsof -ti:3000,3010,5173,5174 2>/dev/null | xargs -r kill -9 2>/dev/null || true
+	@echo "Done."
 
 # Backend API only
 dev\:api:

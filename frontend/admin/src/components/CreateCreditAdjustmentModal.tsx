@@ -133,16 +133,17 @@ export function CreateCreditAdjustmentModal({
       })),
     [userOptions],
   );
+  const adjustmentLayoutClassName = [
+    "sf-credit-adjustment-layout",
+    selectedUser && "sf-credit-adjustment-layout--with-balance",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <>
-      <ModalBody>
-        <div className="sf-admin-form-page">
-          <div>
-            <h3 className="sf-page-title">{t("admin.credits.create_title")}</h3>
-            <p className="sf-page-subtitle">{t("admin.credits.create_help")}</p>
-          </div>
-
+      <ModalBody className="sf-credit-adjustment-modal">
+        <div className="sf-admin-form-page sf-credit-adjustment-page">
           {form.formErrors.length > 0 && (
             <div className="sf-form-error-banner">
               {form.formErrors.map((error) => (
@@ -186,88 +187,98 @@ export function CreateCreditAdjustmentModal({
                 placeholder={t("admin.credits.user_placeholder")}
               />
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Select
-                  name={creditTypeField.name}
-                  label={t("admin.credits.fields.credit_type")}
-                  value={
-                    typeof creditTypeField.value === "string"
-                      ? creditTypeField.value
-                      : currentCreditType
-                  }
-                  options={creditTypeOptions(t)}
-                  onChange={(value) =>
-                    creditTypeField.onChange(
-                      (Array.isArray(value)
-                        ? (value[0] ?? "credit_1")
-                        : value) as CreditAdjustmentFormValues["credit_type"],
-                    )
-                  }
-                  errors={creditTypeField.errors}
-                />
+              <div className={adjustmentLayoutClassName}>
+                <div className="sf-credit-adjustment-controls">
+                  <div className="sf-credit-adjustment-control-row">
+                    <Select
+                      name={creditTypeField.name}
+                      label={t("admin.credits.fields.credit_type")}
+                      value={
+                        typeof creditTypeField.value === "string"
+                          ? creditTypeField.value
+                          : currentCreditType
+                      }
+                      options={creditTypeOptions(t)}
+                      onChange={(value) =>
+                        creditTypeField.onChange(
+                          (Array.isArray(value)
+                            ? (value[0] ?? "credit_1")
+                            : value) as CreditAdjustmentFormValues["credit_type"],
+                        )
+                      }
+                      errors={creditTypeField.errors}
+                    />
 
-                <Select
-                  name={operationField.name}
-                  label={t("admin.credits.fields.operation")}
-                  value={
-                    typeof operationField.value === "string"
-                      ? operationField.value
-                      : currentOperation
-                  }
-                  options={creditOperationOptions(t)}
-                  onChange={(value) =>
-                    operationField.onChange(
-                      (Array.isArray(value)
-                        ? (value[0] ?? "add")
-                        : value) as CreditAdjustmentFormValues["operation"],
-                    )
-                  }
-                  errors={operationField.errors}
-                />
-
-                <Input
-                  name={amountField.name}
-                  label={t("admin.credits.fields.amount")}
-                  value={
-                    typeof amountField.value === "string"
-                      ? amountField.value
-                      : ""
-                  }
-                  onChange={amountField.onChange}
-                  onBlur={amountField.onBlur}
-                  errors={amountField.errors}
-                  placeholder={t("100.00")}
-                  hints={[t("admin.credits.amount_hint")]}
-                />
-              </div>
-
-              {selectedUser && (
-                <div className="sf-page-locale-panel">
-                  <div className="sf-page-locale-panel__header">
-                    {selectedUser.label}
+                    <Select
+                      name={operationField.name}
+                      label={t("admin.credits.fields.operation")}
+                      value={
+                        typeof operationField.value === "string"
+                          ? operationField.value
+                          : currentOperation
+                      }
+                      options={creditOperationOptions(t)}
+                      onChange={(value) =>
+                        operationField.onChange(
+                          (Array.isArray(value)
+                            ? (value[0] ?? "add")
+                            : value) as CreditAdjustmentFormValues["operation"],
+                        )
+                      }
+                      errors={operationField.errors}
+                    />
                   </div>
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                    <div>
-                      <div className="sf-page-subtitle">
-                        {t("admin.credits.current_balance_label", {
-                          credit_type: enumLabel(
-                            CreditTypeOptions,
-                            currentCreditType,
-                            t,
-                          ),
-                        })}
-                      </div>
-                      <div>{currentBalance}</div>
-                    </div>
-                    <div>
-                      <div className="sf-page-subtitle">
-                        {t("admin.credits.projected_balance_label")}
-                      </div>
-                      <div>{nextBalance ?? "—"}</div>
-                    </div>
-                  </div>
+
+                  <Input
+                    name={amountField.name}
+                    type="money"
+                    label={t("admin.credits.fields.amount")}
+                    value={
+                      typeof amountField.value === "string"
+                        ? amountField.value
+                        : ""
+                    }
+                    onChange={amountField.onChange}
+                    onBlur={amountField.onBlur}
+                    errors={amountField.errors}
+                    hints={[t("admin.credits.amount_hint")]}
+                    className="sf-credit-amount-field"
+                    prefix={currentOperation === "deduct" ? "-" : "+"}
+                  />
                 </div>
-              )}
+
+                {selectedUser && (
+                  <div className="sf-credit-balance-panel">
+                    <div className="sf-credit-balance-panel__user">
+                      {selectedUser.label}
+                    </div>
+                    <div className="sf-credit-balance-grid">
+                      <div className="sf-credit-balance-stat">
+                        <div className="sf-credit-balance-stat__label">
+                          {t("admin.credits.current_balance_label", {
+                            credit_type: enumLabel(
+                              CreditTypeOptions,
+                              currentCreditType,
+                              t,
+                            ),
+                          })}
+                        </div>
+                        <div className="sf-credit-balance-stat__value">
+                          {currentBalance}
+                        </div>
+                      </div>
+                      <div className="sf-credit-balance-stat sf-credit-balance-stat--projected">
+                        <div className="sf-credit-balance-stat__label">
+                          {t("admin.credits.projected_balance_label")}
+                        </div>
+                        <div className="sf-credit-balance-stat__value">
+                          {nextBalance ?? "—"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="sf-admin-form-section">

@@ -129,6 +129,7 @@ export function FormField<TValue>({ config, binding }: FormFieldProps<TValue>) {
           placeholder={config.placeholder}
           uploadEndpoint={config.uploadEndpoint}
           uploadFolder={config.uploadFolder}
+          tokenKey={config.tokenKey}
         />
       );
     default:

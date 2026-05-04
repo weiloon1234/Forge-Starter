@@ -3,6 +3,7 @@ import { useRuntimeStore } from "@shared/config";
 import { useForm } from "@shared/hooks";
 import { getLocaleLabel } from "@shared/i18n/localeLabels";
 import { modal } from "@shared/modal";
+import { toast } from "@shared/toast";
 import type {
   AdminPageResponse,
   EditorUploadFolder,
@@ -11,8 +12,7 @@ import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { toast } from "@shared/toast";
-import { api } from "@/api";
+import { ADMIN_AUTH_TOKEN_KEY, api } from "@/api";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { ConfirmDeletePageModal } from "@/components/ConfirmDeletePageModal";
 import { usePermission } from "@/hooks/usePermission";
@@ -438,6 +438,7 @@ export function PageFormPage() {
                   hints={defaultLocaleHint}
                   uploadEndpoint="/api/v1/admin/editor-assets/upload"
                   uploadFolder={PAGES_CONTENT_FOLDER}
+                  tokenKey={ADMIN_AUTH_TOKEN_KEY}
                 />
               </div>
             </div>

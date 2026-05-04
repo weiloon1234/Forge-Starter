@@ -24,8 +24,6 @@ pub struct AdminCreditAdjustmentResponse {
     #[ts(type = "Record<string, string>")]
     pub explanation_overrides: Value,
     pub explanation_text: String,
-    pub related_key: Option<String>,
-    pub related_type: Option<String>,
     #[ts(type = "Record<string, unknown>")]
     pub context: Value,
     pub admin_id: String,

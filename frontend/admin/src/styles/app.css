@@ -503,6 +503,128 @@ body {
     color: var(--color-text);
 }
 
+.sf-modal-container--credit-adjustment {
+    max-width: min(58rem, calc(100vw - 1rem));
+}
+
+.sf-credit-adjustment-modal .sf-field {
+    margin-bottom: 0;
+    min-width: 0;
+}
+
+.sf-credit-adjustment-modal .sf-admin-form-section {
+    padding: clamp(1.25rem, 2vw, 1.75rem);
+}
+
+.sf-credit-adjustment-layout {
+    display: grid;
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.sf-credit-adjustment-controls {
+    display: grid;
+    min-width: 0;
+    gap: 1rem;
+}
+
+.sf-credit-adjustment-control-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.sf-credit-amount-field .sf-input-wrapper {
+    min-height: 3rem;
+    border-radius: 0.875rem;
+}
+
+.sf-credit-amount-field .sf-input {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    font-size: 1.125rem;
+    font-weight: 650;
+}
+
+.sf-credit-amount-field .sf-input-prefix {
+    display: inline-flex;
+    align-self: stretch;
+    align-items: center;
+    justify-content: center;
+    min-width: 3rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.sf-credit-balance-panel {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    padding: 1rem;
+    background: var(--color-bg-muted);
+}
+
+.sf-credit-balance-panel__user {
+    overflow-wrap: anywhere;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.sf-credit-balance-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.sf-credit-balance-stat {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.sf-credit-balance-stat__label {
+    overflow-wrap: anywhere;
+    font-size: 0.8125rem;
+    line-height: 1.35;
+    color: var(--color-text-muted);
+}
+
+.sf-credit-balance-stat__value {
+    overflow-wrap: anywhere;
+    font-size: 1.05rem;
+    font-weight: 650;
+    color: var(--color-text);
+}
+
+.sf-credit-balance-stat--projected .sf-credit-balance-stat__value {
+    color: var(--color-primary);
+}
+
+@media (min-width: 640px) {
+    .sf-credit-balance-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 860px) {
+    .sf-credit-adjustment-layout--with-balance {
+        grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.85fr);
+    }
+
+    .sf-credit-balance-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 639px) {
+    .sf-credit-adjustment-control-row {
+        grid-template-columns: 1fr;
+    }
+}
+
 .sf-page-modal-footer {
     @apply flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between;
 }
