@@ -1183,7 +1183,7 @@ checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
 [[package]]
 name = "forge"
 version = "0.1.0"
-source = "git+https://github.com/weiloon1234/Forge.git?branch=main#1b053f1f438c2a94d3c6a2f2d65484594ac8bc39"
+source = "git+https://github.com/weiloon1234/Forge.git?branch=main#bac60a103332ff62d799b0488bf72a765798dcaa"
 dependencies = [
  "aes-gcm",
  "ammonia",
@@ -1233,12 +1233,12 @@ dependencies = [
 [[package]]
 name = "forge-build"
 version = "0.1.0"
-source = "git+https://github.com/weiloon1234/Forge.git?branch=main#1b053f1f438c2a94d3c6a2f2d65484594ac8bc39"
+source = "git+https://github.com/weiloon1234/Forge.git?branch=main#bac60a103332ff62d799b0488bf72a765798dcaa"
 
 [[package]]
 name = "forge-macros"
 version = "0.1.0"
-source = "git+https://github.com/weiloon1234/Forge.git?branch=main#1b053f1f438c2a94d3c6a2f2d65484594ac8bc39"
+source = "git+https://github.com/weiloon1234/Forge.git?branch=main#bac60a103332ff62d799b0488bf72a765798dcaa"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1439,9 +1439,9 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.4.13"
+version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f44da3a8150a6703ed5d34e164b875fd14c2cdab9af1252a9a1020bde2bdc54"
+checksum = "171fefbc92fe4a4de27e0698d6a5b392d6a0e333506bc49133760b3bcf948733"
 dependencies = [
  "atomic-waker",
  "bytes",
@@ -2052,7 +2052,7 @@ dependencies = [
  "bitflags",
  "libc",
  "plain",
- "redox_syscall 0.7.4",
+ "redox_syscall 0.7.5",
 ]
 
 [[package]]
@@ -2270,9 +2270,9 @@ checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
 
 [[package]]
 name = "no_std_io2"
-version = "0.9.3"
+version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b51ed7824b6e07d354605f4abb3d9d300350701299da96642ee084f5ce631550"
+checksum = "418abd1b6d34fbf6cae440dc874771b0525a604428704c76e48b29a5e67b8003"
 dependencies = [
  "memchr",
 ]
@@ -2417,7 +2417,7 @@ dependencies = [
  "md-5",
  "parking_lot",
  "percent-encoding",
- "quick-xml 0.39.2",
+ "quick-xml 0.39.3",
  "rand 0.10.1",
  "reqwest",
  "ring",
@@ -2819,9 +2819,9 @@ dependencies = [
 
 [[package]]
 name = "quick-xml"
-version = "0.39.2"
+version = "0.39.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "958f21e8e7ceb5a1aa7fa87fab28e7c75976e0bfe7e23ff069e0a260f894067d"
+checksum = "721da970c312655cde9b4ffe0547f20a8494866a4af5ff51f18b7c633d0c870b"
 dependencies = [
  "memchr",
  "serde",
@@ -3091,9 +3091,9 @@ dependencies = [
 
 [[package]]
 name = "redox_syscall"
-version = "0.7.4"
+version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f450ad9c3b1da563fb6948a8e0fb0fb9269711c9c73d9ea1de5058c79c8d643a"
+checksum = "4666a1a60d8412eab19d94f6d13dcc9cea0a5ef4fdf6a5db306537413c661b1b"
 dependencies = [
  "bitflags",
 ]
@@ -3998,9 +3998,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.52.1"
+version = "1.52.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b67dee974fe86fd92cc45b7a95fdd2f99a36a6d7b0d431a231178d3d670bbcc6"
+checksum = "110a78583f19d5cdb2c5ccf321d1290344e71313c6c37d43520d386027d18386"
 dependencies = [
  "bytes",
  "libc",

@@ -124,7 +124,7 @@ The order below minimizes rework. Skip steps based on the decisions above; never
 ### Phase A — Foundations (backend, pre-UI)
 
 1. **(If new enum variants needed)** — Create any `src/domain/enums/<name>.rs` files with `#[derive(forge::AppEnum)]` + add `enum.<snake_name>.<variant>` i18n keys in every locale. No skill yet; pattern in CLAUDE.md's enum rules + `typescript` skill.
-2. **(If new permissions needed)** — Invoke `new-permission` once per variant (typically `.read` + `.manage`). Run `make types` after the last one.
+2. **(If new permissions needed)** — Invoke `new-permission` once per variant (typically `.read` + `.manage`). Run `make types` after the last one so generated `PermissionGroups` updates `permissions.<module>.<action>` for the admin UI.
 3. **Invoke `new-model`** — Create the primary model with migration (via `make:model` + `make:migration`). This must come before anything that references the model (datatable, badge, event listener).
 4. **(If seeder needed)** — Follow the seeder variant in `new-model` (`make:seeder`). Often deferred until the module is working.
 

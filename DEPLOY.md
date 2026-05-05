@@ -228,6 +228,9 @@ SERVER__HOST=127.0.0.1
 SERVER__PORT=3000
 WEBSOCKET__HOST=127.0.0.1
 WEBSOCKET__PORT=3010
+WEBSOCKET__OUTBOUND_BUFFER_SIZE=1024
+WEBSOCKET__ALLOWED_ORIGINS=["https://staging.my-saas.com"]
+WEBSOCKET__HISTORY_BUFFER_SIZE=50
 DATABASE__URL=postgres://...
 REDIS__URL=redis://127.0.0.1:6379
 REDIS__NAMESPACE=my_saas_staging
@@ -351,6 +354,12 @@ VITE_STORAGE_URL=https://assets-staging.my-saas.com
 `wss://<current-host>/ws` on production HTTPS pages. The server-side
 `WEBSOCKET__HOST=127.0.0.1` and `WEBSOCKET__PORT=3010` stay private; Nginx
 proxies the public `/ws` path to that local process.
+
+`WEBSOCKET__ALLOWED_ORIGINS` is server runtime config for WebSocket Origin
+checks and belongs in `/opt/{APP_ID}/.env`. It is separate from `VITE_WS_URL`;
+use a TOML array of exact browser origins, for example
+`["https://staging.my-saas.com"]`. If it is omitted or empty, the WebSocket
+server allows any Origin.
 
 `scripts/build.sh` reads this file locally only:
 

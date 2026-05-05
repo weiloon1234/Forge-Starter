@@ -3,6 +3,7 @@ import { useRuntimeStore } from "@shared/config";
 import { useForm } from "@shared/hooks";
 import { getLocaleLabel } from "@shared/i18n/localeLabels";
 import { ModalBody, ModalFooter } from "@shared/modal";
+import { toast } from "@shared/toast";
 import type {
   AdminCreditAdjustmentResponse,
   AdminUserLookupOptionResponse,
@@ -11,7 +12,6 @@ import { CreditTypeOptions } from "@shared/types/generated";
 import { enumLabel } from "@shared/utils";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "@shared/toast";
 import { api } from "@/api";
 import {
   balanceForCreditType,

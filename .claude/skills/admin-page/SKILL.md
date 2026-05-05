@@ -145,7 +145,7 @@ pub async fn load(app: &AppContext, _i18n: &I18n) -> Result<<SomeDomainStruct>> 
 
 Add `pub mod <name>_service;` in `src/domain/services/mod.rs`.
 
-Run `make types` to regenerate TS bindings for the new response DTO.
+Run `make types` to regenerate TS bindings for the new response DTO and the generated route id.
 
 ### 5. Create the page component
 
@@ -154,7 +154,7 @@ Path: `frontend/admin/src/pages/<Name>Page.tsx`
 ```tsx
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/api";
+import { api, routeUrl, RouteIds } from "@/api";
 import type { <Name>Response } from "@shared/types/generated";
 
 export function <Name>Page() {
@@ -163,7 +163,7 @@ export function <Name>Page() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await api.get<<Name>Response>("/<name>");
+      const { data } = await api.get<<Name>Response>(routeUrl(RouteIds.admin.<name>.show));
       setData(data);
     })();
   }, []);
@@ -200,7 +200,7 @@ Edit `frontend/admin/src/config/side-menu.ts`:
   label: "admin.<name>.title",   // i18n key
   path: "/<slug>",
   icon: <LucideIcon>,             // optional
-  permission: "<module>.<action>",
+  permission: permissions.<module>.<action>,
   // badge: "work.<key>",          // only if a matching admin-badge exists
 },
 ```
@@ -238,7 +238,7 @@ export function AdminDashboardPage() {
 
   useEffect(() => {
     const tick = async () => {
-      const { data } = await api.get<DashboardResponse>("/dashboard");
+      const { data } = await api.get<DashboardResponse>(routeUrl(RouteIds.admin.dashboard.summary));
       setStats(data);
     };
     void tick();
@@ -281,7 +281,7 @@ export function <Resource>DetailPage() {
 
   const load = async () => {
     if (!id) return;
-    const { data } = await api.get<<Resource>Response>(`/<resource>s/${id}`);
+    const { data } = await api.get<<Resource>Response>(routeUrl(RouteIds.admin.<resource>s.show, { id }));
     setData(data);
   };
 
@@ -339,7 +339,7 @@ export function <Report>Page() {
   const [data, setData] = useState<<Report>Response | null>(null);
 
   const run = async () => {
-    const { data } = await api.get<<Report>Response>("/<report>", { params: filters });
+    const { data } = await api.get<<Report>Response>(routeUrl(RouteIds.admin.<report>.index), { params: filters });
     setData(data);
   };
 
@@ -414,12 +414,13 @@ Then manual smoke via `make dev`:
 - **Don't build a CRUD list here.** If the page is "show a sortable filterable list + create + edit + delete", it's `admin-datatable`. Half-building CRUD outside the datatable system forfeits the generic query endpoint, the column permission checks, the export wiring, and consistent UX.
 - **Don't build a login page here.** `new-portal` owns login + refresh + logout UI as part of the portal template.
 - **Don't put business logic in the route handler.** Handlers are thin — extract request, call service, return response. Services live in `src/domain/services/<name>_service.rs`.
-- **Don't skip the permission check.** Every admin page has a `.permission(Permission::<New>)` on its route scope AND a `permission: "<key>"` on its menu entry. The two match; dropping either is a bug.
+- **Don't skip the permission check.** Every admin page has a `.permission(Permission::<New>)` on its route scope AND a generated `permission: permissions.<module>.<action>` on its menu entry. The two point at the same `#[forge(key = "...")]`; dropping either is a bug.
 - **Don't render raw HTML controls.** `<button>`, `<input>`, `<select>`, `<textarea>` are banned. Every control comes from `@shared/components`. See `shared-components`.
 - **Don't hand-roll form state.** Any form fields = `useForm` from `@shared/hooks` + `<Input>` / `<Select>` / etc. If the page has a form section, delegate to `frontend-form`.
 - **Don't catch API errors to toast them.** Axios interceptors auto-toast non-2xx. Catch only for specific recovery or to suppress.
 - **Don't skip non-English locales.** Every `admin.<name>.*` key in `locales/en/messages.json` must have a mirror entry in `locales/zh/messages.json` (and every other locale file). CLAUDE.md hard rule.
-- **Don't forget `make types`** if you added a new response / request DTO. Frontend will `any`-type the fields without regeneration.
+- **Don't forget `make types`** if you added a new response / request DTO or backend route. Frontend will `any`-type the fields and miss `RouteIds` without regeneration.
+- **Don't hardcode registered API paths in page components.** Import `routeUrl` + `RouteIds` from `@/api` and call `api.get(routeUrl(RouteIds.admin...))`.
 - **Don't hardcode colors or use inline styles.** Tailwind utilities + CSS variables (`var(--color-*)`) only. `sf-page-title`, `sf-page-subtitle`, `sf-page-header` are pre-existing classes in the portal's `styles/forms.css` — reuse them.
 
 ## When this skill doesn't fit

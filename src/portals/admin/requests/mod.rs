@@ -1,5 +1,6 @@
 pub mod admins;
 pub mod auth;
+pub mod banks;
 pub mod countries;
 pub mod credits;
 pub mod editor_assets;
@@ -11,6 +12,7 @@ pub mod users;
 
 pub use admins::*;
 pub use auth::*;
+pub use banks::*;
 pub use countries::*;
 pub use credits::*;
 pub use editor_assets::*;

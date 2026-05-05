@@ -43,7 +43,7 @@ Binding to a model:
 
 ```rust
 #[derive(Serialize, forge::Model)]
-#[forge(model = "widgets", lifecycle = "WidgetLifecycle")]
+#[forge(table = "widgets", lifecycle = "WidgetLifecycle")]
 pub struct Widget { /* ... */ }
 
 pub struct WidgetLifecycle;

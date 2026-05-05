@@ -4,7 +4,7 @@ use serde::Serialize;
 
 #[derive(Serialize, forge::Model)]
 #[forge(
-    model = "countries",
+    table = "countries",
     primary_key = "iso2",
     primary_key_strategy = "manual",
     audit = false

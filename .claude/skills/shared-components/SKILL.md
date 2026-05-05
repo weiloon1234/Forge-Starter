@@ -77,14 +77,14 @@ Path: `import { Select } from "@shared/components";`
 />
 ```
 
-For searchable user lookup or other async remote options:
+For searchable user lookup or other async remote options, use the portal route helper when the lookup is a registered route:
 ```tsx
 <Select
   {...form.field("introducer_user_id")}
   label={t("Introducer")}
   searchable
   onSearch={async (query) => {
-    const { data } = await api.get("/users/lookup", { params: { q: query } });
+    const { data } = await api.get(routeUrl(RouteIds.admin.users.options), { params: { q: query } });
     return data.map(u => ({ value: u.id, label: u.username }));
   }}
   loading={searching}

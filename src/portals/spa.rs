@@ -95,9 +95,9 @@ fn is_framework_miss(path: &str) -> bool {
 }
 
 async fn admin_spa_html(app: &AppContext) -> Result<Html<String>> {
-    let config = config_script(&app).await?;
+    let config = config_script(app).await?;
 
-    if is_dev(&app) {
+    if is_dev(app) {
         Ok(Html(dev_html(
             "Admin Portal",
             VITE_ADMIN_PORT,
@@ -121,9 +121,9 @@ pub async fn admin_spa(State(app): State<AppContext>, uri: Uri) -> Result<Respon
 }
 
 async fn user_spa_html(app: &AppContext) -> Result<Html<String>> {
-    let config = config_script(&app).await?;
+    let config = config_script(app).await?;
 
-    if is_dev(&app) {
+    if is_dev(app) {
         Ok(Html(dev_html(
             "Forge Starter",
             VITE_USER_PORT,

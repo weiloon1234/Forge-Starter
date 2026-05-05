@@ -38,7 +38,7 @@ Forms live in three containers:
 ## Prerequisites
 
 - [ ] `@shared/hooks`, `@shared/components`, `@shared/modal` are already available in the portal. They always are — don't install anything.
-- [ ] If the form submits to the API, the backend route + request/response DTOs exist (create/update these via the flow that owns them — `admin-datatable` / `admin-page` / `new-portal`).
+- [ ] If the form submits to the API, the backend route + request/response DTOs exist (create/update these via the flow that owns them — `admin-datatable` / `admin-page` / `new-portal`) and `make types` has regenerated `RouteIds`.
 - [ ] If the form uses enum-typed fields, the enum already exists under `src/domain/enums/` and has been regenerated into TS via `make types`. See `typescript` skill.
 - [ ] If field labels are new user-facing strings, the i18n keys exist in `locales/<lang>/messages.json` (per CLAUDE.md Translation Rules).
 
@@ -84,7 +84,7 @@ Default — single-mode form (create-only OR update-only), types directly agains
 
 ```tsx
 import { useForm } from "@shared/hooks";
-import { api } from "@/api";
+import { api, routeUrl, RouteIds } from "@/api";
 import type { Create<Feature>Request, <Feature>Response } from "@shared/types/generated";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -157,7 +157,7 @@ import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { api } from "@/api";
+import { api, routeUrl, RouteIds } from "@/api";
 import { Confirm<Feature>DeleteModal } from "@/components/Confirm<Feature>DeleteModal";
 
 interface <Feature>FormValues {
@@ -189,14 +189,14 @@ export function <Feature>FormModal({
           <field_1>: values.<field_1>,
           <field_2>: values.<field_2>,
         };
-        await api.post("/<feature>s", payload);
+        await api.post(routeUrl(RouteIds.admin.<feature>s.store), payload);
         toast.success(t("<feature>s.created"));
       } else if (<feature>Id) {
         const payload: Update<Feature>Request = {
           <field_1>: values.<field_1> || null,
           <field_2>: values.<field_2> || null,
         };
-        await api.put(`/<feature>s/${<feature>Id}`, payload);
+        await api.put(routeUrl(RouteIds.admin.<feature>s.update, { id: <feature>Id }), payload);
         toast.success(t("<feature>s.updated"));
       }
       onSaved?.();
@@ -209,7 +209,7 @@ export function <Feature>FormModal({
     if (!<feature>Id) return;
     (async () => {
       try {
-        const { data } = await api.get<<Feature>Response>(`/<feature>s/${<feature>Id}`);
+        const { data } = await api.get<<Feature>Response>(routeUrl(RouteIds.admin.<feature>s.show, { id: <feature>Id }));
         setLoaded(data);
         form.setValues({
           <field_1>: data.<field_1>,
@@ -232,7 +232,7 @@ export function <Feature>FormModal({
       {
         name: loaded.<display_field>,
         onConfirm: async () => {
-          await api.delete(`/<feature>s/${loaded.id}`);
+          await api.delete(routeUrl(RouteIds.admin.<feature>s.destroy, { id: loaded.id }));
           toast.success(t("<feature>s.deleted"));
           onSaved?.();
           onClose();
@@ -287,7 +287,7 @@ import { useForm } from "@shared/hooks";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { api } from "@/api";
+import { api, routeUrl, RouteIds } from "@/api";
 import type { <Feature>Response, Update<Feature>Request } from "@shared/types/generated";
 
 export function <Feature>FormPage() {
@@ -528,5 +528,5 @@ Then manual smoke:
 - **Full admin CRUD page** — use `admin-datatable` (it invokes this skill for its form modal).
 - **Login / refresh / logout UI** — part of `new-portal`'s scaffold.
 - **Datatable column filter** — not a form; the datatable's `available_filters()` (Rust side) + built-in UI handles it. See `admin-datatable`.
-- **Search box not tied to a form** — `useState` + `useDebounce` + `api.get("...?q=...")` is fine. Not every input is a form.
+- **Search box not tied to a form** — `useState` + `useDebounce` + `api.get(routeUrl(RouteIds.admin.<resource>.options), { params: { q } })` is fine. Not every input is a form.
 - **Picking the right `@shared/components` primitive** — consult `shared-components`.

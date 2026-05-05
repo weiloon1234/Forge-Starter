@@ -8,7 +8,7 @@ import {
 import { modal } from "@shared/modal";
 import { Lock, LogOut, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { api } from "@/api";
+import { api, RouteIds, routeUrl } from "@/api";
 import { auth } from "@/auth";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
 import { EditProfileModal } from "@/components/EditProfileModal";
@@ -47,7 +47,9 @@ export function AccountDropdown({ onClose }: AccountDropdownProps) {
     }
 
     localeStore.setLocale(code);
-    api.put("/profile/locale", { locale: code }).catch(() => {});
+    api
+      .put(routeUrl(RouteIds.admin.profile.locale), { locale: code })
+      .catch(() => {});
   };
 
   return (

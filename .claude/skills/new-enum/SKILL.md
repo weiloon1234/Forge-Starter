@@ -138,7 +138,7 @@ use crate::domain::enums::<YourEnum>;
 
 // In a model:
 #[derive(Serialize, forge::Model)]
-#[forge(model = "things")]
+#[forge(table = "things")]
 pub struct Thing {
     pub id: ModelId<Self>,
     pub status: <YourEnum>,
@@ -185,7 +185,7 @@ pub enum SomeThingKind {
 }
 
 #[derive(Serialize, forge::Model)]
-#[forge(model = "some_things")]
+#[forge(table = "some_things")]
 pub struct SomeThing {
     pub id: ModelId<Self>,
     pub kind: SomeThingKind,
@@ -231,6 +231,6 @@ Open `frontend/shared/types/generated/index.ts` and verify the barrel re-exports
 
 - **Enum-typed field on a model** — combine with `new-model`. If the enum is new, run this skill first. If existing, just reference it in `new-model`'s field template.
 - **Adding a single variant to an existing enum** — no skill. Add variant + i18n key + `make types`. Update every match arm the compiler flags.
-- **Permission enum variants specifically** — use `new-permission` (specialized for the Permission enum's `key_str`/`module`/`action`/`implied_permission` conventions).
+- **Permission enum variants specifically** — use `new-permission` (specialized for the Permission enum's typed ID, `module`/`action`, generated `PermissionGroups`, and `implied_permission` conventions).
 - **Non-string-keyed enum** (integer-keyed, e.g., some legacy DB columns) — AppEnum supports integer keys via `forge(key = ...)` with integer, but this is rare. Escalate if you need it.
 - **Internal Rust enum with no persistence / DTO / TS exposure** — plain `enum Foo {}` is fine; AppEnum overhead isn't earned.

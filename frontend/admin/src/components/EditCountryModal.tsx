@@ -1,6 +1,7 @@
 import { Button, Checkbox, Input, Select } from "@shared/components";
 import { useForm } from "@shared/hooks";
 import { ModalBody, ModalFooter } from "@shared/modal";
+import { toast } from "@shared/toast";
 import type {
   CountryStatus,
   UpdateCountryRequest,
@@ -8,8 +9,7 @@ import type {
 import { CountryStatusOptions } from "@shared/types/generated";
 import { enumOptions } from "@shared/utils/enumOptions";
 import { useTranslation } from "react-i18next";
-import { toast } from "@shared/toast";
-import { api } from "@/api";
+import { api, RouteIds, routeUrl } from "@/api";
 
 interface EditCountryModalProps {
   iso2: string;
@@ -36,7 +36,10 @@ export function EditCountryModal({
       is_default: isDefault,
     },
     onSubmit: async (values) => {
-      await api.put(`/countries/${iso2}`, values);
+      await api.put(
+        routeUrl(RouteIds.admin.countries.update, { iso2 }),
+        values,
+      );
       toast.success(t("Country updated"));
       onClose();
     },

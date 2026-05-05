@@ -4,6 +4,7 @@ import { AdminLayout } from "@/layouts/AdminLayout";
 import { AdminFormPage } from "@/pages/AdminFormPage";
 import { AdminsPage } from "@/pages/AdminsPage";
 import { AuditLogsPage } from "@/pages/AuditLogsPage";
+import { BanksPage } from "@/pages/BanksPage";
 import { CountryPage } from "@/pages/CountryPage";
 import { CreditAdjustmentsPage } from "@/pages/CreditAdjustmentsPage";
 import { CreditTransactionsPage } from "@/pages/CreditTransactionsPage";
@@ -38,6 +39,7 @@ export const router = createBrowserRouter(
         { path: "admins/new", element: <AdminFormPage /> },
         { path: "admins/:id", element: <AdminFormPage /> },
         { path: "countries", element: <CountryPage /> },
+        { path: "banks", element: <BanksPage /> },
         { path: "pages", element: <PagesPage /> },
         { path: "pages/new", element: <PageFormPage /> },
         { path: "pages/:id", element: <PageFormPage /> },

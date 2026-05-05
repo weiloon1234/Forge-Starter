@@ -1,6 +1,7 @@
 pub mod admin_service;
 pub mod auth_service;
 pub mod badge_service;
+pub mod bank_service;
 pub mod country_service;
 pub mod credit_service;
 pub mod editor_asset_service;

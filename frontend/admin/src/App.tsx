@@ -1,10 +1,10 @@
 import { localeStore } from "@shared/i18n";
 import { ModalProvider } from "@shared/modal";
+import { Toaster } from "@shared/toast";
 import type { BadgeCountsResponse } from "@shared/types/generated";
 import { useEffect } from "react";
 import { RouterProvider } from "react-router-dom";
-import { Toaster } from "@shared/toast";
-import { api } from "@/api";
+import { api, RouteIds, routeUrl } from "@/api";
 import { auth } from "@/auth";
 import { LoginPage } from "@/pages/LoginPage";
 import { router } from "@/router";
@@ -22,7 +22,9 @@ export default function App() {
 
     const hydrateBadges = async (version: number) => {
       try {
-        const { data } = await api.get<BadgeCountsResponse>("/badges");
+        const { data } = await api.get<BadgeCountsResponse>(
+          routeUrl(RouteIds.admin.badges.index),
+        );
         if (active && version === sessionVersion) {
           adminBadges.hydrate(data.counts);
         }
@@ -48,7 +50,11 @@ export default function App() {
       }
       const currentLocale = localeStore.locale;
       if (user.locale !== currentLocale) {
-        api.put("/profile/locale", { locale: currentLocale }).catch(() => {});
+        api
+          .put(routeUrl(RouteIds.admin.profile.locale), {
+            locale: currentLocale,
+          })
+          .catch(() => {});
       }
 
       await hydrateBadges(version);

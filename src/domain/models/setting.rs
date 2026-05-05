@@ -3,7 +3,7 @@ use forge::settings::SettingType;
 use serde::Serialize;
 
 #[derive(Serialize, forge::Model)]
-#[forge(model = "settings")]
+#[forge(table = "settings")]
 pub struct AppSetting {
     pub id: ModelId<Self>,
     pub key: String,

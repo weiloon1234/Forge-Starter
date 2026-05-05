@@ -1,10 +1,10 @@
 import { Button, Input } from "@shared/components";
 import { useForm } from "@shared/hooks";
 import { ModalBody, ModalFooter } from "@shared/modal";
+import { toast } from "@shared/toast";
 import type { UpdateAdminProfileRequest } from "@shared/types/generated";
 import { useTranslation } from "react-i18next";
-import { toast } from "@shared/toast";
-import { api } from "@/api";
+import { api, RouteIds, routeUrl } from "@/api";
 import { auth } from "@/auth";
 
 interface EditProfileModalProps {
@@ -23,7 +23,7 @@ export function EditProfileModal({
   const form = useForm<UpdateAdminProfileRequest>({
     initialValues: { name, email, current_password: "" },
     onSubmit: async (values) => {
-      await api.put("/profile", values);
+      await api.put(routeUrl(RouteIds.admin.profile.update), values);
       toast.success(t("Profile updated"));
       await auth.fetchMe();
       onClose();

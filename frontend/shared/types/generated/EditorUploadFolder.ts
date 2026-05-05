@@ -17,3 +17,8 @@ id: "editor_upload_folder",
 keyKind: "string",
 options: EditorUploadFolderOptions,
 } as const;
+
+export const EditorUploadFolderGroups = {
+  settings: { content: "settings.content" },
+  pages: { content: "pages.content" },
+} as const;

@@ -1,5 +1,5 @@
 import type { AdminType, Permission } from "@shared/types/generated";
-import { PermissionValues } from "@shared/types/generated";
+import { PermissionGroups, PermissionValues } from "@shared/types/generated";
 
 export type PermissionAction = "read" | "manage";
 export type PermissionSelection = "none" | PermissionAction;
@@ -10,28 +10,37 @@ export interface PermissionModule {
   manage?: Permission;
 }
 
-const MODULES = buildModules(PermissionValues);
+type PermissionGroup = (typeof PermissionGroups)[keyof typeof PermissionGroups];
 
-function buildModules(values: readonly Permission[]): PermissionModule[] {
-  const modules = new Map<string, PermissionModule>();
+const MODULES = buildModules(PermissionGroups);
 
-  for (const permission of values) {
-    const [moduleKey, action] = permission.split(".") as [
-      string,
-      PermissionAction,
-    ];
-
-    const existing = modules.get(moduleKey) ?? { key: moduleKey };
-    if (action === "read") {
-      existing.read = permission;
-    }
-    if (action === "manage") {
-      existing.manage = permission;
-    }
-    modules.set(moduleKey, existing);
+function groupPermission(
+  group: PermissionGroup,
+  action: PermissionAction,
+): Permission | undefined {
+  if (!(action in group)) {
+    return undefined;
   }
 
-  return Array.from(modules.values());
+  return group[action as keyof typeof group] as Permission;
+}
+
+function moduleKey(read?: Permission, manage?: Permission): string | undefined {
+  return (read ?? manage)?.split(".")[0];
+}
+
+function buildModules(groups: typeof PermissionGroups): PermissionModule[] {
+  return Object.values(groups).flatMap((group) => {
+    const read = groupPermission(group, "read");
+    const manage = groupPermission(group, "manage");
+    const key = moduleKey(read, manage);
+
+    if (!key || (!read && !manage)) {
+      return [];
+    }
+
+    return [{ key, read, manage }];
+  });
 }
 
 function effectivePermissionValues(

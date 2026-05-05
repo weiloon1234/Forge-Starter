@@ -1,6 +1,7 @@
 import { Button, Input, Select } from "@shared/components";
 import { useForm } from "@shared/hooks";
 import { ModalBody, ModalFooter } from "@shared/modal";
+import { toast } from "@shared/toast";
 import type {
   AdminUserIntroducerChangeResponse,
   AdminUserLookupOptionResponse,
@@ -8,7 +9,6 @@ import type {
 } from "@shared/types/generated";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "@shared/toast";
 import { api } from "@/api";
 import { mergeUserOptions, userOptionLabel } from "@/userLookup";
 

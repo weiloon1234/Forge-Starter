@@ -18,12 +18,12 @@ A user asks to define a new RBAC scope. Typical phrasings:
 Do NOT invoke for:
 - Applying an existing `Permission::X` to a new route — the scope DSL handles that inline; no skill needed.
 - Adding RBAC to a whole new portal — that's part of the `new-portal` flow.
-- Permission-gating a React component — use `usePermission("<module>.<action>")` directly; regular frontend work.
+- Permission-gating a React component — import `permissions` from `@/permissions` and pass `permissions.<module>.<action>` to `usePermission`; regular frontend work.
 - Listing every permission / auditing RBAC — reference task, not a skill trigger.
 
 ## Concept (one paragraph)
 
-The `Permission` enum in `src/ids/permissions.rs` is an app-owned, strongly-typed catalogue of RBAC scopes. Every variant derives `forge::AppEnum` with a `#[forge(key = "<module>.<action>")]` attribute — the key becomes the stable string persisted against admin grants and the TypeScript union exposed to the frontend. Convention: `<module>.read` grants view access and `<module>.manage` grants create/update/delete. `.manage` typically implies `.read` via the `implied_permission()` method, so granting `TopupsManage` also satisfies a `TopupsRead` check. Keys are load-bearing — existing admins have them persisted — so treat them as stable once shipped.
+The `Permission` enum in `src/ids/permissions.rs` is an app-owned, strongly-typed catalogue of RBAC scopes. It derives `forge::AppEnum` with `#[forge(id_type = PermissionId)]`, and every variant carries a `#[forge(key = "<module>.<action>")]` attribute. The key becomes the stable string persisted against admin grants, the typed `PermissionId`, the TypeScript union, and the generated `PermissionGroups` object exposed to the frontend through `@/permissions`. Convention: `<module>.read` grants view access and `<module>.manage` grants create/update/delete. `.manage` typically implies `.read` via the `implied_permission()` method, so granting `TopupsManage` also satisfies a `TopupsRead` check. Keys are load-bearing — existing admins have them persisted — so treat them as stable once shipped.
 
 ## Prerequisites
 
@@ -67,21 +67,7 @@ pub enum Permission {
 - Variant name is the PascalCase mirror of the key: `topups.read` → `TopupsRead`.
 - Do NOT rename an existing key — admins in the database hold the old string. Add a new variant; deprecate the old one explicitly if retiring.
 
-### 2. Extend the `key_str()` match
-
-Add arms covering the new variants, returning the exact `#[forge(key = "...")]` string:
-
-```rust
-const fn key_str(self) -> &'static str {
-    match self {
-        // ... existing arms
-        Self::TopupsRead => "topups.read",
-        Self::TopupsManage => "topups.manage",
-    }
-}
-```
-
-### 3. Extend the `module()` match
+### 2. Extend the `module()` match
 
 Group both `Read` and `Manage` variants of the same module onto one arm, returning the module string:
 
@@ -94,7 +80,7 @@ pub const fn module(self) -> &'static str {
 }
 ```
 
-### 4. Extend the `action()` match
+### 3. Extend the `action()` match
 
 Add the new variants to the appropriate action group (`read` or `manage`). The `|` lists are ordered by module — match the existing style:
 
@@ -111,7 +97,7 @@ pub const fn action(self) -> &'static str {
 }
 ```
 
-### 5. Extend the `implied_permission()` match
+### 4. Extend the `implied_permission()` match
 
 For every new `<Module>Manage`, add an arm returning `Some(Self::<Module>Read)`. Read permissions fall through to `_ => None`:
 
@@ -127,13 +113,13 @@ pub const fn implied_permission(self) -> Option<Self> {
 
 Pattern MUST match the existing convention. If you intentionally skip the implication for a rare action, document why inline — the default is that manage implies read.
 
-### 6. Regenerate TypeScript bindings
+### 5. Regenerate TypeScript bindings
 
 ```bash
 make types
 ```
 
-The generated `frontend/shared/types/generated/Permission.ts` union (plus `PermissionOptions` / `PermissionValues`) picks up the new keys. Frontend code using `usePermission("topups.read")` compiles against the refreshed union.
+The generated `frontend/shared/types/generated/Permission.ts` union (plus `PermissionOptions`, `PermissionValues`, and `PermissionGroups`) picks up the new keys. `frontend/admin/src/permissions.ts` re-exports `PermissionGroups` as `permissions`, so frontend code should use `usePermission(permissions.topups.read)` instead of raw strings. Do not edit the generated files or `frontend/admin/src/permissions.ts` by hand.
 
 ## Use the new permission (downstream wiring)
 
@@ -142,7 +128,7 @@ The permission isn't useful until something references it. Common targets — ea
 - **Route gating** — in `src/portals/<portal>/mod.rs`, attach to a scope via `.permission(Permission::TopupsRead)` (inherited by all routes inside) or override on a specific route with `.permissions([Permission::TopupsManage])`. Scope defaults cascade; individual routes override.
 - **Datatable gating** — if adding a datatable for this resource, extend `minimum_read_permission` in `src/portals/admin/datatable_routes.rs` with an arm mapping the datatable ID to the new `Read` permission. The `admin-datatable` skill handles full CRUD wiring.
 - **Sidebar badge gating** — if adding a badge tied to this resource, set `const PERMISSION: Permission = Permission::TopupsRead;` on the `AdminBadge` impl. The `admin-badge` skill covers the full flow.
-- **Frontend gating** — `usePermission("topups.read")` in React components. The string argument is typed against the regenerated `Permission` union, so typos fail at compile time.
+- **Frontend gating** — import `permissions` from `@/permissions`, then use `usePermission(permissions.topups.read)` in React components. The value comes from regenerated `PermissionGroups`, so missing modules/actions fail at compile time.
 
 ## Verify
 
@@ -162,18 +148,18 @@ All three must be clean. Then confirm:
 
 ## Don't
 
-- **Don't use stringly-typed permissions in Rust.** Always `Permission::TopupsRead`, never `"topups.read"`. Strings are only acceptable in the frontend where the typed union is the mechanism.
+- **Don't use stringly-typed permissions.** In Rust, always `Permission::TopupsRead`, never `"topups.read"`. In the frontend, use `permissions.topups.read`, never a raw permission string.
 - **Don't skip `make types`.** The frontend `Permission` union must match the Rust enum exactly — skipping regeneration silently desyncs the two.
 - **Don't invent action verbs outside the vocabulary.** Stick to `read` and `manage`. Rare exceptions (`export`, `approve`) require a clear reason and matching UX in the admin permissions picker — don't freelance.
 - **Don't add a `.manage` without an `implied_permission()` arm.** Leaving `TopupsManage` without the implication means granting manage alone won't satisfy read checks — almost always wrong.
 - **Don't rename an existing `#[forge(key = "...")]`.** The key is persisted against admin grants; renaming is a breaking schema change. Add new, deprecate old.
 - **Don't leave a permission unreferenced.** A variant declared with no route / datatable / badge / service check is dead code. Wire it somewhere in the same PR.
-- **Don't forget the `key_str()`, `module()`, and `action()` arms.** The compiler catches missing arms, but only if you actually compile — `make check` is mandatory, not optional.
+- **Don't forget the `module()` and `action()` arms.** The compiler catches missing arms, but only if you actually compile — `make check` is mandatory, not optional.
 
 ## When this skill doesn't fit
 
 - **Applying an existing `Permission::X` to a new route** → no skill needed. Just add `.permission(Permission::X)` to the scope or route in `src/portals/<portal>/mod.rs`.
 - **Adding a whole new portal** → use `new-portal`; it introduces the portal's permission scope alongside guard + config + frontend bootstrap.
 - **Per-row permissions** ("admin can only see rows they created") → not RBAC. Implement as a datatable `filters()` scope or service-layer check. Escalate if the design needs a new construct.
-- **Permission-gating a React component only** → use `usePermission("<module>.<action>")` directly. No new Rust variant needed if the backend already gates the corresponding API.
+- **Permission-gating a React component only** → use `usePermission(permissions.<module>.<action>)` from `@/permissions`. No new Rust variant needed if the backend already gates the corresponding API.
 - **Auditing or listing current permissions** → read `src/ids/permissions.rs` directly; reference task, not a skill trigger.

@@ -12,7 +12,7 @@ import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { ADMIN_AUTH_TOKEN_KEY, api } from "@/api";
+import { ADMIN_AUTH_TOKEN_KEY, api, RouteIds, routeUrl } from "@/api";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { ConfirmDeletePageModal } from "@/components/ConfirmDeletePageModal";
 import { usePermission } from "@/hooks/usePermission";
@@ -85,13 +85,13 @@ export function PageFormPage() {
       const savedPage = isCreateRoute
         ? (
             await api.post<AdminPageResponse>(
-              "/pages",
+              routeUrl(RouteIds.admin.pages.store),
               buildCreatePagePayload(values, locales),
             )
           ).data
         : (
             await api.put<AdminPageResponse>(
-              `/pages/${id}`,
+              routeUrl(RouteIds.admin.pages.update, { id: id ?? "" }),
               buildUpdatePagePayload(values, locales),
             )
           ).data;
@@ -100,9 +100,14 @@ export function PageFormPage() {
         if (selectedCover) {
           const formData = new FormData();
           formData.append("file", selectedCover);
-          await api.post(`/pages/${savedPage.id}/cover`, formData);
+          await api.post(
+            routeUrl(RouteIds.admin.pages.uploadCover, { id: savedPage.id }),
+            formData,
+          );
         } else if (removeCover && page?.cover) {
-          await api.delete(`/pages/${savedPage.id}/cover`);
+          await api.delete(
+            routeUrl(RouteIds.admin.pages.deleteCover, { id: savedPage.id }),
+          );
         }
       } catch {
         toast.error(t("admin.pages.cover_save_failed"));
@@ -155,7 +160,9 @@ export function PageFormPage() {
       }
 
       try {
-        const { data } = await api.get<AdminPageResponse>(`/pages/${id}`);
+        const { data } = await api.get<AdminPageResponse>(
+          routeUrl(RouteIds.admin.pages.show, { id: id ?? "" }),
+        );
 
         if (!active) {
           return;
@@ -232,7 +239,9 @@ export function PageFormPage() {
       {
         slug: page.slug,
         onConfirm: async () => {
-          await api.delete(`/pages/${page.id}`);
+          await api.delete(
+            routeUrl(RouteIds.admin.pages.destroy, { id: page.id }),
+          );
           toast.success(t("admin.pages.deleted"));
           navigate("/pages", { replace: true });
         },

@@ -5,6 +5,7 @@ mod scopes;
 pub mod admin_routes;
 pub mod auth_routes;
 pub mod badge_routes;
+pub mod bank_routes;
 pub mod country_routes;
 pub mod credit_routes;
 pub mod datatable_routes;
@@ -34,6 +35,7 @@ pub fn register(r: &mut HttpRegistrar) -> Result<()> {
             scopes::register_credit_scope(admin)?;
             scopes::register_setting_scope(admin)?;
             scopes::register_page_scope(admin)?;
+            scopes::register_bank_scope(admin)?;
             scopes::register_editor_asset_scope(admin)?;
             scopes::register_log_scope(admin)?;
             scopes::register_datatable_scope(admin)?;

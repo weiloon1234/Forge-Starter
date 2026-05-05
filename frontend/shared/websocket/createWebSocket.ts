@@ -40,7 +40,12 @@ export interface WebSocketManager {
   disconnect: () => void;
   subscribe: (channel: string, room?: string) => void;
   unsubscribe: (channel: string, room?: string) => void;
-  send: (channel: string, event: string, payload?: WebSocketPayload) => void;
+  send: (
+    channel: string,
+    event: string,
+    payload?: WebSocketPayload,
+    room?: string,
+  ) => void;
   on(
     channel: string,
     event: "*",
@@ -102,7 +107,7 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
   function flushPendingSubscriptions() {
     for (const key of pendingSubscriptions) {
       const [channel, room] = key.split("|");
-      sendRaw({ action: "Subscribe", channel, room: room || undefined });
+      sendRaw({ action: "subscribe", channel, room: room || undefined });
       activeSubscriptions.add(key);
     }
     pendingSubscriptions.clear();
@@ -111,7 +116,7 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
   function resubscribeAll() {
     for (const key of activeSubscriptions) {
       const [channel, room] = key.split("|");
-      sendRaw({ action: "Subscribe", channel, room: room || undefined });
+      sendRaw({ action: "subscribe", channel, room: room || undefined });
     }
   }
 
@@ -237,7 +242,7 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
     if (activeSubscriptions.has(key) || pendingSubscriptions.has(key)) return;
 
     if (ws?.readyState === WebSocket.OPEN) {
-      sendRaw({ action: "Subscribe", channel, room });
+      sendRaw({ action: "subscribe", channel, room });
       activeSubscriptions.add(key);
     } else {
       pendingSubscriptions.add(key);
@@ -250,12 +255,17 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
     pendingSubscriptions.delete(key);
 
     if (ws?.readyState === WebSocket.OPEN) {
-      sendRaw({ action: "Unsubscribe", channel, room });
+      sendRaw({ action: "unsubscribe", channel, room });
     }
   }
 
-  function send(channel: string, event: string, payload?: WebSocketPayload) {
-    sendRaw({ action: "Message", channel, event, payload });
+  function send(
+    channel: string,
+    event: string,
+    payload?: WebSocketPayload,
+    room?: string,
+  ) {
+    sendRaw({ action: "message", channel, room, event, payload });
   }
 
   function on(

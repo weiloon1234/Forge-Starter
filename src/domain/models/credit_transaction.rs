@@ -7,7 +7,7 @@ use crate::domain::models::User;
 pub struct CreditRelatedKey;
 
 #[derive(Serialize, forge::Model)]
-#[forge(model = "credit_transactions")]
+#[forge(table = "credit_transactions")]
 pub struct CreditTransaction {
     pub id: ModelId<Self>,
     pub user_id: ModelId<User>,

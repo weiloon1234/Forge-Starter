@@ -2,6 +2,7 @@ import { Button, Input, Select } from "@shared/components";
 import { getConfig } from "@shared/config";
 import { useForm } from "@shared/hooks";
 import { ModalBody, ModalFooter, modal } from "@shared/modal";
+import { toast } from "@shared/toast";
 import type {
   AdminPermissionResponse,
   AdminResponse,
@@ -13,7 +14,6 @@ import { enumOptions } from "@shared/utils";
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "@shared/toast";
 import { adminFormModeForTarget, canDeleteAdminTarget } from "@/adminAccess";
 import {
   type AdminFormValues,
@@ -22,7 +22,7 @@ import {
   buildUpdateAdminPayload,
   emptyAdminFormValues,
 } from "@/adminForm";
-import { api } from "@/api";
+import { api, RouteIds, routeUrl } from "@/api";
 import { auth } from "@/auth";
 import { ConfirmDeleteAdminModal } from "@/components/ConfirmDeleteAdminModal";
 import { PermissionMatrix } from "@/components/PermissionMatrix";
@@ -103,10 +103,16 @@ export function AdminFormModal({
     initialValues: emptyAdminFormValues(createLocale),
     onSubmit: async (values) => {
       if (isCreate) {
-        await api.post("/admins", buildCreateAdminPayload(values));
+        await api.post(
+          routeUrl(RouteIds.admin.admins.store),
+          buildCreateAdminPayload(values),
+        );
         toast.success(t("admin.admins.created"));
       } else if (adminId) {
-        await api.put(`/admins/${adminId}`, buildUpdateAdminPayload(values));
+        await api.put(
+          routeUrl(RouteIds.admin.admins.update, { id: adminId }),
+          buildUpdateAdminPayload(values),
+        );
         toast.success(t("admin.admins.updated"));
       }
 
@@ -132,9 +138,13 @@ export function AdminFormModal({
 
       try {
         const [{ data: grantableRows }, adminResponse] = await Promise.all([
-          api.get<AdminPermissionResponse[]>("/admins/permissions"),
+          api.get<AdminPermissionResponse[]>(
+            routeUrl(RouteIds.admin.admins.permissions),
+          ),
           adminId
-            ? api.get<AdminResponse>(`/admins/${adminId}`)
+            ? api.get<AdminResponse>(
+                routeUrl(RouteIds.admin.admins.show, { id: adminId }),
+              )
             : Promise.resolve(null),
         ]);
 
@@ -214,7 +224,9 @@ export function AdminFormModal({
       {
         name: loadedAdmin.name,
         onConfirm: async () => {
-          await api.delete(`/admins/${loadedAdmin.id}`);
+          await api.delete(
+            routeUrl(RouteIds.admin.admins.destroy, { id: loadedAdmin.id }),
+          );
           toast.success(t("admin.admins.deleted"));
           onSaved?.();
           onClose();

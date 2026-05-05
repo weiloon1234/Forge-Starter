@@ -9,7 +9,7 @@ use crate::ids::guards::Guard;
 pub struct UserLifecycle;
 
 #[derive(Serialize, forge::Model)]
-#[forge(model = "users", soft_deletes = true, lifecycle = UserLifecycle)]
+#[forge(table = "users", soft_deletes = true, lifecycle = UserLifecycle)]
 pub struct User {
     pub id: ModelId<Self>,
     #[forge(write_mutator = "normalize_username")]

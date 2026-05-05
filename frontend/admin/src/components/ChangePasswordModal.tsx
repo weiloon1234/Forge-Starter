@@ -1,10 +1,10 @@
 import { Button, Input } from "@shared/components";
 import { useForm } from "@shared/hooks";
 import { ModalBody, ModalFooter } from "@shared/modal";
+import { toast } from "@shared/toast";
 import type { ChangeAdminPasswordRequest } from "@shared/types/generated";
 import { useTranslation } from "react-i18next";
-import { toast } from "@shared/toast";
-import { api } from "@/api";
+import { api, RouteIds, routeUrl } from "@/api";
 
 interface ChangePasswordModalProps {
   onClose: () => void;
@@ -20,7 +20,7 @@ export function ChangePasswordModal({ onClose }: ChangePasswordModalProps) {
       password_confirmation: "",
     },
     onSubmit: async (values) => {
-      await api.put("/profile/password", values);
+      await api.put(routeUrl(RouteIds.admin.profile.changePassword), values);
       toast.success(t("Password changed"));
       onClose();
     },

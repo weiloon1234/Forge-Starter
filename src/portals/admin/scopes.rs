@@ -6,18 +6,19 @@ use crate::portals::admin::requests::{
     AdminLoginRequest, ChangeAdminPasswordRequest, ChangeUserIntroducerRequest,
     CreateAdminCreditAdjustmentRequest, CreateAdminRequest, CreatePageRequest, CreateUserRequest,
     UpdateAdminLocaleRequest, UpdateAdminProfileRequest, UpdateAdminRequest, UpdateCountryRequest,
-    UpdatePageRequest, UpdateSettingValueRequest, UpdateUserRequest,
+    UpdatePageRequest, UpdateSettingValueRequest, UpdateUserRequest, UpsertBankRequest,
 };
 use crate::portals::admin::responses::{
-    AdminCreditAdjustmentResponse, AdminEditorAssetUploadResponse, AdminMeResponse,
-    AdminPageResponse, AdminPermissionResponse, AdminResponse, AdminSettingResponse,
-    AdminUserIntroducerChangeResponse, AdminUserLookupOptionResponse, AdminUserResponse,
-    BadgeCountsResponse, LogEntryResponse, LogFileResponse,
+    AdminBankResponse, AdminCreditAdjustmentResponse, AdminEditorAssetUploadResponse,
+    AdminMeResponse, AdminPageResponse, AdminPermissionResponse, AdminResponse,
+    AdminSettingResponse, AdminUserIntroducerChangeResponse, AdminUserLookupOptionResponse,
+    AdminUserResponse, BadgeCountsResponse, BankOptionResponse, LogEntryResponse, LogFileResponse,
 };
 
 use super::{
-    admin_routes, auth_routes, badge_routes, country_routes, credit_routes, datatable_routes,
-    editor_asset_routes, log_routes, page_routes, profile_routes, setting_routes, user_routes,
+    admin_routes, auth_routes, badge_routes, bank_routes, country_routes, credit_routes,
+    datatable_routes, editor_asset_routes, log_routes, page_routes, profile_routes, setting_routes,
+    user_routes,
 };
 
 pub fn register_auth_scope(admin: &mut HttpScope<'_>) -> Result<()> {
@@ -418,6 +419,51 @@ pub fn register_log_scope(admin: &mut HttpScope<'_>) -> Result<()> {
         logs.delete("/{filename}", "destroy", log_routes::destroy, |route| {
             route.permission(Permission::LogsManage);
             route.summary("Delete a log file");
+            route.response::<MessageResponse>(200);
+        });
+
+        Ok(())
+    })?;
+
+    Ok(())
+}
+
+pub fn register_bank_scope(admin: &mut HttpScope<'_>) -> Result<()> {
+    admin.scope("/banks", |banks| {
+        banks
+            .name_prefix("banks")
+            .tag("admin:banks")
+            .guard(Guard::Admin)
+            .permission(Permission::BanksRead);
+
+        banks.get("/options", "options", bank_routes::options, |route| {
+            route.permissions([Permission::BanksRead]);
+            route.summary("List bank options");
+            route.response::<Vec<BankOptionResponse>>(200);
+        });
+
+        banks.get("/{id}", "show", bank_routes::show, |route| {
+            route.summary("Get bank detail");
+            route.response::<AdminBankResponse>(200);
+        });
+
+        banks.post("", "store", bank_routes::store, |route| {
+            route.permission(Permission::BanksManage);
+            route.summary("Create bank");
+            route.request::<UpsertBankRequest>();
+            route.response::<AdminBankResponse>(200);
+        });
+
+        banks.put("/{id}", "update", bank_routes::update, |route| {
+            route.permission(Permission::BanksManage);
+            route.summary("Update bank");
+            route.request::<UpsertBankRequest>();
+            route.response::<AdminBankResponse>(200);
+        });
+
+        banks.delete("/{id}", "destroy", bank_routes::destroy, |route| {
+            route.permission(Permission::BanksManage);
+            route.summary("Delete bank");
             route.response::<MessageResponse>(200);
         });
 

@@ -1,3 +1,4 @@
+import { toast } from "@shared/toast";
 import type {
   FieldBinding,
   UseFormConfig,
@@ -5,7 +6,6 @@ import type {
 } from "@shared/types/form";
 import axios from "axios";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "@shared/toast";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;

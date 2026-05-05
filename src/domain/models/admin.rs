@@ -6,7 +6,7 @@ use crate::domain::enums::AdminType;
 use crate::ids::guards::Guard;
 
 #[derive(Serialize, forge::Model)]
-#[forge(model = "admins", soft_deletes = true)]
+#[forge(table = "admins", soft_deletes = true)]
 pub struct Admin {
     pub id: ModelId<Self>,
     #[forge(write_mutator = "normalize_username")]

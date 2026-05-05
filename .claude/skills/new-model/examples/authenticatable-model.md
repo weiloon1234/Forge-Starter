@@ -35,7 +35,7 @@ use serde::Serialize;
 use crate::ids::guards::Guard;
 
 #[derive(Serialize, forge::Model)]
-#[forge(model = "merchants", soft_deletes = true)]
+#[forge(table = "merchants", soft_deletes = true)]
 pub struct Merchant {
     pub id: ModelId<Self>,
     pub username: String,
@@ -71,7 +71,7 @@ impl Authenticatable for Merchant {
 
 **Notes on each piece:**
 
-- `#[forge(model = "merchants", soft_deletes = true)]` — plural snake_case table, soft-delete so deactivated merchants can be restored and FKs referencing them don't orphan.
+- `#[forge(table = "merchants", soft_deletes = true)]` — plural snake_case table, soft-delete so deactivated merchants can be restored and FKs referencing them don't orphan.
 - `soft_deletes = true` requires the `deleted_at: Option<DateTime>` field. Forge's query builder will exclude soft-deleted rows by default; use `.with_trashed()` when you explicitly want them.
 - `password_hash: String` with `#[serde(skip)]` — never serialize the hash to API responses. `#[forge(write_mutator = "hash_password")]` — the mutator hashes plaintext at save time.
 - `hash_password` is a **private** `async fn` inside the `impl Merchant { ... }` block. Forge discovers it by name match; it must not be `pub` and must not live outside the impl block.

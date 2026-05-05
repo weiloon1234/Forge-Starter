@@ -26,9 +26,9 @@ Do NOT invoke for:
 
 Admin datatables in this starter are defined backend-side as `impl forge::Datatable` structs that declare a source query (direct `ModelQuery<M>` or a `ProjectionQuery` with joins), columns, filters, default sort, and row-level scope filters. They're registered globally and served via a single generic endpoint: `GET /admin/datatables/{id}/query` (and `/download` for CSV export). CRUD mutations go through dedicated REST routes under the resource's own scope (e.g., `/admin/admins`).
 
-Frontend renders with `<DataTable>` from `@shared/components`, pointing at the generic query URL with the datatable's ID. Create/edit/delete are modal-based: click a row action → `modal.open(FormModal, { id, onSaved })` → service call → `toast` + refresh.
+Frontend renders with `<DataTable>` from `@shared/components`, pointing at the generic query URL with the datatable's ID. Create/edit/delete are modal-based: click a row action → `modal.open(FormModal, { id, onSaved })` → service call via `routeUrl(RouteIds...)` → `toast` + refresh. Datatable query/download URLs stay as runtime strings because the datatable id is a runtime parameter.
 
-Frontend page shells are standardized: datatable pages compose through `frontend/admin/src/components/AdminDatatablePage.tsx`, and any permission checks in those pages import typed constants from `frontend/admin/src/permissions.ts` instead of inlining permission keys.
+Frontend page shells are standardized: datatable pages compose through `frontend/admin/src/components/AdminDatatablePage.tsx`, and any permission checks in those pages import the generated `permissions` object from `frontend/admin/src/permissions.ts` instead of inlining permission keys. That file is a tiny re-export of Forge-generated `PermissionGroups`; do not maintain a parallel permission map.
 
 **Deeper references** (read only if the procedure below is unclear):
 - Existing datatables: `src/portals/admin/datatables/admin_datatable.rs` (simplest), `user_datatable.rs` (projection with joins), `setting_datatable.rs` (`updated_at`-primary exception)
@@ -84,7 +84,7 @@ Do NOT use `updated_at` for anything that is actually "created" by a human (user
 Before writing any code, verify each of these exists. If any is missing, stop and create it first — don't paper over gaps:
 
 - [ ] **The source model** exists in `src/domain/models/` with `#[derive(forge::Model)]`. Migration applied.
-- [ ] **The permission(s) gating view/manage** exist in `src/ids/permissions.rs`. If new permissions are needed (e.g., `TopupsRead`, `TopupsManage`), add them first and run `make types`.
+- [ ] **The permission(s) gating view/manage** exist in `src/ids/permissions.rs`. If new permissions are needed (e.g., `TopupsRead`, `TopupsManage`), add them first and run `make types`; `PermissionGroups` will regenerate the frontend `permissions.<module>.<action>` constants.
 - [ ] **Enum variants for any status-like fields** exist in `src/domain/enums/` with `#[derive(forge::AppEnum)]`. String-based status columns must not be introduced.
 - [ ] **The menu group** (parent under which this page will live) exists in `frontend/admin/src/config/side-menu.ts`. If not, decide the parent now.
 
@@ -421,7 +421,7 @@ Edit `frontend/admin/src/config/side-menu.ts`. Add to the appropriate parent gro
   key: "<group>.<resource>s",
   label: "admin.<resource>s.title",  // i18n key
   path: "/<resource>s",
-  permission: "<resource>.read",
+  permission: permissions.<resource>s.read,
   // badge: "work.pending_<resource>s",  // only if there's a matching AdminBadge
 },
 ```
@@ -876,7 +876,8 @@ Log in as developer admin, navigate to the new page via the menu, verify:
 - **Don't create CRUD routes for a read-only variant.** If the decision guide chose read-only, steps 8–14 don't exist for this page.
 - **Don't manually construct `DatatableRequest` on the frontend.** `<DataTable>` handles query param assembly from the column config; just pass `url` + `columns` + `refreshRef`.
 - **Don't bypass the generic `/datatables/<id>/query` endpoint.** Custom list endpoints miss the framework's filter parsing, sort handling, and permission check.
-- **Don't skip `make types` after adding request/response DTOs.** Frontend will `any`-type the fields without regeneration.
+- **Don't skip `make types` after adding request/response DTOs or CRUD routes.** Frontend will `any`-type the fields and miss generated `RouteIds` without regeneration.
+- **Don't hand-write CRUD API paths in modal/service code.** Use the portal `routeUrl(RouteIds.admin.<resource>s.store/update/show/destroy, params)` helper. The generic datatable `url` / `downloadUrl` strings are the exception.
 - **Don't forget `locales/zh/*` (or any non-English locale).** CLAUDE.md rule: every non-English locale file must have every key.
 - **Don't install new dependencies without asking.** Datatable + modal + form + i18n infra is already in place.
 - **Don't violate the column-arrangement convention.** `#` is auto-rendered (never in `columns`); `__actions` is always FIRST when present; `created_at` is always LAST (or `updated_at` in the documented exception case); the `date_from`/`date_to` range pair ships by default.

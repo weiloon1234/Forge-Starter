@@ -1,16 +1,8 @@
 use forge::prelude::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, ForgeId)]
+#[forge(id = GuardId, rename_all = "snake_case")]
 pub enum Guard {
     User,
     Admin,
-}
-
-impl From<Guard> for GuardId {
-    fn from(v: Guard) -> Self {
-        match v {
-            Guard::User => GuardId::new("user"),
-            Guard::Admin => GuardId::new("admin"),
-        }
-    }
 }

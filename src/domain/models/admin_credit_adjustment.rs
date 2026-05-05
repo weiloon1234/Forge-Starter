@@ -4,7 +4,7 @@ use serde::Serialize;
 use crate::domain::models::{Admin, CreditTransaction};
 
 #[derive(Serialize, forge::Model)]
-#[forge(model = "admin_credit_adjustments")]
+#[forge(table = "admin_credit_adjustments")]
 pub struct AdminCreditAdjustment {
     pub id: ModelId<Self>,
     pub credit_transaction_id: ModelId<CreditTransaction>,

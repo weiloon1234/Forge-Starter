@@ -59,9 +59,9 @@ function resolveWebSocketUrl(configuredUrl: string | null | undefined): string {
 }
 
 function viteEnv(key: string): string | undefined {
-  return (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env?.[
-    key
-  ];
+  return (
+    import.meta as ImportMeta & { env?: Record<string, string | undefined> }
+  ).env?.[key];
 }
 
 function defaultWebSocketUrl(): string {
@@ -86,7 +86,10 @@ function normalizeWebSocketUrl(rawUrl: string, envUrl: string | null): string {
       url.protocol = "wss:";
     }
 
-    if (!isLoopbackHost(window.location.hostname) && isLoopbackHost(url.hostname)) {
+    if (
+      !isLoopbackHost(window.location.hostname) &&
+      isLoopbackHost(url.hostname)
+    ) {
       return envUrl
         ? normalizeWebSocketUrl(envUrl, null)
         : browserWebSocketUrl(url.pathname || "/ws", url.search);
@@ -108,7 +111,9 @@ function browserWebSocketUrl(path: string, search = ""): string {
 }
 
 function hasBrowserLocation(): boolean {
-  return typeof window !== "undefined" && typeof window.location !== "undefined";
+  return (
+    typeof window !== "undefined" && typeof window.location !== "undefined"
+  );
 }
 
 function isLoopbackHost(hostname: string): boolean {

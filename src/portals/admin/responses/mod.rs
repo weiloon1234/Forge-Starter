@@ -1,6 +1,7 @@
 pub mod admins;
 pub mod auth;
 pub mod badges;
+pub mod banks;
 pub mod credits;
 pub mod editor_assets;
 pub mod logs;
@@ -11,6 +12,7 @@ pub mod users;
 pub use admins::*;
 pub use auth::*;
 pub use badges::*;
+pub use banks::*;
 pub use credits::*;
 pub use editor_assets::*;
 pub use logs::*;

@@ -53,7 +53,7 @@ use serde::Serialize;
 use crate::domain::models::User;
 
 #[derive(Serialize, forge::Model)]
-#[forge(model = "posts")]
+#[forge(table = "posts")]
 pub struct Post {
     pub id: ModelId<Self>,
     pub author_id: ModelId<User>,
@@ -174,7 +174,7 @@ use serde::Serialize;
 use crate::domain::models::UserProfile;
 
 #[derive(Serialize, forge::Model)]
-#[forge(model = "users", soft_deletes = true)]
+#[forge(table = "users", soft_deletes = true)]
 pub struct User {
     pub id: ModelId<Self>,
     // ...
@@ -230,7 +230,7 @@ use serde::Serialize;
 use crate::domain::models::Post;
 
 #[derive(Serialize, forge::Model)]
-#[forge(model = "users", soft_deletes = true)]
+#[forge(table = "users", soft_deletes = true)]
 pub struct User {
     pub id: ModelId<Self>,
     // ...

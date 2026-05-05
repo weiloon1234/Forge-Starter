@@ -1,6 +1,7 @@
 use forge::prelude::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, forge::AppEnum)]
+#[forge(id_type = PermissionId)]
 pub enum Permission {
     #[forge(key = "exports.read")]
     ExportsRead,
@@ -42,34 +43,13 @@ pub enum Permission {
     LogsManage,
     #[forge(key = "audit_logs.read")]
     AuditLogsRead,
+    #[forge(key = "banks.read")]
+    BanksRead,
+    #[forge(key = "banks.manage")]
+    BanksManage,
 }
 
 impl Permission {
-    const fn key_str(self) -> &'static str {
-        match self {
-            Self::ExportsRead => "exports.read",
-            Self::ObservabilityView => "observability.view",
-            Self::AdminsRead => "admins.read",
-            Self::AdminsManage => "admins.manage",
-            Self::UsersRead => "users.read",
-            Self::UsersManage => "users.manage",
-            Self::IntroducerChangesRead => "introducer_changes.read",
-            Self::IntroducerChangesManage => "introducer_changes.manage",
-            Self::CountriesRead => "countries.read",
-            Self::CountriesManage => "countries.manage",
-            Self::SettingsRead => "settings.read",
-            Self::SettingsManage => "settings.manage",
-            Self::PagesRead => "pages.read",
-            Self::PagesManage => "pages.manage",
-            Self::CreditsRead => "credits.read",
-            Self::CreditsManage => "credits.manage",
-            Self::CreditTransactionsRead => "credit_transactions.read",
-            Self::LogsRead => "logs.read",
-            Self::LogsManage => "logs.manage",
-            Self::AuditLogsRead => "audit_logs.read",
-        }
-    }
-
     pub const fn module(self) -> &'static str {
         match self {
             Self::ExportsRead => "exports",
@@ -84,6 +64,7 @@ impl Permission {
             Self::CreditTransactionsRead => "credit_transactions",
             Self::LogsRead | Self::LogsManage => "logs",
             Self::AuditLogsRead => "audit_logs",
+            Self::BanksRead | Self::BanksManage => "banks",
         }
     }
 
@@ -100,7 +81,8 @@ impl Permission {
             | Self::CreditsRead
             | Self::CreditTransactionsRead
             | Self::LogsRead
-            | Self::AuditLogsRead => "read",
+            | Self::AuditLogsRead
+            | Self::BanksRead => "read",
             Self::AdminsManage
             | Self::UsersManage
             | Self::IntroducerChangesManage
@@ -108,7 +90,8 @@ impl Permission {
             | Self::SettingsManage
             | Self::PagesManage
             | Self::CreditsManage
-            | Self::LogsManage => "manage",
+            | Self::LogsManage
+            | Self::BanksManage => "manage",
         }
     }
 
@@ -122,20 +105,9 @@ impl Permission {
             Self::PagesManage => Some(Self::PagesRead),
             Self::CreditsManage => Some(Self::CreditsRead),
             Self::LogsManage => Some(Self::LogsRead),
+            Self::BanksManage => Some(Self::BanksRead),
             _ => None,
         }
-    }
-}
-
-impl From<Permission> for PermissionId {
-    fn from(value: Permission) -> Self {
-        PermissionId::new(value.key_str())
-    }
-}
-
-impl AsRef<str> for Permission {
-    fn as_ref(&self) -> &str {
-        self.key_str()
     }
 }
 

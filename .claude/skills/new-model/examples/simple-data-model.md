@@ -29,7 +29,7 @@ use forge::prelude::*;
 use serde::Serialize;
 
 #[derive(Serialize, forge::Model)]
-#[forge(model = "widgets")]
+#[forge(table = "widgets")]
 pub struct Widget {
     pub id: ModelId<Self>,
     pub name: String,

@@ -31,7 +31,7 @@ An admin badge answers *"how many items need an admin with permission P to act o
 
 Before writing badge code, verify each of these exists. If any is missing, build it first — don't paper over gaps:
 
-- [ ] **The model the badge watches** — e.g., `TopUp` at `src/domain/models/top_up.rs`, declared with `#[derive(forge::Model)]` and an appropriate `#[forge(model = "...")]` table name. The macro must expose column constants (e.g., `TopUp::STATUS`).
+- [ ] **The model the badge watches** — e.g., `TopUp` at `src/domain/models/top_up.rs`, declared with `#[derive(forge::Model)]` and an appropriate `#[forge(table = "...")]` table name. The macro must expose column constants (e.g., `TopUp::STATUS`).
 - [ ] **The permission that gates visibility** — a variant of `Permission` in `src/ids/permissions.rs`. If you need a new one, add it with a unique `#[forge(key = "...")]` and regenerate types (`make types`).
 - [ ] **The state enum you're filtering on** — e.g., `TopUpStatus` in `src/domain/enums/`, with `#[derive(forge::AppEnum)]`. Never filter by a raw string.
 - [ ] **The menu item that will display the badge** — an entry in `frontend/admin/src/config/side-menu.ts`. Create one if missing (paired with the relevant page route).
@@ -104,7 +104,7 @@ Edit `frontend/admin/src/config/side-menu.ts` — on the relevant `MenuItem`, ad
   key: "...",
   label: "...",
   path: "/admin/...",
-  permission: "...",       // admin-side permission check (separate from backend)
+  permission: permissions.<module>.<action>, // generated admin-side permission check
   badge: "work.<your_key>", // ← match the KEY from step 1 exactly
 }
 ```

@@ -231,10 +231,34 @@ import { enumOptions } from "@shared/utils";
 
 ```ts
 // Iteration / runtime checks
-import { PermissionValues } from "@shared/types/generated";
+import { PermissionGroups, PermissionValues } from "@shared/types/generated";
 
 const isValid = PermissionValues.includes(input as (typeof PermissionValues)[number]);
+const userRead = PermissionGroups.users.read;
 ```
+
+### Route manifest consumption
+
+`make types` exports `RouteManifest.ts` with `RouteIds`, `routeUrl`, and `createRouteUrlBuilder`. Each portal should expose a base-stripping builder from its local `api.ts`:
+
+```ts
+import { createApi } from "@shared/api";
+import { createRouteUrlBuilder, RouteIds } from "@shared/types/generated";
+
+export const routeUrl = createRouteUrlBuilder({ basePath: "/api/v1/admin" });
+export { RouteIds };
+export const api = createApi({ baseURL: "/api/v1/admin" });
+```
+
+Feature code uses generated route ids, not raw API path strings:
+
+```ts
+import { api, routeUrl, RouteIds } from "@/api";
+
+const { data } = await api.get(routeUrl(RouteIds.admin.users.show, { id }));
+```
+
+Keep explicit strings only for datatable runtime URLs, browser/download navigations, external URLs, or endpoints absent from `RouteManifest`.
 
 ## Verify
 
@@ -255,7 +279,7 @@ The new file exists, contains the expected union / struct shape, and is re-expor
 - **Don't add `ts_rs::TS` to models** in `src/domain/models/`. Models are internal; the frontend gets DTOs.
 - **Don't hand-edit files in `frontend/shared/types/generated/`.** They regenerate on every `make types`.
 - **Don't duplicate an app-owned enum in both Rust and TypeScript.** `forge::AppEnum` is the single source of truth — one definition, the generator handles the rest.
-- **Don't use string literals on the frontend where a generated const exists.** For permissions, use `PermissionValues` / `PermissionOptions`, never the raw `"admins.manage"` string. For enum variants, use `<Enum>Values` or the typed `type` union.
+- **Don't use string literals on the frontend where a generated const exists.** For permission checks, use `PermissionGroups` through `@/permissions` (`permissions.admins.manage`), never the raw `"admins.manage"` string. For route URLs, use `routeUrl(RouteIds...)` from `@/api`. For permission iteration, use `PermissionValues` / `PermissionOptions`. For enum variants, use `<Enum>Values` or the typed `type` union.
 - **Don't forget `#[ts(export)]`.** Without it, the derive compiles but no file lands.
 - **Don't ship a Rust type that doesn't round-trip through `serde`.** ts_rs introspection and `forge::ApiSchema` both rely on the same serde shape.
 - **Don't commit without re-running `make types`.** Stale generated files are a merge-conflict magnet and a source of runtime drift.

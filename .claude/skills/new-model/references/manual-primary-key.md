@@ -18,7 +18,7 @@ use serde::Serialize;
 
 #[derive(Serialize, forge::Model)]
 #[forge(
-    model = "currencies",
+    table = "currencies",
     primary_key = "code",
     primary_key_strategy = "manual"
 )]

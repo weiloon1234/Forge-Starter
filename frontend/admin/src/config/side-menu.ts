@@ -6,6 +6,7 @@ import {
   Code2,
   FileText,
   Gauge,
+  Landmark,
   LayoutDashboard,
   MoreHorizontal,
   ScrollText,
@@ -86,6 +87,13 @@ export const sideMenu: MenuItem[] = [
         label: "Countries",
         path: "/countries",
         permission: permissions.countries.read,
+      },
+      {
+        key: "other.banks",
+        label: "Banks",
+        path: "/banks",
+        icon: Landmark,
+        permission: permissions.banks.read,
       },
       {
         key: "other.settings",

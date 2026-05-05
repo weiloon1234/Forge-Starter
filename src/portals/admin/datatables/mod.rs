@@ -4,6 +4,7 @@ use crate::ids::permissions::Permission;
 
 pub mod admin_datatable;
 pub mod audit_log_datatable;
+pub mod bank_datatable;
 pub mod country_datatable;
 pub mod credit_adjustment_datatable;
 pub mod credit_transaction_datatable;
@@ -15,6 +16,7 @@ pub mod user_datatable;
 
 pub use admin_datatable::AdminDatatable;
 pub use audit_log_datatable::AuditLogDatatable;
+pub use bank_datatable::BankDatatable;
 pub use country_datatable::CountryDatatable;
 pub use credit_adjustment_datatable::CreditAdjustmentDatatable;
 pub use credit_transaction_datatable::{
@@ -45,6 +47,7 @@ macro_rules! admin_datatables {
                 Permission::IntroducerChangesRead
             ),
             (AuditLogDatatable, Permission::AuditLogsRead),
+            (BankDatatable, Permission::BanksRead),
         )
     };
 }

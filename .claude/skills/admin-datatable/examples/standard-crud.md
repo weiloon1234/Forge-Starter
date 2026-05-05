@@ -39,7 +39,7 @@ The base `frontend-form` Variant A already covers the full shape. The additions 
 
 5. **View-only mode** (optional) — if some admins can view but not edit records, extend the base template with a `mode: "edit" | "view"` derived from a per-target permission helper (see `frontend/admin/src/adminAccess.ts` for `adminFormModeForTarget`). Disable every `<Input>` / `<Select>` in view mode, hide the Delete button, and replace Save with Close. The real-world pattern lives in `frontend/admin/src/components/AdminFormModal.tsx` — consult it if you hit view-mode requirements.
 
-6. **Permissions on the modal** — gate the Delete button with the resource's manage permission (`usePermission("<resource>.manage")`). The Save button is always visible to anyone who can open the modal; the backend's `.permissions([Permission::<Resource>Manage])` on the update route is the authoritative check.
+6. **Permissions on the modal** — gate the Delete button with the resource's generated manage permission (`usePermission(permissions.<resource>s.manage)`). The Save button is always visible to anyone who can open the modal; the backend's `.permissions([Permission::<Resource>Manage])` on the update route is the authoritative check.
 
 7. **i18n keys** — mirror the convention set by `admin-datatable` step 7:
    - `admin.<resource>s.create_title` / `edit_title` / `view_title`

@@ -158,7 +158,7 @@ For every recurring task, the authoritative procedure is the matching skill in `
 
 **Adding a new portal** — auth actor + route scope + `src/portals/<name>/` + `src/portals/spa.rs` handler + `frontend/<name>/` SPA + Makefile + Dockerfile. → skill `new-portal`.
 
-**Adding a new model** — `#[derive(Serialize, forge::Model)]` + `#[forge(model = "<table>")]` + CLI-scaffolded migration + `mod.rs` export. Authenticatable actors additionally need `impl HasToken + Authenticatable` + `Guard::<Name>` + `config/auth.toml` block + `register_authenticatable::<M>()?` call. → skill `new-model`.
+**Adding a new model** — `#[derive(Serialize, forge::Model)]` + `#[forge(table = "<table>")]` + CLI-scaffolded migration + `mod.rs` export. Authenticatable actors additionally need `impl HasToken + Authenticatable` + `Guard::<Name>` + `config/auth.toml` block + `register_authenticatable::<M>()?` call. → skill `new-model`.
 
 **Adding an admin CRUD page** — Datatable trait + routes + request/response DTOs + service + form modal + delete modal + menu + i18n. Form-modal shape delegates to `frontend-form`. → skill `admin-datatable`.
 
@@ -193,6 +193,8 @@ WebSocket runs as a separate process on port 3010 (`PROCESS=websocket cargo run`
 **Auth**: Browser WebSocket API can't set headers. Token is passed via query param: `ws://host:3010/ws?token=xxx`. The framework extracts it automatically.
 
 **Token exchange**: Authenticated portals call `POST /auth/ws-token` to get a short-lived PAT for the WebSocket connection.
+
+**Wire contract**: Client actions are snake_case (`subscribe`, `unsubscribe`, `message`). Send only after subscribing to the matching channel/room.
 
 **Frontend client** at `@shared/websocket`:
 ```ts

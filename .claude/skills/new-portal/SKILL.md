@@ -117,6 +117,7 @@ Reference for reviewers. Each item is either a "create" or a "modify". The later
 - `src/providers/app_service_provider.rs` — `registrar.register_authenticatable::<<Name>>()?;` (delegated)
 - `src/ids/permissions.rs` — variants if portal has RBAC (delegated to `new-permission`)
 - `src/domain/services/auth_service.rs` — `<name>_login_with_token`, `refresh_<name>_token` functions
+- `src/bootstrap/cli.rs` — ensure the CLI builder registers `portals::register` before `commands::register`, otherwise `make types` cannot export the route manifest
 
 ### Frontend — create (SPA portals only)
 - `frontend/<name>/package.json`
@@ -446,10 +447,17 @@ server: { port: 5175, /* or your chosen port */ origin: "http://localhost:5175" 
 **`frontend/<name>/src/api.ts`** — set the portal-specific baseURL:
 ```ts
 import { createApi } from "@shared/api";
+import { createRouteUrlBuilder, RouteIds } from "@shared/types/generated";
+
+export const routeUrl = createRouteUrlBuilder({ basePath: "/api/v1/<name>" });
+export { RouteIds };
 
 export const api = createApi({
   baseURL: "/api/v1/<name>",
-  silentPaths: ["/auth/me", "/auth/refresh"],
+  silentPaths: [
+    routeUrl(RouteIds.<name>.auth.me),
+    routeUrl(RouteIds.<name>.auth.refresh),
+  ],
 });
 ```
 
@@ -457,16 +465,16 @@ export const api = createApi({
 ```ts
 import { createAuth } from "@shared/auth";
 import type { <Name>MeResponse } from "@shared/types/generated";  // update import after make types
-import { api } from "@/api";
+import { api, routeUrl, RouteIds } from "@/api";
 
 export const auth = createAuth<<Name>MeResponse>({
   api,
   mode: "token",
   paths: {
-    login: "/auth/login",
-    refresh: "/auth/refresh",
-    logout: "/auth/logout",   // omit if user-style
-    me: "/auth/me",           // or "/me" for user-style
+    login: routeUrl(RouteIds.<name>.auth.login),
+    refresh: routeUrl(RouteIds.<name>.auth.refresh),
+    logout: routeUrl(RouteIds.<name>.auth.logout),   // omit if user-style / not generated
+    me: routeUrl(RouteIds.<name>.auth.me),           // or RouteIds.<name>.me.show for user-style
   },
 });
 ```
@@ -595,7 +603,7 @@ Run in order. Each must pass before moving on.
 
 ```bash
 make migrate         # actor table exists
-make types           # TS for the new DTOs + enums regenerates
+make types           # TS for the new DTOs, enums, and RouteManifest regenerates
 make check           # Rust compiles
 make lint            # clippy + Biome clean
 ```
@@ -633,7 +641,7 @@ Visit `http://localhost:3000/<name>/` — served from built assets.
 - **Don't skip the new-model skill for the auth actor.** Hand-rolling the struct + `impl Authenticatable + HasToken` + Guard variant + auth.toml + provider registration loses one or more steps every time. Use the skill.
 - **Don't reuse an existing portal's Vite dev port.** Ports must be unique; collisions mean the second server fails silently or serves stale HTML.
 - **Don't forget the `src/portals/spa.rs` update.** The route in `register_spa()` + the handler function + the port constant + the HTML cache all four need to exist together. Missing any one produces 404 or stale dev HTML.
-- **Don't mismatch the URL prefix between REST and frontend.** REST at `/api/v1/<name>/`, Vite base at `/<name>/`. The frontend's `api.ts` uses `baseURL: "/api/v1/<name>"` — any mismatch breaks all API calls.
+- **Don't mismatch the URL prefix between REST and frontend.** REST at `/api/v1/<name>/`, Vite base at `/<name>/`. The frontend's `api.ts` uses `baseURL: "/api/v1/<name>"` and `createRouteUrlBuilder({ basePath: "/api/v1/<name>" })` so generated full route paths become Axios-relative URLs.
 - **Don't register the new portal in `register_spa()` after the User portal's asset block.** The User portal serves assets at `/assets/` (no portal prefix); it must be registered last so it doesn't intercept other portals' asset paths.
 - **Don't include the `proxy` block in `vite.config.ts` if the portal hits the same origin as the API in dev.** The proxy is only needed for cross-origin dev setups. User portal omits it; admin portal includes it. Copy the template that fits.
 - **Don't hash passwords in the auth service.** The model's `write_mutator` handles it. The service calls `app.hash()?.verify(plaintext, &actor.password_hash)` to check; the `save()` path hashes via mutator.

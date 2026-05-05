@@ -1,12 +1,12 @@
 import { Button, CheckboxGroup, Select } from "@shared/components";
 import { modal } from "@shared/modal";
+import { toast } from "@shared/toast";
 import type {
   LogEntryResponse,
   LogFileResponse,
 } from "@shared/types/generated";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "@shared/toast";
 import { api } from "@/api";
 import { AdminPageHeader } from "@/components/AdminPageHeader";
 import { ConfirmDeleteLogModal } from "@/components/ConfirmDeleteLogModal";

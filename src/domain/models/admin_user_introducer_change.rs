@@ -4,7 +4,7 @@ use serde::Serialize;
 use crate::domain::models::{Admin, User};
 
 #[derive(Serialize, forge::Model)]
-#[forge(model = "admin_user_introducer_changes")]
+#[forge(table = "admin_user_introducer_changes")]
 pub struct AdminUserIntroducerChange {
     pub id: ModelId<Self>,
     pub admin_id: ModelId<Admin>,

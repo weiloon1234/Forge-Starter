@@ -9,6 +9,7 @@ import {
 } from "@shared/components";
 import { useForm } from "@shared/hooks";
 import { ModalBody, ModalFooter } from "@shared/modal";
+import { toast } from "@shared/toast";
 import type {
   AdminSettingAssetResponse,
   AdminSettingResponse,
@@ -16,8 +17,7 @@ import type {
 } from "@shared/types/generated";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "@shared/toast";
-import { api } from "@/api";
+import { api, RouteIds, routeUrl } from "@/api";
 import {
   dateStringToLocalDate,
   dateTimeStringToDate,
@@ -74,16 +74,20 @@ export function EditSettingModal({
         return;
       }
 
-      const encodedKey = encodeURIComponent(setting.key);
-
       if (isUploadSetting(setting)) {
         if (selectedFile) {
           const formData = new FormData();
           formData.append("file", selectedFile);
-          await api.post(`/settings/${encodedKey}/upload`, formData);
+          await api.post(
+            routeUrl(RouteIds.admin.settings.upload, { key: setting.key }),
+            formData,
+          );
         } else if (clearAsset) {
           const payload: UpdateSettingValueRequest = { value: null };
-          await api.put(`/settings/${encodedKey}`, payload);
+          await api.put(
+            routeUrl(RouteIds.admin.settings.update, { key: setting.key }),
+            payload,
+          );
         } else {
           return;
         }
@@ -99,7 +103,10 @@ export function EditSettingModal({
           value: serializeSettingValue(setting.setting_type, values.value),
         };
 
-        await api.put(`/settings/${encodedKey}`, payload);
+        await api.put(
+          routeUrl(RouteIds.admin.settings.update, { key: setting.key }),
+          payload,
+        );
         toast.success(t("admin.settings.updated"));
         onSaved?.();
         onClose();

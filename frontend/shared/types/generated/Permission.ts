@@ -1,6 +1,6 @@
 // Auto-generated from AppEnum. Do not edit.
 
-export type Permission = "exports.read" | "observability.view" | "admins.read" | "admins.manage" | "users.read" | "users.manage" | "introducer_changes.read" | "introducer_changes.manage" | "countries.read" | "countries.manage" | "settings.read" | "settings.manage" | "pages.read" | "pages.manage" | "credits.read" | "credits.manage" | "credit_transactions.read" | "logs.read" | "logs.manage" | "audit_logs.read";
+export type Permission = "exports.read" | "observability.view" | "admins.read" | "admins.manage" | "users.read" | "users.manage" | "introducer_changes.read" | "introducer_changes.manage" | "countries.read" | "countries.manage" | "settings.read" | "settings.manage" | "pages.read" | "pages.manage" | "credits.read" | "credits.manage" | "credit_transactions.read" | "logs.read" | "logs.manage" | "audit_logs.read" | "banks.read" | "banks.manage";
 
 export const PermissionValues = [
   "exports.read",
@@ -23,6 +23,8 @@ export const PermissionValues = [
   "logs.read",
   "logs.manage",
   "audit_logs.read",
+  "banks.read",
+  "banks.manage",
 ] as const;
 
 export const PermissionOptions = [
@@ -46,10 +48,28 @@ export const PermissionOptions = [
   { value: "logs.read", labelKey: "enum.permission.logs_read" },
   { value: "logs.manage", labelKey: "enum.permission.logs_manage" },
   { value: "audit_logs.read", labelKey: "enum.permission.audit_logs_read" },
+  { value: "banks.read", labelKey: "enum.permission.banks_read" },
+  { value: "banks.manage", labelKey: "enum.permission.banks_manage" },
 ] as const;
 
 export const PermissionMeta = {
 id: "permission",
 keyKind: "string",
 options: PermissionOptions,
+} as const;
+
+export const PermissionGroups = {
+  exports: { read: "exports.read" },
+  observability: { view: "observability.view" },
+  admins: { read: "admins.read", manage: "admins.manage" },
+  users: { read: "users.read", manage: "users.manage" },
+  introducerChanges: { read: "introducer_changes.read", manage: "introducer_changes.manage" },
+  countries: { read: "countries.read", manage: "countries.manage" },
+  settings: { read: "settings.read", manage: "settings.manage" },
+  pages: { read: "pages.read", manage: "pages.manage" },
+  credits: { read: "credits.read", manage: "credits.manage" },
+  creditTransactions: { read: "credit_transactions.read" },
+  logs: { read: "logs.read", manage: "logs.manage" },
+  auditLogs: { read: "audit_logs.read" },
+  banks: { read: "banks.read", manage: "banks.manage" },
 } as const;

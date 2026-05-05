@@ -313,7 +313,7 @@ Per CLAUDE.md: portals are THIN. The handler parses + calls; the service is wher
 make types
 ```
 
-Any new request/response DTO must appear in `frontend/shared/types/generated/` before frontend consumption compiles.
+Any new request/response DTO must appear in `frontend/shared/types/generated/` before frontend consumption compiles. `make types` also regenerates `RouteManifest.ts`; frontend consumers should use `routeUrl(RouteIds...)` from the portal `@/api` instead of hand-writing registered API paths.
 
 ### 7. Verify backend
 
@@ -336,14 +336,14 @@ The backend endpoint is called from an existing page's button. No new SPA route 
 
 ```tsx
 import { Button } from "@shared/components";
-import { api } from "@/api";
+import { api, routeUrl, RouteIds } from "@/api";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
 function ApproveButton({ topupId, onSaved }: { topupId: string; onSaved?: () => void }) {
   const { t } = useTranslation();
   const handle = async () => {
-    await api.post(`/top-ups/${topupId}/approve`, {});
+    await api.post(routeUrl(RouteIds.admin.topUps.approve, { id: topupId }), {});
     toast.success(t("admin.top_ups.approved"));
     onSaved?.();
   };
@@ -351,7 +351,7 @@ function ApproveButton({ topupId, onSaved }: { topupId: string; onSaved?: () => 
 }
 ```
 
-This fits into an existing `admin-datatable` row action or detail page. No new route registration.
+This fits into an existing `admin-datatable` row action or detail page. No new route registration. If the `RouteIds...` member is missing, fix the backend route registration / route id first, rerun `make types`, then wire the frontend.
 
 ### Variant B — New SPA route to a new page
 
@@ -370,7 +370,7 @@ Add a menu entry if the page should be reachable from the sidebar:
   key: "<group>.<name>",
   label: "admin.<name>.title",
   path: "/<slug>",
-  permission: "<module>.<action>",
+  permission: permissions.<module>.<action>,
 }
 ```
 
@@ -378,7 +378,7 @@ Build the page per the `admin-page` skill (for non-CRUD) or `admin-datatable` (f
 
 ### Variant C — Export / download
 
-Trigger a download:
+Trigger a download. Browser navigations and file downloads may stay as explicit URLs when they are not consumed through Axios or when the endpoint is intentionally outside the generated manifest:
 
 ```tsx
 <Button
@@ -401,7 +401,8 @@ A page that reuses existing endpoints. Add only the router entry + optional menu
 - **Don't put business logic in the route handler.** Handlers are thin — extractors, validation, service call, response. Per CLAUDE.md "Portals are THIN".
 - **Don't hardcode permission strings.** Use `Permission::<Variant>` from `src/ids/permissions.rs`. If a new permission is needed, `new-permission` adds it first.
 - **Don't skip the response DTO type binding** (`route.response::<T>(200)`). It's what feeds OpenAPI docs + the TypeScript generator.
-- **Don't forget `make types`** after adding a DTO. Frontend consumers will be `any`-typed until regenerated.
+- **Don't forget `make types`** after adding a DTO or named route. Frontend consumers will be `any`-typed until regenerated, and `RouteIds` will be stale.
+- **Don't hardcode frontend API paths for registered routes.** Use `routeUrl(RouteIds.portal.resource.action, params)` from the portal `@/api`. Keep raw strings for datatable runtime URLs, browser/download URLs, external URLs, or endpoints that truly are not in `RouteManifest`.
 - **Don't catch API errors in the handler to swallow them.** Let `Result<Err>` propagate — the framework's error middleware converts to structured JSON responses with i18n'd messages.
 - **Don't use raw SQL in the handler** when the model builder covers the operation. Same SSOT rule as everywhere else.
 - **Don't return raw English strings from the handler.** Any user-visible message uses `t!(i18n, "key")` (CLAUDE.md hard rule — the frontend displays backend messages in toasts).

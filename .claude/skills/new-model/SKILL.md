@@ -25,7 +25,7 @@ Do NOT invoke for:
 
 ## Concept
 
-A `forge::Model` in the starter is a Rust struct `#[derive(Serialize, forge::Model)]` with a `#[forge(model = "<table>")]` attribute, mirroring a PostgreSQL table. The macro generates:
+A `forge::Model` in the starter is a Rust struct `#[derive(Serialize, forge::Model)]` with a `#[forge(table = "<table>")]` attribute, mirroring a PostgreSQL table. The macro generates:
 
 - Column constants (`Admin::USERNAME`, `TopUp::STATUS`) for strongly-typed queries
 - A table metadata accessor (`<Model>::table_meta()`) used by e.g. the badge registry
@@ -210,7 +210,7 @@ use forge::prelude::*;
 use serde::Serialize;
 
 #[derive(Serialize, forge::Model)]
-#[forge(model = "<table_name>")]
+#[forge(table = "<table_name>")]
 pub struct <YourModel> {
     pub id: ModelId<Self>,
     // ... fields in schema order: required first, then optional, then timestamps
@@ -232,7 +232,7 @@ use serde::Serialize;
 use crate::domain::enums::<YourEnum>;
 
 #[derive(Serialize, forge::Model)]
-#[forge(model = "<table_name>")]
+#[forge(table = "<table_name>")]
 pub struct <YourModel> {
     pub id: ModelId<Self>,
     pub status: <YourEnum>,    // stored as TEXT, serialized as string key
@@ -250,7 +250,7 @@ use serde::Serialize;
 use crate::domain::models::User;
 
 #[derive(Serialize, forge::Model)]
-#[forge(model = "<table_name>")]
+#[forge(table = "<table_name>")]
 pub struct <YourModel> {
     pub id: ModelId<Self>,
     pub user_id: ModelId<User>,
@@ -282,7 +282,7 @@ Add `soft_deletes = true` to the attribute and `deleted_at` field:
 
 ```rust
 #[derive(Serialize, forge::Model)]
-#[forge(model = "<table_name>", soft_deletes = true)]
+#[forge(table = "<table_name>", soft_deletes = true)]
 pub struct <YourModel> {
     pub id: ModelId<Self>,
     // ... other fields
@@ -301,7 +301,7 @@ use forge::prelude::*;
 use serde::Serialize;
 
 #[derive(Serialize, forge::Model)]
-#[forge(model = "<table_name>")]
+#[forge(table = "<table_name>")]
 pub struct <YourModel> {
     pub id: ModelId<Self>,
     // ...
