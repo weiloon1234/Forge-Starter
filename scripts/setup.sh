@@ -212,7 +212,7 @@ RESUME_POLL ?= 0
 APP_SERVICES := http worker scheduler websocket
 ALL_SERVICES := http worker scheduler websocket poll
 
-.PHONY: help status start stop restart logs versions pull
+.PHONY: help status start stop restart logs doctor deploy-check versions pull
 
 help:
 	@echo ""
@@ -221,6 +221,9 @@ help:
 	@echo "  make start SERVICE=http      Start http, worker, scheduler, websocket, poll, or all"
 	@echo "  make stop SERVICE=http       Stop http, worker, scheduler, websocket, poll, or all"
 	@echo "  make logs SERVICE=http       Follow logs for one service, or SERVICE=all"
+	@echo "  make doctor                  Run Forge doctor against the current binary"
+	@echo "  make deploy-check            Verify the current remote VERSION without stopping services"
+	@echo "  make deploy-check VERSION=<version>"
 	@echo "  make versions                Show current/latest and bucket artifact versions"
 	@echo "  make pull                    Deploy the current remote VERSION now, then resume poll"
 	@echo "  make pull VERSION=<version>  Deploy an exact version and leave poll stopped"
@@ -260,6 +263,17 @@ logs:
 		units+=("-u" "$$unit"); \
 	done; \
 	$(SUDO) journalctl "$${units[@]}" -f
+
+doctor:
+	@$(SUDO) env DEPLOY_CONF="$(DEPLOY_CONF)" "$(DEPLOY_SCRIPT)" doctor
+
+deploy-check:
+	@set -euo pipefail; \
+	if [[ -n "$(VERSION)" ]]; then \
+		$(SUDO) env DEPLOY_CONF="$(DEPLOY_CONF)" "$(DEPLOY_SCRIPT)" deploy-check "$(VERSION)"; \
+	else \
+		$(SUDO) env DEPLOY_CONF="$(DEPLOY_CONF)" "$(DEPLOY_SCRIPT)" deploy-check; \
+	fi
 
 versions:
 	@set -euo pipefail; \
@@ -403,6 +417,9 @@ EXISTING_POLL_INTERVAL=""
 EXISTING_DEPLOY_BUCKET=""
 EXISTING_DEPLOY_REGION=""
 EXISTING_DEPLOY_ENDPOINT=""
+EXISTING_DEPLOY_PREFLIGHT_ENABLED=""
+EXISTING_DEPLOY_HEALTH_TIMEOUT_SECONDS=""
+EXISTING_DEPLOY_MIGRATION_LOCK_TIMEOUT_MS=""
 
 if [[ -f "${APP_DIR}/.env" ]]; then
     info "Found existing .env at ${APP_DIR}/.env — loading as defaults."
@@ -430,6 +447,9 @@ if [[ -f "${APP_DIR}/config/deploy.conf" ]]; then
     EXISTING_DEPLOY_BUCKET="${EXISTING_DEPLOY_BUCKET:-$(grep -oP '^DEPLOY_BUCKET="\K[^"]+' "${APP_DIR}/config/deploy.conf" 2>/dev/null || true)}"
     EXISTING_DEPLOY_REGION="${EXISTING_DEPLOY_REGION:-$(grep -oP '^DEPLOY_REGION="\K[^"]+' "${APP_DIR}/config/deploy.conf" 2>/dev/null || true)}"
     EXISTING_DEPLOY_ENDPOINT="${EXISTING_DEPLOY_ENDPOINT:-$(grep -oP '^DEPLOY_ENDPOINT="\K[^"]+' "${APP_DIR}/config/deploy.conf" 2>/dev/null || true)}"
+    EXISTING_DEPLOY_PREFLIGHT_ENABLED="$(grep -oP '^DEPLOY_PREFLIGHT_ENABLED="\K[^"]+' "${APP_DIR}/config/deploy.conf" 2>/dev/null || true)"
+    EXISTING_DEPLOY_HEALTH_TIMEOUT_SECONDS="$(grep -oP '^DEPLOY_HEALTH_TIMEOUT_SECONDS="\K[^"]+' "${APP_DIR}/config/deploy.conf" 2>/dev/null || true)"
+    EXISTING_DEPLOY_MIGRATION_LOCK_TIMEOUT_MS="$(grep -oP '^DEPLOY_MIGRATION_LOCK_TIMEOUT_MS="\K[^"]+' "${APP_DIR}/config/deploy.conf" 2>/dev/null || true)"
 fi
 
 echo ""
@@ -797,6 +817,9 @@ DEPLOY_BUCKET="$(ask "Deploy artifact bucket" "${EXISTING_DEPLOY_BUCKET}")"
 DEPLOY_REGION="$(ask "Deploy artifact region (auto for R2)" "${EXISTING_DEPLOY_REGION:-auto}")"
 DEPLOY_ENDPOINT="$(ask "Deploy artifact endpoint (blank for AWS S3)" "${EXISTING_DEPLOY_ENDPOINT}")"
 DEPLOY_POLL_INTERVAL="$(ask "Poll interval in seconds" "${EXISTING_POLL_INTERVAL:-30}")"
+DEPLOY_PREFLIGHT_ENABLED="${EXISTING_DEPLOY_PREFLIGHT_ENABLED:-1}"
+DEPLOY_HEALTH_TIMEOUT_SECONDS="${EXISTING_DEPLOY_HEALTH_TIMEOUT_SECONDS:-30}"
+DEPLOY_MIGRATION_LOCK_TIMEOUT_MS="${EXISTING_DEPLOY_MIGRATION_LOCK_TIMEOUT_MS:-0}"
 
 if [[ -z "${DEPLOY_BUCKET}" ]]; then
     warn "Deploy artifact bucket is empty. Deploy polling will be disabled."
@@ -815,6 +838,9 @@ APP_DIR="${APP_DIR}"
 BINARY_NAME="${BINARY_NAME}"
 RUN_USER="${SYS_USER}"
 POLL_INTERVAL="${DEPLOY_POLL_INTERVAL}"
+DEPLOY_PREFLIGHT_ENABLED="${DEPLOY_PREFLIGHT_ENABLED}"
+DEPLOY_HEALTH_TIMEOUT_SECONDS="${DEPLOY_HEALTH_TIMEOUT_SECONDS}"
+DEPLOY_MIGRATION_LOCK_TIMEOUT_MS="${DEPLOY_MIGRATION_LOCK_TIMEOUT_MS}"
 DEPLOY_BUCKET="${DEPLOY_BUCKET}"
 DEPLOY_REGION="${DEPLOY_REGION}"
 DEPLOY_ENDPOINT="${DEPLOY_ENDPOINT}"
@@ -862,6 +888,26 @@ FINAL_REDIS_URL="$(ask "REDIS_URL" "${DEFAULT_REDIS_URL}")"
 SUMMARY_DATABASE_URL="${FINAL_DATABASE_URL}"
 SUMMARY_REDIS_URL="${FINAL_REDIS_URL}"
 
+PRESERVED_ENV_LINES=""
+if [[ -f "${ENV_FILE}" ]]; then
+    cp "${ENV_FILE}" "${ENV_FILE}.bak.$(date -u +%Y%m%d%H%M%S)"
+    PRESERVED_ENV_LINES="$(
+        awk '
+            /^[[:space:]]*($|#)/ { next }
+            {
+                line = $0
+                sub(/^[[:space:]]*export[[:space:]]+/, "", line)
+                key = line
+                sub(/[[:space:]]*=.*/, "", key)
+                gsub(/[[:space:]]/, "", key)
+                if (key !~ /^(APP__NAME|APP__ENVIRONMENT|APP__SIGNING_KEY|CRYPT__KEY|SERVER__HOST|SERVER__PORT|WEBSOCKET__HOST|WEBSOCKET__PORT|DATABASE__URL|REDIS__URL|REDIS__NAMESPACE)$/) {
+                    print $0
+                }
+            }
+        ' "${ENV_FILE}"
+    )"
+fi
+
 cat > "${ENV_FILE}" <<ENV
 APP__NAME=${APP_NAME}
 APP__ENVIRONMENT=${ENVIRONMENT}
@@ -877,6 +923,14 @@ DATABASE__URL=${SUMMARY_DATABASE_URL}
 REDIS__URL=${SUMMARY_REDIS_URL}
 REDIS__NAMESPACE=${REDIS_NAMESPACE}
 ENV
+
+if [[ -n "${PRESERVED_ENV_LINES}" ]]; then
+    {
+        echo ""
+        echo "# Preserved server-only values from the previous .env"
+        printf '%s\n' "${PRESERVED_ENV_LINES}"
+    } >> "${ENV_FILE}"
+fi
 
 chmod 600 "${ENV_FILE}"
 chown "${SYS_USER}:${SYS_USER}" "${ENV_FILE}"
@@ -908,6 +962,8 @@ EnvironmentFile=${APP_DIR}/.env
 ExecStart=${APP_DIR}/bin/${BINARY_NAME}
 Restart=always
 RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=45
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=${service_name}
@@ -934,6 +990,8 @@ WorkingDirectory=${APP_DIR}
 ExecStart=${APP_DIR}/scripts/deploy-poll.sh
 Restart=always
 RestartSec=10
+KillSignal=SIGTERM
+TimeoutStopSec=60
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=${service_name}

@@ -27,6 +27,42 @@ host = "127.0.0.1"
 port = 3000
 
 # -----------------------------------------------------------------------------
+# HTTP Edge
+# -----------------------------------------------------------------------------
+# These are Forge's config defaults. Code-registered global middleware of the
+# same kind takes precedence, so the existing HTTP bootstrap remains compatible.
+[http]
+max_body_size_bytes = 0
+request_timeout_ms = 0
+
+[http.security_headers]
+enabled = true
+hsts = false
+frame_options = "DENY"
+referrer_policy = "strict-origin-when-cross-origin"
+content_security_policy = ""
+
+[http.trusted_proxy]
+enabled = false
+trusted_cidrs = []
+headers = ["cf-connecting-ip", "x-real-ip", "x-forwarded-for"]
+
+[http.cors]
+enabled = false
+allowed_origins = []
+allowed_methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+allowed_headers = ["authorization", "content-type", "x-request-id", "x-csrf-token"]
+allow_credentials = false
+max_age_seconds = 600
+
+[http.rate_limit]
+enabled = false
+max_requests = 600
+window_seconds = 60
+by = "actor_or_ip"
+key_prefix = "http:"
+
+# -----------------------------------------------------------------------------
 # Redis
 # -----------------------------------------------------------------------------
 [redis]
@@ -38,6 +74,7 @@ namespace = "forge_starter"
 # -----------------------------------------------------------------------------
 [database]
 url = "postgres://postgres:postgres@127.0.0.1:5432/forge_starter"
+migration_lock_timeout_ms = 0
 log_queries = false
 slow_query_threshold_ms = 500
 slow_query_retention = 100
@@ -66,6 +103,18 @@ access_token_ttl_minutes = 15
 refresh_token_ttl_days = 30
 token_length = 32
 rotate_refresh_tokens = true
+prune_retention_days = 30
+prune_interval_ms = 3600000
+prune_batch_size = 1000
+
+# Optional per-guard token TTL overrides.
+# [auth.tokens.guards.admin]
+# access_token_ttl_minutes = 43200
+# refresh_token_ttl_days = 30
+#
+# [auth.tokens.guards.user]
+# access_token_ttl_minutes = 4320
+# refresh_token_ttl_days = 3
 
 [auth.sessions]
 ttl_minutes = 120
@@ -74,6 +123,16 @@ cookie_secure = false  # dev-only (HTTP); override in prod: AUTH__SESSIONS__COOK
 cookie_path = "/"
 sliding_expiry = true
 remember_ttl_days = 30
+
+[auth.password_resets]
+expiry_minutes = 60
+prune_interval_ms = 3600000
+prune_batch_size = 1000
+
+[auth.email_verification]
+expiry_minutes = 1440
+prune_interval_ms = 3600000
+prune_batch_size = 1000
 
 [auth.lockout]
 enabled = true

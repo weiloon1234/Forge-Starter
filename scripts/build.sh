@@ -126,12 +126,14 @@ first_config_value() {
 }
 
 frontend_portals() {
-    local portal
-    for portal in website admin user team; do
-        if [[ -d "$PROJECT_DIR/frontend/$portal" ]]; then
-            printf '%s\n' "$portal"
-        fi
-    done
+    local portal_dir portal
+    [[ -d "$PROJECT_DIR/frontend" ]] || return 0
+
+    while IFS= read -r portal_dir; do
+        portal="$(basename "$portal_dir")"
+        [[ "$portal" == "shared" ]] && continue
+        printf '%s\n' "$portal"
+    done < <(find "$PROJECT_DIR/frontend" -mindepth 1 -maxdepth 1 -type d | sort)
 }
 
 read_app_name_from_config() {
@@ -251,6 +253,39 @@ validate_deploy_options() {
             DEPLOY_DOCKER_CLEANUP="aggressive"
             ;;
     esac
+}
+
+sha256_file() {
+    local file="$1"
+
+    if command -v sha256sum &>/dev/null; then
+        sha256sum "$file" | awk '{ print $1 }'
+        return 0
+    fi
+    if command -v shasum &>/dev/null; then
+        shasum -a 256 "$file" | awk '{ print $1 }'
+        return 0
+    fi
+
+    error "No SHA-256 tool found. Install sha256sum or shasum."
+    exit 1
+}
+
+write_artifact_manifest() {
+    local manifest_path="$1"
+    local sha256="$2"
+    local built_at="$3"
+
+    cat > "$manifest_path" <<EOF
+VERSION="$VERSION"
+APP_NAME="$APP_NAME"
+ENVIRONMENT="$DEPLOY_ENV"
+BINARY_NAME="$BINARY_NAME"
+ARTIFACT="$ZIP_NAME"
+SHA256="$sha256"
+BUILT_AT="$built_at"
+RUNTIME_ONLY="1"
+EOF
 }
 
 artifact_entry_allowed() {
@@ -387,6 +422,8 @@ prune_bucket_releases() {
         if ! aws_s3 rm "${S3_BASE}/${file}"; then
             warn "Failed to remove old bucket artifact: $file"
         fi
+        aws_s3 rm "${S3_BASE}/${file}.sha256" &>/dev/null || true
+        aws_s3 rm "${S3_BASE}/${file%.zip}.manifest" &>/dev/null || true
     done
 }
 
@@ -590,6 +627,16 @@ ZIP_SIZE=$(du -h "$ZIP_PATH" | cut -f1)
 ok "Archive created: $ZIP_SIZE"
 verify_artifact_zip "$ZIP_PATH"
 
+ZIP_SHA256="$(sha256_file "$ZIP_PATH")"
+BUILT_AT="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+CHECKSUM_NAME="${ZIP_NAME}.sha256"
+CHECKSUM_PATH="$TEMP_DIR/$CHECKSUM_NAME"
+MANIFEST_NAME="${BINARY_NAME}-${VERSION}.manifest"
+MANIFEST_PATH="$TEMP_DIR/$MANIFEST_NAME"
+printf '%s  %s\n' "$ZIP_SHA256" "$ZIP_NAME" > "$CHECKSUM_PATH"
+write_artifact_manifest "$MANIFEST_PATH" "$ZIP_SHA256" "$BUILT_AT"
+ok "Artifact checksum: $ZIP_SHA256"
+
 # ---------------------------------------------------------------------------
 # S3/R2 upload helper
 # ---------------------------------------------------------------------------
@@ -612,8 +659,18 @@ info "Uploading $ZIP_NAME to $S3_ZIP_PATH"
 s3_cp "$ZIP_PATH" "$S3_ZIP_PATH"
 ok "Artifact uploaded"
 
+S3_CHECKSUM_PATH="${S3_BASE}/${CHECKSUM_NAME}"
+info "Uploading checksum to $S3_CHECKSUM_PATH"
+s3_cp "$CHECKSUM_PATH" "$S3_CHECKSUM_PATH"
+ok "Checksum uploaded"
+
+S3_MANIFEST_PATH="${S3_BASE}/${MANIFEST_NAME}"
+info "Uploading manifest to $S3_MANIFEST_PATH"
+s3_cp "$MANIFEST_PATH" "$S3_MANIFEST_PATH"
+ok "Manifest uploaded"
+
 # ---------------------------------------------------------------------------
-# Upload VERSION file
+# Upload VERSION file last so pollers never see half-published releases
 # ---------------------------------------------------------------------------
 VERSION_FILE="$TEMP_DIR/VERSION"
 echo "$VERSION" > "$VERSION_FILE"
@@ -644,6 +701,8 @@ echo "  Version:       $VERSION"
 echo "  Environment:   $DEPLOY_ENV"
 echo "  Artifact:      $S3_ZIP_PATH"
 echo "  Artifact size: $ZIP_SIZE"
+echo "  SHA-256:       $ZIP_SHA256"
+echo "  Manifest:      $S3_MANIFEST_PATH"
 echo "  VERSION file:  $S3_VERSION_PATH"
 echo "  Build time:    ${BUILD_DURATION}s"
 echo "  Upload time:   ${UPLOAD_DURATION}s"

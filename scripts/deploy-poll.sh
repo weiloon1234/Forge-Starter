@@ -17,6 +17,8 @@ set -euo pipefail
 # Installed setup copies this script to $APP_DIR/scripts and deploy.conf to
 # $APP_DIR/config, so the script-relative path is the safe default.
 DEPLOY_CONF="${DEPLOY_CONF:-}"
+LOCK_FD=200
+LOCK_HELD=false
 
 # Try to find deploy.conf from the script's own location first
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -95,6 +97,33 @@ first_config_value() {
     return 1
 }
 
+sha256_file() {
+    local file="$1"
+
+    if command -v sha256sum &>/dev/null; then
+        sha256sum "$file" | awk '{ print $1 }'
+        return 0
+    fi
+    if command -v shasum &>/dev/null; then
+        shasum -a 256 "$file" | awk '{ print $1 }'
+        return 0
+    fi
+
+    log_error "No SHA-256 tool found. Install sha256sum or shasum."
+    return 1
+}
+
+non_negative_integer_or_default() {
+    local value="$1"
+    local fallback="$2"
+
+    if [[ "$value" =~ ^[0-9]+$ ]]; then
+        printf '%s' "$value"
+    else
+        printf '%s' "$fallback"
+    fi
+}
+
 # -----------------------------------------------------------------------------
 # Load config from deploy.conf + optional server .env fallback
 # -----------------------------------------------------------------------------
@@ -115,6 +144,14 @@ load_config() {
     : "${BINARY_NAME:?BINARY_NAME not set in $DEPLOY_CONF}"
     : "${POLL_INTERVAL:=30}"
     : "${RUN_USER:=forge}"
+    : "${DEPLOY_PREFLIGHT_ENABLED:=1}"
+    : "${DEPLOY_HEALTH_TIMEOUT_SECONDS:=30}"
+    : "${DEPLOY_MIGRATION_LOCK_TIMEOUT_MS:=0}"
+
+    POLL_INTERVAL="$(non_negative_integer_or_default "$POLL_INTERVAL" 30)"
+    DEPLOY_PREFLIGHT_ENABLED="$(non_negative_integer_or_default "$DEPLOY_PREFLIGHT_ENABLED" 1)"
+    DEPLOY_HEALTH_TIMEOUT_SECONDS="$(non_negative_integer_or_default "$DEPLOY_HEALTH_TIMEOUT_SECONDS" 30)"
+    DEPLOY_MIGRATION_LOCK_TIMEOUT_MS="$(non_negative_integer_or_default "$DEPLOY_MIGRATION_LOCK_TIMEOUT_MS" 0)"
 
     ENV_FILE="$APP_DIR/.env"
     S3_BUCKET="$(first_config_value "$ENV_FILE" DEPLOY_BUCKET STORAGE__DISKS__R2__BUCKET STORAGE__DISKS__S3__BUCKET || true)"
@@ -129,11 +166,15 @@ load_config() {
         exit 1
     fi
 
+    cd "$APP_DIR"
+
     # Derived paths
     BIN_DIR="$APP_DIR/bin"
     BINARY="$BIN_DIR/$BINARY_NAME"
     LOCAL_VERSION_FILE="$APP_DIR/VERSION"
     LOCK_FILE="$APP_DIR/deploy-poll.lock"
+    DEPLOY_MANIFEST_FILE="$APP_DIR/DEPLOY_MANIFEST"
+    DEPLOY_CHECKSUM_FILE="$APP_DIR/DEPLOY_SHA256"
     S3_PREFIX="s3://$S3_BUCKET/_deployments/$APP_NAME/$ENVIRONMENT"
 
     # Dynamic service names based on APP_ID
@@ -150,21 +191,26 @@ load_config() {
 # -----------------------------------------------------------------------------
 
 acquire_lock() {
-    if [[ -f "$LOCK_FILE" ]]; then
-        local pid
-        pid=$(cat "$LOCK_FILE" 2>/dev/null || true)
-        if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
-            log_error "Another deploy-poll is running (PID $pid). Exiting."
-            exit 1
-        fi
-        log_warn "Stale lock file found. Removing."
-        rm -f "$LOCK_FILE"
+    if ! command -v flock &>/dev/null; then
+        log_error "'flock' is required for deploy locking. Install util-linux."
+        exit 1
     fi
-    echo $$ > "$LOCK_FILE"
+
+    exec 200>"$LOCK_FILE"
+    if ! flock -n "$LOCK_FD"; then
+        log_error "Another deploy-poll or deploy-once process is already running for $APP_ID."
+        exit 1
+    fi
+
+    LOCK_HELD=true
+    printf '%s\n' "$$" >&200
 }
 
 release_lock() {
-    rm -f "${LOCK_FILE:-}" 2>/dev/null || true
+    if [[ "$LOCK_HELD" == true ]]; then
+        flock -u "$LOCK_FD" 2>/dev/null || true
+        LOCK_HELD=false
+    fi
 }
 
 # -----------------------------------------------------------------------------
@@ -276,6 +322,62 @@ verify_artifact_zip() {
     return 0
 }
 
+manifest_value() {
+    local manifest="$1"
+    local key="$2"
+    env_file_value "$key" "$manifest"
+}
+
+verify_release_metadata() {
+    local version="$1"
+    local zip_path="$2"
+    local checksum_path="$3"
+    local manifest_path="$4"
+    local expected_sha actual_sha manifest_version manifest_artifact manifest_sha
+
+    if [[ ! -f "$checksum_path" ]]; then
+        log_error "Artifact checksum file is missing."
+        return 1
+    fi
+    if [[ ! -f "$manifest_path" ]]; then
+        log_error "Artifact manifest file is missing."
+        return 1
+    fi
+
+    expected_sha="$(awk 'NF >= 1 { print $1; exit }' "$checksum_path")"
+    if [[ -z "$expected_sha" ]]; then
+        log_error "Artifact checksum file is empty."
+        return 1
+    fi
+    actual_sha="$(sha256_file "$zip_path")" || return 1
+    if [[ "$actual_sha" != "$expected_sha" ]]; then
+        log_error "Artifact checksum mismatch for version $version."
+        log_error "Expected: $expected_sha"
+        log_error "Actual:   $actual_sha"
+        return 1
+    fi
+
+    manifest_version="$(manifest_value "$manifest_path" VERSION || true)"
+    manifest_artifact="$(manifest_value "$manifest_path" ARTIFACT || true)"
+    manifest_sha="$(manifest_value "$manifest_path" SHA256 || true)"
+
+    if [[ "$manifest_version" != "$version" ]]; then
+        log_error "Artifact manifest VERSION mismatch: expected $version, got ${manifest_version:-<empty>}."
+        return 1
+    fi
+    if [[ "$manifest_artifact" != "${BINARY_NAME}-${version}.zip" ]]; then
+        log_error "Artifact manifest ARTIFACT mismatch: got ${manifest_artifact:-<empty>}."
+        return 1
+    fi
+    if [[ "$manifest_sha" != "$actual_sha" ]]; then
+        log_error "Artifact manifest SHA256 mismatch."
+        return 1
+    fi
+
+    log_info "Artifact checksum and manifest verified."
+    return 0
+}
+
 # -----------------------------------------------------------------------------
 # Service management
 # -----------------------------------------------------------------------------
@@ -298,6 +400,42 @@ start_services() {
         fi
     done
     log_info "Services started."
+}
+
+enabled_forge_services() {
+    local svc
+    for svc in "${FORGE_SERVICES[@]}"; do
+        if systemctl is-enabled --quiet "$svc" 2>/dev/null; then
+            printf '%s\n' "$svc"
+        fi
+    done
+}
+
+wait_for_services_healthy() {
+    local deadline failed svc
+    deadline=$(( $(date +%s) + DEPLOY_HEALTH_TIMEOUT_SECONDS ))
+
+    while true; do
+        failed=()
+        while IFS= read -r svc; do
+            [[ -z "$svc" ]] && continue
+            if ! systemctl is-active --quiet "$svc" 2>/dev/null; then
+                failed+=("$svc")
+            fi
+        done < <(enabled_forge_services)
+
+        if [[ ${#failed[@]} -eq 0 ]]; then
+            log_info "All enabled Forge services are active."
+            return 0
+        fi
+
+        if (( $(date +%s) >= deadline )); then
+            log_error "Services failed to become active before timeout: ${failed[*]}"
+            return 1
+        fi
+
+        sleep 1
+    done
 }
 
 # -----------------------------------------------------------------------------
@@ -325,6 +463,131 @@ get_remote_version() {
 }
 
 # -----------------------------------------------------------------------------
+# Runtime file deployment helpers
+# -----------------------------------------------------------------------------
+
+backup_runtime_files() {
+    local backup_dir="$1"
+
+    mkdir -p "$backup_dir"
+    if [[ -f "$BINARY" ]]; then
+        mkdir -p "$backup_dir/bin"
+        cp -a "$BINARY" "$backup_dir/bin/$BINARY_NAME"
+    fi
+    for path in public locales templates docs; do
+        if [[ -e "$APP_DIR/$path" ]]; then
+            cp -a "$APP_DIR/$path" "$backup_dir/$path"
+        fi
+    done
+    mkdir -p "$backup_dir/config"
+    find "$APP_DIR/config" -maxdepth 1 -name '*.toml' -exec cp -a {} "$backup_dir/config/" \;
+    if [[ -f "$LOCAL_VERSION_FILE" ]]; then
+        cp -a "$LOCAL_VERSION_FILE" "$backup_dir/VERSION"
+    fi
+    if [[ -f "$DEPLOY_MANIFEST_FILE" ]]; then
+        cp -a "$DEPLOY_MANIFEST_FILE" "$backup_dir/DEPLOY_MANIFEST"
+    fi
+    if [[ -f "$DEPLOY_CHECKSUM_FILE" ]]; then
+        cp -a "$DEPLOY_CHECKSUM_FILE" "$backup_dir/DEPLOY_SHA256"
+    fi
+}
+
+restore_runtime_files() {
+    local backup_dir="$1"
+
+    if [[ ! -f "$backup_dir/bin/$BINARY_NAME" ]]; then
+        log_error "No previous binary backup exists; services were left stopped."
+        return 1
+    fi
+
+    mkdir -p "$BIN_DIR" "$APP_DIR/config"
+    cp -a "$backup_dir/bin/$BINARY_NAME" "$BINARY"
+    chmod +x "$BINARY"
+    chown "$RUN_USER:$RUN_USER" "$BINARY"
+
+    for path in public locales templates docs; do
+        rm -rf "$APP_DIR/$path"
+        if [[ -e "$backup_dir/$path" ]]; then
+            cp -a "$backup_dir/$path" "$APP_DIR/$path"
+        else
+            mkdir -p "$APP_DIR/$path"
+        fi
+    done
+
+    find "$APP_DIR/config" -maxdepth 1 -name '*.toml' -delete
+    if [[ -d "$backup_dir/config" ]]; then
+        find "$backup_dir/config" -maxdepth 1 -name '*.toml' -exec cp -a {} "$APP_DIR/config/" \;
+    fi
+
+    if [[ -f "$backup_dir/VERSION" ]]; then
+        cp -a "$backup_dir/VERSION" "$LOCAL_VERSION_FILE"
+    else
+        rm -f "$LOCAL_VERSION_FILE"
+    fi
+    if [[ -f "$backup_dir/DEPLOY_MANIFEST" ]]; then
+        cp -a "$backup_dir/DEPLOY_MANIFEST" "$DEPLOY_MANIFEST_FILE"
+    else
+        rm -f "$DEPLOY_MANIFEST_FILE"
+    fi
+    if [[ -f "$backup_dir/DEPLOY_SHA256" ]]; then
+        cp -a "$backup_dir/DEPLOY_SHA256" "$DEPLOY_CHECKSUM_FILE"
+    else
+        rm -f "$DEPLOY_CHECKSUM_FILE"
+    fi
+
+    chown -R "$RUN_USER:$RUN_USER" "$APP_DIR/public" "$APP_DIR/locales" "$APP_DIR/templates" "$APP_DIR/docs" "$APP_DIR/config"
+    return 0
+}
+
+deploy_runtime_files() {
+    local extract_dir="$1"
+
+    mkdir -p "$BIN_DIR" "$APP_DIR/config"
+    cp -a "$extract_dir/$BINARY_NAME" "$BINARY"
+    chmod +x "$BINARY"
+    chown "$RUN_USER:$RUN_USER" "$BINARY"
+
+    for path in public locales templates docs; do
+        rm -rf "$APP_DIR/$path"
+        if [[ -d "$extract_dir/$path" ]]; then
+            cp -a "$extract_dir/$path" "$APP_DIR/$path"
+        else
+            mkdir -p "$APP_DIR/$path"
+        fi
+    done
+
+    find "$APP_DIR/config" -maxdepth 1 -name '*.toml' -delete
+    if [[ -d "$extract_dir/config" ]]; then
+        find "$extract_dir/config" -maxdepth 1 -name '*.toml' -exec cp -a {} "$APP_DIR/config/" \;
+    fi
+
+    chown -R "$RUN_USER:$RUN_USER" "$APP_DIR/public" "$APP_DIR/locales" "$APP_DIR/templates" "$APP_DIR/docs" "$APP_DIR/config"
+}
+
+run_doctor_for_binary() {
+    local binary="$1"
+    local force="${2:-0}"
+
+    if (( DEPLOY_PREFLIGHT_ENABLED == 0 && force == 0 )); then
+        log_warn "Deploy preflight disabled by DEPLOY_PREFLIGHT_ENABLED=0."
+        return 0
+    fi
+
+    log_info "Running Forge doctor preflight..."
+    sudo -u "$RUN_USER" env PROCESS=cli "$binary" doctor --deploy --json
+}
+
+run_migrations() {
+    local args=(db:migrate)
+
+    if (( DEPLOY_MIGRATION_LOCK_TIMEOUT_MS > 0 )); then
+        args+=(--lock-timeout-ms "$DEPLOY_MIGRATION_LOCK_TIMEOUT_MS")
+    fi
+
+    sudo -u "$RUN_USER" env PROCESS=cli "$BINARY" "${args[@]}"
+}
+
+# -----------------------------------------------------------------------------
 # Deployment
 # -----------------------------------------------------------------------------
 
@@ -332,7 +595,11 @@ deploy_version() {
     local version="$1"
     local tmp_dir
     tmp_dir=$(mktemp -d)
+    chmod 755 "$tmp_dir"
     local zip_file="$tmp_dir/${BINARY_NAME}-${version}.zip"
+    local checksum_file="$tmp_dir/${BINARY_NAME}-${version}.zip.sha256"
+    local manifest_file="$tmp_dir/${BINARY_NAME}-${version}.manifest"
+    local backup_dir="$tmp_dir/backup"
     local success=false
 
     log_info "Deploying version: $version"
@@ -341,6 +608,16 @@ deploy_version() {
     log_info "Downloading artifact..."
     if ! s3_download "$S3_PREFIX/${BINARY_NAME}-${version}.zip" "$zip_file"; then
         log_error "Failed to download artifact zip."
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+    if ! s3_download "$S3_PREFIX/${BINARY_NAME}-${version}.zip.sha256" "$checksum_file"; then
+        log_error "Failed to download artifact checksum."
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+    if ! s3_download "$S3_PREFIX/${BINARY_NAME}-${version}.manifest" "$manifest_file"; then
+        log_error "Failed to download artifact manifest."
         rm -rf "$tmp_dir"
         return 1
     fi
@@ -359,77 +636,56 @@ deploy_version() {
             return 1
         fi
     fi
+    if ! verify_release_metadata "$version" "$zip_file" "$checksum_file" "$manifest_file"; then
+        rm -rf "$tmp_dir"
+        return 1
+    fi
     if ! verify_artifact_zip "$zip_file"; then
         log_error "Artifact failed runtime-only safety checks."
         rm -rf "$tmp_dir"
         return 1
     fi
 
-    # Backup current binary
-    if [[ -f "$BINARY" ]]; then
-        cp "$BINARY" "${BINARY}.bak"
-        log_info "Backed up current binary."
-    fi
-
-    # Stop services
-    stop_services
-
     # Extract zip
     log_info "Extracting artifact..."
     local extract_dir="$tmp_dir/extracted"
     mkdir -p "$extract_dir"
     unzip -o "$zip_file" -d "$extract_dir" > /dev/null
+    chmod -R a+rX "$extract_dir"
 
-    # Deploy binary
-    if [[ -f "$extract_dir/$BINARY_NAME" ]]; then
-        cp "$extract_dir/$BINARY_NAME" "$BINARY"
-        chmod +x "$BINARY"
-        chown "$RUN_USER:$RUN_USER" "$BINARY"
-    else
+    if [[ ! -f "$extract_dir/$BINARY_NAME" ]]; then
         log_error "Binary '$BINARY_NAME' not found in artifact zip."
-        if [[ -f "${BINARY}.bak" ]]; then
-            cp "${BINARY}.bak" "$BINARY"
-        fi
-        start_services
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+    if [[ ! -x "$extract_dir/$BINARY_NAME" ]]; then
+        log_error "Artifact binary '$BINARY_NAME' is not executable."
         rm -rf "$tmp_dir"
         return 1
     fi
 
-    # Deploy public assets
-    if [[ -d "$extract_dir/public" ]]; then
-        rm -rf "$APP_DIR/public/website" "$APP_DIR/public/admin" "$APP_DIR/public/user" "$APP_DIR/public/team"
-        cp -r "$extract_dir/public/." "$APP_DIR/public/"
-        chown -R "$RUN_USER:$RUN_USER" "$APP_DIR/public/"
-        log_info "Deployed public assets."
+    if ! run_doctor_for_binary "$extract_dir/$BINARY_NAME"; then
+        log_error "Forge doctor preflight failed. Current services were not stopped."
+        rm -rf "$tmp_dir"
+        return 1
     fi
 
-    # Deploy config
-    if [[ -d "$extract_dir/config" ]]; then
-        # Preserve deploy.conf — only overwrite app config files
-        find "$extract_dir/config" -maxdepth 1 -name '*.toml' -exec cp {} "$APP_DIR/config/" \;
-        log_info "Deployed config files."
-    fi
+    backup_runtime_files "$backup_dir"
+    log_info "Backed up current runtime files."
 
-    # Deploy locales
-    if [[ -d "$extract_dir/locales" ]]; then
-        cp -r "$extract_dir/locales/." "$APP_DIR/locales/"
-    fi
+    # Stop services
+    stop_services
 
-    # Deploy templates
-    if [[ -d "$extract_dir/templates" ]]; then
-        cp -r "$extract_dir/templates/." "$APP_DIR/templates/"
-    fi
-
-    # Deploy API docs
-    if [[ -d "$extract_dir/docs" ]]; then
-        mkdir -p "$APP_DIR/docs"
-        cp -r "$extract_dir/docs/." "$APP_DIR/docs/"
-    fi
+    deploy_runtime_files "$extract_dir"
+    cp -a "$manifest_file" "$DEPLOY_MANIFEST_FILE"
+    cp -a "$checksum_file" "$DEPLOY_CHECKSUM_FILE"
+    chown "$RUN_USER:$RUN_USER" "$DEPLOY_MANIFEST_FILE" "$DEPLOY_CHECKSUM_FILE"
+    log_info "Deployed runtime files."
 
     # Run database migrations before starting services
     log_info "Running database migrations..."
     local migrations_ok=false
-    if sudo -u "$RUN_USER" PROCESS=cli "$BINARY" db:migrate 2>&1; then
+    if run_migrations 2>&1; then
         migrations_ok=true
         log_info "Migrations complete."
     else
@@ -440,31 +696,27 @@ deploy_version() {
         # Start services
         start_services
 
-        # Verify at least the HTTP service started
-        sleep 2
-        local http_svc="${APP_ID}-http"
-        if systemctl is-active --quiet "$http_svc" 2>/dev/null; then
+        if wait_for_services_healthy; then
             success=true
-            log_info "$http_svc is running. Deployment successful."
+            log_info "Deployment services are running."
         else
-            log_error "$http_svc failed to start after deployment."
+            log_error "One or more services failed to start after deployment."
         fi
     fi
 
     if [[ "$success" = true ]]; then
         echo "$version" > "$LOCAL_VERSION_FILE"
-        rm -f "${BINARY}.bak"
+        chown "$RUN_USER:$RUN_USER" "$LOCAL_VERSION_FILE"
         log_info "Deployment complete: $version"
     else
-        log_warn "Rolling back to previous binary..."
-        if [[ -f "${BINARY}.bak" ]]; then
-            cp "${BINARY}.bak" "$BINARY"
-            chmod +x "$BINARY"
-            chown "$RUN_USER:$RUN_USER" "$BINARY"
+        if [[ "$migrations_ok" = true ]]; then
+            log_warn "Migrations already ran; restoring runtime files only. Database schema may be forward-migrated."
+        fi
+        log_warn "Rolling back runtime files..."
+        if restore_runtime_files "$backup_dir"; then
             start_services
-            log_warn "Rollback complete. Continuing to poll."
-        else
-            log_error "No previous binary backup exists; services were left stopped."
+            wait_for_services_healthy || log_warn "Rollback services did not all become active."
+            log_warn "Runtime rollback complete. Continuing to poll."
         fi
     fi
 
@@ -553,6 +805,73 @@ deploy_once() {
     return 1
 }
 
+deploy_check() {
+    local version="${1:-}"
+    local tmp_dir zip_file checksum_file manifest_file extract_dir
+
+    load_config
+
+    if [[ -z "$version" ]]; then
+        log_info "Fetching remote VERSION for deploy check."
+        if ! version=$(get_remote_version); then
+            log_error "Could not read remote VERSION."
+            return 1
+        fi
+    fi
+
+    version=$(echo "$version" | tr -d '[:space:]')
+    if [[ -z "$version" ]]; then
+        log_error "Version is empty."
+        return 1
+    fi
+
+    tmp_dir=$(mktemp -d)
+    chmod 755 "$tmp_dir"
+    zip_file="$tmp_dir/${BINARY_NAME}-${version}.zip"
+    checksum_file="$tmp_dir/${BINARY_NAME}-${version}.zip.sha256"
+    manifest_file="$tmp_dir/${BINARY_NAME}-${version}.manifest"
+    extract_dir="$tmp_dir/extracted"
+
+    log_info "Checking deploy artifact version: $version"
+    if ! s3_download "$S3_PREFIX/${BINARY_NAME}-${version}.zip" "$zip_file" \
+        || ! s3_download "$S3_PREFIX/${BINARY_NAME}-${version}.zip.sha256" "$checksum_file" \
+        || ! s3_download "$S3_PREFIX/${BINARY_NAME}-${version}.manifest" "$manifest_file"; then
+        log_error "Failed to download deploy artifact, checksum, or manifest."
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+
+    if ! unzip -t "$zip_file" > /dev/null 2>&1 \
+        || ! verify_release_metadata "$version" "$zip_file" "$checksum_file" "$manifest_file" \
+        || ! verify_artifact_zip "$zip_file"; then
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+
+    mkdir -p "$extract_dir"
+    unzip -o "$zip_file" -d "$extract_dir" > /dev/null
+    chmod -R a+rX "$extract_dir"
+    if [[ ! -x "$extract_dir/$BINARY_NAME" ]]; then
+        log_error "Artifact binary '$BINARY_NAME' is not executable."
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+
+    run_doctor_for_binary "$extract_dir/$BINARY_NAME" 1
+    local status=$?
+    rm -rf "$tmp_dir"
+    return "$status"
+}
+
+doctor_current() {
+    load_config
+    if [[ ! -x "$BINARY" ]]; then
+        log_error "Current binary is missing or not executable: $BINARY"
+        return 1
+    fi
+    run_doctor_for_binary "$BINARY" 1
+}
+
 list_versions() {
     load_config
     aws_s3 ls "${S3_PREFIX}/" \
@@ -572,6 +891,11 @@ Usage:
   $0 deploy-once     Deploy the current remote VERSION immediately.
   $0 deploy-once <version>
                      Deploy a specific artifact version immediately.
+  $0 deploy-check
+                     Verify the current remote VERSION without stopping services.
+  $0 deploy-check <version>
+                     Verify a specific artifact without stopping services.
+  $0 doctor          Run Forge doctor against the currently deployed binary.
   $0 versions        List artifact versions in the deploy bucket.
 USAGE
 }
@@ -583,6 +907,13 @@ case "${1:-poll}" in
     deploy-once)
         shift
         deploy_once "${1:-}"
+        ;;
+    deploy-check)
+        shift
+        deploy_check "${1:-}"
+        ;;
+    doctor)
+        doctor_current
         ;;
     versions)
         list_versions
