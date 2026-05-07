@@ -38,6 +38,12 @@ namespace = "forge_starter"
 # -----------------------------------------------------------------------------
 [database]
 url = "postgres://postgres:postgres@127.0.0.1:5432/forge_starter"
+log_queries = false
+slow_query_threshold_ms = 500
+slow_query_retention = 100
+n_plus_one_detection = true
+n_plus_one_min_repeats = 10
+n_plus_one_retention = 100
 
 [database.models]
 # timestamps_default = true   # inherit Forge default
@@ -91,8 +97,15 @@ window_minutes = 15
 queue = "default"
 max_retries = 5
 poll_interval_ms = 100
+lease_ttl_ms = 30000
+requeue_batch_size = 64
 max_concurrent_jobs = 0
 timeout_seconds = 300
+shutdown_timeout_ms = 30000
+track_history = true
+history_retention_days = 30
+history_prune_interval_ms = 3600000
+history_prune_batch_size = 1000
 
 # -----------------------------------------------------------------------------
 # Scheduler (Cron)
@@ -125,7 +138,11 @@ heartbeat_interval_seconds = 30
 # Observability (Dashboard + Tracing + Metrics)
 # -----------------------------------------------------------------------------
 [observability]
+enabled = true
+capture_enabled = true
 base_path = "/_forge"
+http_sample_retention = 500
+websocket_channel_retention = 500
 tracing_enabled = false
 otlp_endpoint = "http://localhost:4317"
 service_name = "forge-starter"

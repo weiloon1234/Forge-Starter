@@ -490,6 +490,16 @@ export function JobsDashboardPage() {
                   value: formatDateTime(selectedJob.created_at),
                 },
                 {
+                  key: "request_id",
+                  label: t("observability.common.request_id"),
+                  value: selectedJob.request_id ?? "—",
+                },
+                {
+                  key: "trace_id",
+                  label: t("observability.common.trace_id"),
+                  value: selectedJob.trace_id ?? "—",
+                },
+                {
                   key: "started_at",
                   label: t("observability.common.started_at"),
                   value: formatDateTime(selectedJob.started_at),

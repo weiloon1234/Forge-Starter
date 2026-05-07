@@ -36,6 +36,50 @@ export interface HttpRuntimeSnapshot {
   duration_ms: HttpDurationHistogramSnapshot;
 }
 
+export interface HttpStatsResponse {
+  stats: HttpStatsSummary;
+  top_slowest_routes: HttpRouteRanking[];
+  top_error_routes: HttpRouteRanking[];
+  recent_slow_requests: HttpRequestSample[];
+  recent_error_requests: HttpRequestSample[];
+}
+
+export interface HttpStatsSummary {
+  requests_total: number;
+  retained_request_count: number;
+  retention_capacity: number;
+  slow_request_threshold_ms: number;
+  route_count: number;
+  slow_request_count: number;
+  error_request_count: number;
+}
+
+export interface HttpRouteRanking {
+  method: string;
+  path: string;
+  requests_total: number;
+  informational_total: number;
+  success_total: number;
+  redirection_total: number;
+  client_error_total: number;
+  server_error_total: number;
+  avg_duration_ms: number;
+  max_duration_ms: number;
+  p95_duration_ms: number;
+  p99_duration_ms: number;
+  latest_recorded_at: string;
+}
+
+export interface HttpRequestSample {
+  method: string;
+  path: string;
+  status: number;
+  duration_ms: number;
+  request_id?: string | null;
+  trace_id?: string | null;
+  recorded_at: string;
+}
+
 export interface RuntimeResponse {
   backend: string;
   bootstrap_complete: boolean;
@@ -85,6 +129,8 @@ export interface FailedJobEntry {
   completed_at?: string | null;
   duration_ms?: number | null;
   created_at?: string | null;
+  request_id?: string | null;
+  trace_id?: string | null;
 }
 
 export interface JobsFailedResponse {
@@ -112,6 +158,8 @@ export interface SlowQueryEntry {
   sql: string;
   duration_ms: number;
   label?: string | null;
+  request_id?: string | null;
+  trace_id?: string | null;
   recorded_at: string;
 }
 
@@ -119,6 +167,7 @@ export interface NPlusOneSuspect {
   method: string;
   path: string;
   request_id?: string | null;
+  trace_id?: string | null;
   fingerprint: string;
   repeat_count: number;
   total_duration_ms: number;

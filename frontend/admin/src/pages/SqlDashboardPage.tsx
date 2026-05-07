@@ -68,6 +68,12 @@ export function SqlDashboardPage() {
       render: (query) => query.label ?? "—",
     },
     {
+      key: "trace_id",
+      label: t("observability.common.trace_id"),
+      className: "sf-obs-table__cell--mono",
+      render: (query) => query.trace_id ?? query.request_id ?? "—",
+    },
+    {
       key: "recorded_at",
       label: t("observability.sql.recorded_at"),
       render: (query) => formatDateTime(query.recorded_at),
@@ -89,7 +95,12 @@ export function SqlDashboardPage() {
           <strong>
             {suspect.method} {suspect.path}
           </strong>
-          <span>{suspect.request_id ?? "—"}</span>
+          <span>
+            {t("observability.common.request_id")}: {suspect.request_id ?? "—"}
+          </span>
+          <span>
+            {t("observability.common.trace_id")}: {suspect.trace_id ?? "—"}
+          </span>
         </div>
       ),
     },
@@ -263,8 +274,13 @@ export function SqlDashboardPage() {
                   },
                   {
                     key: "request_id",
-                    label: t("observability.sql.request_id"),
+                    label: t("observability.common.request_id"),
                     value: selectedEntry.entry.request_id ?? "—",
+                  },
+                  {
+                    key: "trace_id",
+                    label: t("observability.common.trace_id"),
+                    value: selectedEntry.entry.trace_id ?? "—",
                   },
                   {
                     key: "repeat_count",
@@ -329,6 +345,16 @@ export function SqlDashboardPage() {
                     key: "label",
                     label: t("observability.sql.label"),
                     value: selectedEntry.entry.label ?? "—",
+                  },
+                  {
+                    key: "request_id",
+                    label: t("observability.common.request_id"),
+                    value: selectedEntry.entry.request_id ?? "—",
+                  },
+                  {
+                    key: "trace_id",
+                    label: t("observability.common.trace_id"),
+                    value: selectedEntry.entry.trace_id ?? "—",
                   },
                   {
                     key: "recorded_at",
