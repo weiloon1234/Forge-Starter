@@ -5,7 +5,7 @@ export const ADMIN_AUTH_TOKEN_KEY = "admin_auth_token";
 
 export const api = createApi({
   baseURL: "/api/v1/admin",
-  silentPaths: ["/auth/me", "/auth/refresh"],
+  silentPaths: ["/auth/me", "/auth/refresh", "/auth/ws-token"],
   tokenKey: ADMIN_AUTH_TOKEN_KEY,
 });
 

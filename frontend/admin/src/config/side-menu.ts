@@ -4,6 +4,7 @@ import {
   Activity,
   Cable,
   Code2,
+  Database,
   FileText,
   Gauge,
   Landmark,
@@ -136,6 +137,13 @@ export const sideMenu: MenuItem[] = [
         label: "Jobs",
         path: "/developer/jobs",
         icon: Activity,
+        permission: permissions.observability.view,
+      },
+      {
+        key: "developer.sql",
+        label: "SQL",
+        path: "/developer/sql",
+        icon: Database,
         permission: permissions.observability.view,
       },
       {

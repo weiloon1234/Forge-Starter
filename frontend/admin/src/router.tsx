@@ -18,6 +18,7 @@ import { NotFoundPage } from "@/pages/NotFoundPage";
 import { PageFormPage } from "@/pages/PageFormPage";
 import { PagesPage } from "@/pages/PagesPage";
 import { SettingsPage } from "@/pages/SettingsPage";
+import { SqlDashboardPage } from "@/pages/SqlDashboardPage";
 import { UsersPage } from "@/pages/UsersPage";
 import { WebSocketDashboardPage } from "@/pages/WebSocketDashboardPage";
 
@@ -65,6 +66,14 @@ export const router = createBrowserRouter(
           element: (
             <DeveloperOnlyRoute>
               <JobsDashboardPage />
+            </DeveloperOnlyRoute>
+          ),
+        },
+        {
+          path: "developer/sql",
+          element: (
+            <DeveloperOnlyRoute>
+              <SqlDashboardPage />
             </DeveloperOnlyRoute>
           ),
         },

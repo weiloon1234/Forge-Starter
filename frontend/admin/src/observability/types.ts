@@ -91,6 +91,47 @@ export interface JobsFailedResponse {
   failed_jobs: FailedJobEntry[];
 }
 
+export interface SqlObservabilityResponse {
+  stats: SqlObservabilityStats;
+  top_slowest: SlowQueryEntry[];
+  n_plus_one_suspects: NPlusOneSuspect[];
+  slow_queries: SlowQueryEntry[];
+}
+
+export interface SqlObservabilityStats {
+  retained_count: number;
+  capacity: number;
+  slow_query_threshold_ms: number;
+  max_duration_ms?: number | null;
+  avg_duration_ms?: number | null;
+  latest_recorded_at?: string | null;
+  n_plus_one_suspect_count: number;
+}
+
+export interface SlowQueryEntry {
+  sql: string;
+  duration_ms: number;
+  label?: string | null;
+  recorded_at: string;
+}
+
+export interface NPlusOneSuspect {
+  method: string;
+  path: string;
+  request_id?: string | null;
+  fingerprint: string;
+  repeat_count: number;
+  total_duration_ms: number;
+  max_duration_ms: number;
+  avg_duration_ms: number;
+  rows_total: number;
+  labels: string[];
+  kinds: string[];
+  sample_sql: string;
+  first_recorded_at: string;
+  latest_recorded_at: string;
+}
+
 export interface WebSocketStatsResponse {
   global: {
     active_connections: number;

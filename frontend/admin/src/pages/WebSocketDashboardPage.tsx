@@ -365,6 +365,14 @@ export function WebSocketDashboardPage() {
           accent="success"
         />
         <MetricCard
+          label={t("observability.common.subscriptions_total")}
+          value={formatNumber(data?.stats.global.subscriptions_total)}
+        />
+        <MetricCard
+          label={t("observability.common.unsubscribes_total")}
+          value={formatNumber(data?.stats.global.unsubscribes_total)}
+        />
+        <MetricCard
           label={t("observability.websocket.inbound_messages")}
           value={formatNumber(data?.stats.global.inbound_messages_total)}
         />

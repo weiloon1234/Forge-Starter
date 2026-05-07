@@ -7,7 +7,7 @@ import axios, { type AxiosError, type AxiosInstance } from "axios";
 
 interface ApiConfig {
   baseURL: string;
-  /** URL paths that should never toast (auth probing endpoints). */
+  /** URL paths that should never toast (auth probing/background endpoints). */
   silentPaths?: string[];
   /** Optional per-portal token key for portals that can be open side-by-side. */
   tokenKey?: string;
@@ -42,6 +42,17 @@ function transformFieldErrors(
     result[err.field].push(err.message);
   }
   return result;
+}
+
+function isRecoverableAuthError(
+  status: number | undefined,
+  data: ApiErrorResponse | undefined,
+): boolean {
+  return (
+    status === 401 &&
+    (data?.error_code === "invalid_bearer_token" ||
+      data?.message_key === "auth.invalid_bearer_token")
+  );
 }
 
 // ── Auth token ─────────────────────────────────────────
@@ -108,9 +119,9 @@ export function createApi({
         return Promise.reject(new ApiFormError(data));
       }
 
-      // Silent paths (auth probing: /me, /refresh) — no toast
+      // Silent paths and recoverable auth refresh failures — no toast
       const isSilent = silentPaths.some((p) => url === p || url.endsWith(p));
-      if (isSilent) {
+      if (isSilent || isRecoverableAuthError(status, data)) {
         return Promise.reject(error);
       }
 

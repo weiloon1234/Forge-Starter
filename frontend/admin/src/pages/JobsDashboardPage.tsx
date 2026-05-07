@@ -275,6 +275,11 @@ export function JobsDashboardPage() {
           detail={t("observability.jobs.cumulative_total")}
         />
         <MetricCard
+          label={t("observability.jobs.jobs_leased")}
+          value={formatNumber(runtime?.jobs.leased_total)}
+          detail={t("observability.jobs.cumulative_total")}
+        />
+        <MetricCard
           label={t("observability.jobs.jobs_started")}
           value={formatNumber(runtime?.jobs.started_total)}
           detail={t("observability.jobs.cumulative_total")}

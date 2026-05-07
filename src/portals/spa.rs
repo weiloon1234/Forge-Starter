@@ -1,4 +1,4 @@
-use axum::http::Uri;
+use axum::http::{Method, Uri};
 use axum::response::Html;
 use forge::prelude::*;
 use std::sync::OnceLock;
@@ -94,6 +94,10 @@ fn is_framework_miss(path: &str) -> bool {
     path.starts_with("/api/") || path.starts_with("/_forge/")
 }
 
+fn is_blocked_spa_fallback_request(method: &Method, path: &str) -> bool {
+    method != Method::GET || is_framework_miss(path) || is_blocked_dotfile_path(path)
+}
+
 async fn admin_spa_html(app: &AppContext) -> Result<Html<String>> {
     let config = config_script(app).await?;
 
@@ -135,12 +139,16 @@ async fn user_spa_html(app: &AppContext) -> Result<Html<String>> {
     }
 }
 
-/// User-portal SPA fallback: any unmatched path serves the user SPA HTML so
-/// React Router can handle deep links. API and framework prefixes are excluded
-/// so misses there return a real 404 instead of HTML.
-pub async fn user_spa_fallback(State(app): State<AppContext>, uri: Uri) -> Result<Response> {
+/// User-portal SPA fallback: unmatched GET paths serve the user SPA HTML so
+/// React Router can handle deep links. Non-GET requests, API and framework
+/// prefixes, and dotfile paths return a real 404 instead of HTML.
+pub async fn user_spa_fallback(
+    State(app): State<AppContext>,
+    method: Method,
+    uri: Uri,
+) -> Result<Response> {
     let path = uri.path();
-    if is_framework_miss(path) || is_blocked_dotfile_path(path) {
+    if is_blocked_spa_fallback_request(&method, path) {
         return Ok(StatusCode::NOT_FOUND.into_response());
     }
     Ok(user_spa_html(&app).await?.into_response())
@@ -156,7 +164,8 @@ pub async fn user_spa(State(app): State<AppContext>, uri: Uri) -> Result<Respons
 
 #[cfg(test)]
 mod tests {
-    use super::is_blocked_dotfile_path;
+    use super::{is_blocked_dotfile_path, is_blocked_spa_fallback_request};
+    use axum::http::Method;
 
     #[test]
     fn blocks_dotfile_spa_paths() {
@@ -167,5 +176,15 @@ mod tests {
             "/.well-known/acme-challenge/token"
         ));
         assert!(!is_blocked_dotfile_path("/login"));
+    }
+
+    #[test]
+    fn blocks_non_get_spa_fallback_requests() {
+        assert!(is_blocked_spa_fallback_request(
+            &Method::POST,
+            "/stripe/webhook"
+        ));
+        assert!(is_blocked_spa_fallback_request(&Method::HEAD, "/login"));
+        assert!(!is_blocked_spa_fallback_request(&Method::GET, "/login"));
     }
 }

@@ -233,6 +233,13 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
+.sf-obs-table__cell--wide {
+  min-width: 280px;
+  max-width: 520px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .sf-obs-table__row--interactive {
   cursor: pointer;
   transition: background 150ms ease;

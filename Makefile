@@ -4,7 +4,7 @@
 # Run: make <target>
 # =============================================================================
 
-.PHONY: help setup dev dev\:api dev\:admin dev\:user stop build check lint lint\:rust lint\:frontend lint\:starter lint\:fix api-docs types migrate seed routes deploy clean
+.PHONY: help setup dev dev\:api dev\:admin dev\:user stop build check lint lint\:rust lint\:frontend lint\:types lint\:starter lint\:fix api-docs types migrate seed routes deploy clean
 
 # Default: show help
 help:
@@ -22,6 +22,7 @@ help:
 	@echo "  make lint         Run Rust + frontend lint checks"
 	@echo "  make lint:rust    Run rustfmt check + clippy"
 	@echo "  make lint:frontend Run Biome on React/TypeScript code"
+	@echo "  make lint:types   Type-check each frontend portal (tsc -b)"
 	@echo "  make lint:starter Run starter-template DRY/SSOT guardrails"
 	@echo "  make lint:fix     Auto-fix Rust formatting + frontend formatting/imports"
 	@echo "  make api-docs     Generate API docs at docs/api/"
@@ -90,6 +91,7 @@ check:
 lint:
 	$(MAKE) lint:rust
 	$(MAKE) lint:frontend
+	$(MAKE) lint:types
 	$(MAKE) lint:starter
 
 # Rust linting
@@ -100,6 +102,13 @@ lint\:rust:
 # Frontend linting / formatting
 lint\:frontend:
 	npm run lint:frontend
+
+# Frontend type-checking — mirrors the per-portal `tsc -b` step that
+# `npm run build` runs inside the Docker deploy build, so missing imports
+# and removed-DTO-field references fail locally instead of at deploy time.
+lint\:types:
+	cd frontend/admin && npx --no-install tsc -b
+	cd frontend/user && npx --no-install tsc -b
 
 lint\:starter:
 	bash scripts/check-starter-guardrails.sh
