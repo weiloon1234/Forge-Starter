@@ -9,9 +9,7 @@ use serde_json::Value;
 #[ts(export)]
 pub struct CreateAdminCreditAdjustmentRequest {
     pub user_id: String,
-    #[ts(type = "import(\"./CreditType\").CreditType")]
     pub credit_type: CreditType,
-    #[ts(type = "import(\"./CreditAdjustmentOperation\").CreditAdjustmentOperation")]
     pub operation: CreditAdjustmentOperation,
     pub amount: String,
     #[ts(type = "Record<string, string>")]

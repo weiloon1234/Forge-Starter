@@ -17,9 +17,7 @@ pub struct CreateAdminRequest {
     pub email: String,
     pub name: String,
     pub password: String,
-    #[ts(type = "import(\"./AdminType\").AdminType")]
     pub admin_type: AdminType,
-    #[ts(type = "Array<import(\"./Permission\").Permission>")]
     pub permissions: Vec<Permission>,
     pub locale: String,
 }
@@ -59,9 +57,7 @@ pub struct UpdateAdminRequest {
     pub name: Option<String>,
     pub email: Option<String>,
     pub password: Option<String>,
-    #[ts(type = "Array<import(\"./Permission\").Permission> | null")]
     pub permissions: Option<Vec<Permission>>,
-    #[ts(type = "import(\"./AdminType\").AdminType | null")]
     pub admin_type: Option<AdminType>,
     pub locale: Option<String>,
 }

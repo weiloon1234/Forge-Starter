@@ -69,7 +69,6 @@ pub struct AdminSettingResponse {
     pub label: String,
     pub description: Option<String>,
     pub group_name: String,
-    #[ts(type = "import(\"./SettingType\").SettingType")]
     pub setting_type: SettingType,
     #[ts(type = "Record<string, unknown>")]
     pub parameters: Value,

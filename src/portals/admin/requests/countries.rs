@@ -7,7 +7,6 @@ use serde::Deserialize;
 #[derive(Debug, Deserialize, ts_rs::TS, forge::ApiSchema)]
 #[ts(export)]
 pub struct UpdateCountryRequest {
-    #[ts(type = "import(\"./CountryStatus\").CountryStatus")]
     pub status: CountryStatus,
     pub conversion_rate: Option<f64>,
     pub is_default: bool,

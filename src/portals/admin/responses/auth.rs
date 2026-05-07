@@ -14,9 +14,7 @@ pub struct AdminMeResponse {
     pub username: String,
     pub email: String,
     pub name: String,
-    #[ts(type = "import(\"./AdminType\").AdminType")]
     pub admin_type: AdminType,
-    #[ts(type = "Array<import(\"./Permission\").Permission>")]
     pub abilities: Vec<Permission>,
     pub locale: String,
 }
