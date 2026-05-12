@@ -207,36 +207,63 @@
 
 .sf-obs-table-shell {
   @apply overflow-x-auto;
+  scrollbar-gutter: stable;
 }
 
 .sf-obs-table {
   @apply w-full border-separate;
   border-spacing: 0;
+  min-width: max-content;
 }
 
 .sf-obs-table thead th {
-  @apply pb-3 text-left text-xs font-semibold uppercase tracking-[0.14em];
+  @apply px-3 pb-3 text-left text-xs font-semibold uppercase tracking-[0.14em] whitespace-nowrap;
   color: var(--color-text-muted);
 }
 
 .sf-obs-table tbody td {
-  @apply py-3 text-sm align-top border-t;
+  @apply px-3 py-3 text-sm align-top border-t;
   border-color: #eef2f7;
   color: var(--color-text);
 }
 
+.sf-obs-table thead th:first-child,
+.sf-obs-table tbody td:first-child {
+  padding-left: 0;
+}
+
+.sf-obs-table thead th:last-child,
+.sf-obs-table tbody td:last-child {
+  padding-right: 0;
+}
+
 .sf-obs-table__cell--right {
+  min-width: 6rem;
   text-align: right;
+  white-space: nowrap;
 }
 
 .sf-obs-table__cell--mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: nowrap;
+}
+
+.sf-obs-table__cell--primary {
+  min-width: 16rem;
+  max-width: 34rem;
+  width: 100%;
+  white-space: normal;
 }
 
 .sf-obs-table__cell--wide {
   min-width: 280px;
   max-width: 520px;
   white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.sf-obs-table__cell--primary .sf-obs-table-stack strong,
+.sf-obs-table__cell--wide {
   overflow-wrap: anywhere;
 }
 

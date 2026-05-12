@@ -1,0 +1,99 @@
+# =============================================================================
+# Forge Framework Configuration - Runtime
+#
+# Forge loads every direct config/*.toml file in lexical filename order,
+# merges the tables in memory, then applies .env overrides.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Jobs (Background Queue)
+# -----------------------------------------------------------------------------
+[jobs]
+queue = "default"
+max_retries = 5
+poll_interval_ms = 100
+lease_ttl_ms = 30000
+requeue_batch_size = 64
+max_concurrent_jobs = 16
+timeout_seconds = 300
+shutdown_timeout_ms = 30000
+track_history = true
+history_retention_days = 30
+history_prune_interval_ms = 3600000
+history_prune_batch_size = 1000
+
+# -----------------------------------------------------------------------------
+# Scheduler (Cron)
+# -----------------------------------------------------------------------------
+[scheduler]
+tick_interval_ms = 1000
+leader_lease_ttl_ms = 5000
+
+# -----------------------------------------------------------------------------
+# WebSocket
+# -----------------------------------------------------------------------------
+[websocket]
+host = "127.0.0.1"
+port = 3010
+path = "/ws"
+heartbeat_interval_seconds = 30
+heartbeat_timeout_seconds = 10
+max_message_size_bytes = 1048576
+max_frame_size_bytes = 1048576
+max_write_buffer_size_bytes = 1048576
+max_messages_per_second = 50
+max_connections_per_user = 5
+max_subscriptions_per_connection = 100
+max_channel_length = 128
+max_room_length = 256
+max_event_length = 128
+max_ack_id_length = 128
+outbound_buffer_size = 1024
+query_token_enabled = true
+query_token_name = "token"
+query_token_max_length = 4096
+allowed_origins = []
+
+# -----------------------------------------------------------------------------
+# Logging
+# -----------------------------------------------------------------------------
+# Defaults are fine for dev; production can switch to JSON via env:
+# LOGGING__FORMAT=json
+[logging]
+# level = "info"
+# format = "text"
+# log_dir = "logs"
+# retention_days = 30
+
+# -----------------------------------------------------------------------------
+# Observability (Dashboard + Tracing + Metrics)
+# -----------------------------------------------------------------------------
+[observability]
+enabled = true
+capture_enabled = true
+base_path = "/_forge"
+http_sample_retention = 500
+websocket_channel_retention = 500
+tracing_enabled = false
+otlp_endpoint = "http://localhost:4317"
+service_name = "forge-starter"
+
+[observability.websocket]
+include_payloads = false  # redact WS payloads in /_forge/ws/history (privacy default)
+
+# -----------------------------------------------------------------------------
+# Cache
+# -----------------------------------------------------------------------------
+# Forge cache defaults. Use env overrides for production-specific changes.
+[cache]
+driver = "redis"
+error_mode = "strict"
+prefix = "cache:"
+ttl_seconds = 3600
+max_entries = 10000
+key_max_length = 512
+remember_singleflight = true
+remember_distributed_lock = false
+remember_lock_ttl_ms = 30000
+remember_lock_wait_timeout_ms = 5000
+remember_lock_poll_ms = 100

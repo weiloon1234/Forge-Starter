@@ -1,0 +1,94 @@
+# =============================================================================
+# Forge Framework Configuration - Security
+#
+# Forge loads every direct config/*.toml file in lexical filename order,
+# merges the tables in memory, then applies .env overrides.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Authentication
+# -----------------------------------------------------------------------------
+[auth]
+default_guard = "user"
+
+[auth.guards.user]
+driver = "token"
+
+[auth.guards.admin]
+driver = "token"
+
+[auth.tokens]
+access_token_ttl_minutes = 15
+refresh_token_ttl_days = 30
+token_length = 32
+rotate_refresh_tokens = true
+prune_retention_days = 30
+prune_interval_ms = 3600000
+prune_batch_size = 1000
+
+# Optional per-guard token TTL overrides.
+# [auth.tokens.guards.admin]
+# access_token_ttl_minutes = 43200
+# refresh_token_ttl_days = 30
+#
+# [auth.tokens.guards.user]
+# access_token_ttl_minutes = 4320
+# refresh_token_ttl_days = 3
+
+[auth.sessions]
+ttl_minutes = 120
+cookie_name = "forge_session"
+cookie_secure = false  # dev-only (HTTP); override in prod: AUTH__SESSIONS__COOKIE_SECURE=true
+cookie_path = "/"
+cookie_same_site = "lax"
+cookie_domain = ""
+sliding_expiry = true
+remember_ttl_days = 30
+
+[auth.password_resets]
+expiry_minutes = 60
+prune_interval_ms = 3600000
+prune_batch_size = 1000
+
+[auth.email_verification]
+expiry_minutes = 1440
+prune_interval_ms = 3600000
+prune_batch_size = 1000
+
+[auth.lockout]
+enabled = true
+max_failures = 5
+lockout_minutes = 15
+window_minutes = 15
+
+# [auth.mfa]
+# enabled = true
+# issuer = "forge-starter"
+# pending_token_ttl_minutes = 10
+# recovery_codes = 8
+#
+# [auth.mfa.required_roles]
+# admin = ["developer", "super_admin"]
+
+# -----------------------------------------------------------------------------
+# Audit
+# -----------------------------------------------------------------------------
+[audit]
+redact_sensitive_fields = true
+sensitive_fields = ["password", "password_hash", "passwd", "secret", "secret_key", "api_key", "access_key", "private_key", "token", "token_hash", "access_token", "refresh_token", "authorization", "credential", "credentials", "mfa_secret", "totp_secret", "otp_secret", "recovery_code", "recovery_codes"]
+
+# -----------------------------------------------------------------------------
+# Hashing (Passwords)
+# -----------------------------------------------------------------------------
+# Argon2id defaults from Forge are appropriate for most apps.
+[hashing]
+# driver = "argon2"
+# memory_cost = 19456
+# time_cost = 2
+# parallelism = 1
+
+# -----------------------------------------------------------------------------
+# Encryption
+# -----------------------------------------------------------------------------
+[crypt]
+key = "Xqkm5cfkcQj8gLQzkVpTPCFQZGs0hgbdzHcKs3DgpZk="  # dev-only; CRYPT__KEY in prod

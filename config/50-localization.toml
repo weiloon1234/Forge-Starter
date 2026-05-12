@@ -1,0 +1,20 @@
+# =============================================================================
+# Forge Framework Configuration - Localization
+#
+# Forge loads every direct config/*.toml file in lexical filename order,
+# merges the tables in memory, then applies .env overrides.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Internationalization
+# -----------------------------------------------------------------------------
+[i18n]
+default_locale = "en"
+fallback_locale = "en"
+resource_path = "locales"
+
+# -----------------------------------------------------------------------------
+# TypeScript
+# -----------------------------------------------------------------------------
+[typescript]
+output_dir = "frontend/shared/types/generated"

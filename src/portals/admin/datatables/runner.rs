@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use forge::database::{DbType, Pagination};
 use forge::datatable::filter_engine::{apply_auto_filters, apply_default_sorts, apply_sorts};
+use forge::http::download::attachment_content_disposition;
 use forge::prelude::*;
 use forge::{DatatableColumnMeta, DatatablePaginationMeta, DatatableQuery};
 use serde::Serialize;
@@ -77,7 +78,7 @@ where
         )
         .header(
             "Content-Disposition",
-            format!("attachment; filename=\"{filename}\""),
+            attachment_content_disposition(&filename),
         )
         .body(axum::body::Body::from(bytes))
         .map_err(|error| Error::message(format!("failed to build download response: {error}")))

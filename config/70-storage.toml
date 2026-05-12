@@ -1,0 +1,64 @@
+# =============================================================================
+# Forge Framework Configuration - Storage
+#
+# Forge loads every direct config/*.toml file in lexical filename order,
+# merges the tables in memory, then applies .env overrides.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Storage
+# -----------------------------------------------------------------------------
+# Starter deployment uses Cloudflare R2 for both app storage and deployment
+# artifacts (_deployments/{app_name}/{environment}/). Populate credentials via
+# env in production: STORAGE__DISKS__R2__KEY, __SECRET, __BUCKET, __ENDPOINT,
+# __URL. See DEPLOY.md.
+[storage]
+default = "r2"
+# Total multipart file bytes per request (0 = no storage-level cap).
+max_upload_size_bytes = 104857600
+# Per-file multipart upload cap (0 = no storage-level cap).
+max_upload_file_size_bytes = 52428800
+# Max uploaded files per multipart request (0 = no storage-level cap).
+max_upload_files = 20
+# Worker cleanup age for forge-upload-* temp files (0 = keep forever).
+upload_temp_retention_seconds = 3600
+# How often workers attempt upload temp cleanup.
+upload_temp_prune_interval_ms = 3600000
+# Max upload temp files deleted per prune pass.
+upload_temp_prune_batch_size = 1000
+# Max image bytes decoded by attachment processing (0 = disabled).
+image_max_input_bytes = 52428800
+# Max decoded image pixels for attachment processing (0 = disabled).
+image_max_pixels = 50000000
+# Max decoded image width for attachment processing (0 = disabled).
+image_max_width = 12000
+# Max decoded image height for attachment processing (0 = disabled).
+image_max_height = 12000
+# Audit old storage objects under attachment_orphan_prefix during worker maintenance.
+attachment_orphan_audit_enabled = true
+# Allow Forge to delete audited attachment orphans (off by default).
+attachment_orphan_delete_enabled = false
+# Only audit/delete attachment orphans older than this age.
+attachment_orphan_retention_seconds = 604800
+# How often workers attempt attachment orphan audit/delete.
+attachment_orphan_prune_interval_ms = 3600000
+# Max listed attachment objects checked per maintenance pass.
+attachment_orphan_prune_batch_size = 100
+# Storage prefix owned by Forge attachments for orphan audit/delete.
+attachment_orphan_prefix = "attachments/"
+
+[storage.disks.r2]
+driver = "s3"
+key = ""
+secret = ""
+region = "auto"
+bucket = ""
+endpoint = ""
+url = ""  # stable CDN prefix for public editor assets (e.g., https://cdn.example.com)
+visibility = "public"
+
+# [storage.disks.local]
+# driver = "local"
+# root = "storage/app"
+# url = "/storage"
+# visibility = "private"

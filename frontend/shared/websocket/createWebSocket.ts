@@ -15,6 +15,10 @@ export interface WebSocketChannelEvent {
 type WebSocketWildcardHandler = (message: WebSocketChannelEvent) => void;
 type WebSocketListener = WebSocketEventHandler | WebSocketWildcardHandler;
 
+const DEFAULT_MAX_RECONNECT_ATTEMPTS = 10;
+const RECONNECT_BASE_DELAY_MS = 1000;
+const RECONNECT_JITTER_RATIO = 0.2;
+
 interface ServerMessage {
   channel: string;
   event: string;
@@ -31,7 +35,7 @@ interface WebSocketConfig {
   autoReconnect?: boolean;
   /** Max reconnect delay in ms (default 30000) */
   maxReconnectDelay?: number;
-  /** Max reconnect attempts before giving up (default: keep trying) */
+  /** Max reconnect attempts before giving up (default: 10) */
   maxReconnectAttempts?: number;
 }
 
@@ -68,7 +72,7 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
     getToken,
     autoReconnect = true,
     maxReconnectDelay = 30000,
-    maxReconnectAttempts = Number.POSITIVE_INFINITY,
+    maxReconnectAttempts = DEFAULT_MAX_RECONNECT_ATTEMPTS,
   } = config;
 
   const statusStore = createStore<{ status: ConnectionStatus }>({
@@ -150,14 +154,34 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
     }
   }
 
+  function clearReconnectTimer() {
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = undefined;
+    }
+  }
+
+  function reconnectDelay(attempt: number): number {
+    const delay = Math.min(
+      RECONNECT_BASE_DELAY_MS * 2 ** attempt,
+      maxReconnectDelay,
+    );
+    const jitter =
+      Math.random() * Math.min(delay * RECONNECT_JITTER_RATIO, 1000);
+
+    return Math.max(0, Math.round(delay - jitter));
+  }
+
   function scheduleReconnect() {
     if (!autoReconnect || intentionalClose) return;
     if (reconnectAttempts >= maxReconnectAttempts) return;
+    if (reconnectTimer) return;
 
-    const delay = Math.min(1000 * 2 ** reconnectAttempts, maxReconnectDelay);
+    const delay = reconnectDelay(reconnectAttempts);
     reconnectAttempts++;
 
     reconnectTimer = setTimeout(() => {
+      reconnectTimer = undefined;
       connect();
     }, delay);
   }
@@ -177,6 +201,7 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
       return;
     }
 
+    clearReconnectTimer();
     connecting = true;
     intentionalClose = false;
     setStatus("connecting");
@@ -222,10 +247,7 @@ export function createWebSocket(config: WebSocketConfig): WebSocketManager {
 
   function disconnect() {
     intentionalClose = true;
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer);
-      reconnectTimer = undefined;
-    }
+    clearReconnectTimer();
     reconnectAttempts = 0;
     hasConnectedOnce = false;
     activeSubscriptions.clear();

@@ -1,0 +1,60 @@
+# =============================================================================
+# Forge Framework Configuration - Email
+#
+# Forge loads every direct config/*.toml file in lexical filename order,
+# merges the tables in memory, then applies .env overrides.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Email
+# -----------------------------------------------------------------------------
+[email]
+default = "log"
+# queue = "default"
+# template_path = "templates/emails"
+max_attachment_bytes = 26214400
+max_total_attachment_bytes = 26214400
+
+[email.from]
+address = "noreply@example.com"
+name = "Forge Starter"
+
+# Development log mailer — writes outbound mail to the tracing subsystem
+# instead of sending. Production: switch default to "smtp" / "ses" / "resend"
+# and fill in the appropriate mailer block below.
+[email.mailers.log]
+driver = "log"
+target = "email.outbound"
+
+# [email.mailers.smtp]
+# driver = "smtp"
+# host = "smtp.example.com"
+# port = 587
+# username = ""
+# password = ""
+# encryption = "starttls"
+# timeout_secs = 30
+
+# [email.mailers.ses]
+# driver = "ses"
+# key = ""
+# secret = ""
+# region = "us-east-1"
+# timeout_secs = 30
+
+# [email.mailers.postmark]
+# driver = "postmark"
+# server_token = ""
+# timeout_secs = 30
+
+# [email.mailers.resend]
+# driver = "resend"
+# api_key = ""
+# timeout_secs = 30
+
+# [email.mailers.mailgun]
+# driver = "mailgun"
+# domain = ""
+# api_key = ""
+# region = "us"
+# timeout_secs = 30

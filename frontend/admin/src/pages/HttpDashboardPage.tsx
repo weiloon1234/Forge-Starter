@@ -134,6 +134,7 @@ export function HttpDashboardPage() {
     {
       key: "route",
       label: t("observability.http.route"),
+      className: "sf-obs-table__cell--primary",
       render: (route) => (
         <div className="sf-obs-table-stack">
           <strong>
@@ -206,6 +207,7 @@ export function HttpDashboardPage() {
     {
       key: "request",
       label: t("observability.http.request"),
+      className: "sf-obs-table__cell--primary",
       render: (sample) => (
         <div className="sf-obs-table-stack">
           <strong>

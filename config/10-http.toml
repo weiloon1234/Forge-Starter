@@ -1,0 +1,76 @@
+# =============================================================================
+# Forge Framework Configuration - HTTP
+#
+# Forge loads every direct config/*.toml file in lexical filename order,
+# merges the tables in memory, then applies .env overrides.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# HTTP Edge
+# -----------------------------------------------------------------------------
+# These are Forge's config defaults. Code-registered global middleware of the
+# same kind takes precedence, so the existing HTTP bootstrap remains compatible.
+[http]
+max_body_size_bytes = 0
+request_timeout_ms = 0
+
+[http.security_headers]
+enabled = true
+hsts = false
+frame_options = "DENY"
+referrer_policy = "strict-origin-when-cross-origin"
+content_security_policy = ""
+
+[http.trusted_proxy]
+enabled = true
+trusted_cidrs = [
+    "127.0.0.1/32",
+    "::1/128",
+    "173.245.48.0/20",
+    "103.21.244.0/22",
+    "103.22.200.0/22",
+    "103.31.4.0/22",
+    "141.101.64.0/18",
+    "108.162.192.0/18",
+    "190.93.240.0/20",
+    "188.114.96.0/20",
+    "197.234.240.0/22",
+    "198.41.128.0/17",
+    "162.158.0.0/15",
+    "104.16.0.0/13",
+    "104.24.0.0/14",
+    "172.64.0.0/13",
+    "131.0.72.0/22",
+    "2400:cb00::/32",
+    "2606:4700::/32",
+    "2803:f800::/32",
+    "2405:b500::/32",
+    "2405:8100::/32",
+    "2a06:98c0::/29",
+    "2c0f:f248::/32",
+]
+headers = ["cf-connecting-ip", "x-real-ip", "x-forwarded-for"]
+
+[http.cors]
+enabled = false
+allowed_origins = []
+allowed_methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+allowed_headers = ["authorization", "content-type", "x-request-id", "x-csrf-token"]
+allow_credentials = false
+max_age_seconds = 600
+
+[http.csrf]
+enabled = false
+cookie_name = "forge_csrf"
+header_name = "x-csrf-token"
+cookie_secure = true
+cookie_path = "/"
+cookie_same_site = "lax"
+exclude_paths = []
+
+[http.rate_limit]
+enabled = true
+max_requests = 600
+window_seconds = 60
+by = "actor_or_ip"
+key_prefix = "http:"

@@ -1,0 +1,32 @@
+# =============================================================================
+# Forge Framework Configuration - Database
+#
+# Forge loads every direct config/*.toml file in lexical filename order,
+# merges the tables in memory, then applies .env overrides.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Database (PostgreSQL)
+# -----------------------------------------------------------------------------
+[database]
+url = "postgres://postgres:postgres@127.0.0.1:5432/forge_starter"
+migration_lock_timeout_ms = 0
+log_queries = false
+log_query_bindings = false
+redact_sql_literals = true
+slow_query_threshold_ms = 500
+slow_query_retention = 100
+n_plus_one_detection = true
+n_plus_one_min_repeats = 10
+n_plus_one_retention = 100
+
+[database.models]
+# timestamps_default = true   # inherit Forge default
+# soft_deletes_default = false
+
+# -----------------------------------------------------------------------------
+# Datatable
+# -----------------------------------------------------------------------------
+[datatable]
+max_per_page = 500
+max_export_rows = 50000
