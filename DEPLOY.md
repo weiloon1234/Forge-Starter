@@ -9,19 +9,19 @@ do not attach a public custom domain to the deploy bucket.
 
 ## Project Names
 
-Use these exact app names when setup or deploy prompts ask for `App name`:
+Use a lowercase base project slug when setup or deploy prompts ask for
+`App name`. Do not include the environment in the app name.
 
 | Project | App name |
 |---|---|
-| Daily-Deal | `daily-deal` |
-| Mediaforge-new | `mediaforge-new` |
 | Forge-Starter | `forge-starter` |
+| ABCProject | `abc-project` |
 
 Each environment gets its own app id:
 
 ```text
 APP_ID = {APP_NAME}-{ENVIRONMENT}
-Example: daily-deal-staging
+Example: abc-project-staging
 ```
 
 Server runtime paths and services are isolated by app id:
@@ -90,9 +90,9 @@ chmod 600 ~/.forge-deploy/deploy-signing.key
 chmod 644 ~/.forge-deploy/deploy-signing.pub
 ```
 
-Recommended simple setup: use one team deploy signing key pair for all three
-projects. Install the public key on every server/app setup. Keep the private key
-only on local deploy machines or CI.
+Recommended simple setup: use one team deploy signing key pair for all projects.
+Install the public key on every server/app setup. Keep the private key only on
+local deploy machines or CI.
 
 ## 3. Fill Local Deploy Env Files
 
@@ -143,25 +143,30 @@ file `/opt/{APP_ID}/.env`.
 
 Recommended model for the current scripts:
 
-1. Use root, or a sudo-capable `ops` user, only for server provisioning and setup.
-2. Run setup with `sudo -H bash scripts/setup.sh`.
-3. Let setup create/use the locked `forge` system user for app runtime.
-4. Do not SSH as `forge` and do not run the app as root.
-5. The deploy poller currently runs as root because it controls systemd services
+1. Use root only for the first operator-user bootstrap on a fresh server.
+2. Use a sudo-capable operator user such as `ops` for project setup.
+3. Run setup as `ops` with `sudo -H bash scripts/setup.sh`.
+4. Let setup create/use the locked `forge` system user for app runtime.
+5. Do not SSH as `forge` and do not run the app as root.
+6. The deploy poller currently runs as root because it controls systemd services
    and writes runtime files under `/opt/{APP_ID}`.
-6. The risk is controlled by using a private bucket, read-only server bucket
+7. The risk is controlled by using a private bucket, read-only server bucket
    credentials, and signed manifest verification before extraction.
 
-For a fresh VPS, root login for first setup is acceptable. After the server is
-ready, create an operator user and disable root SSH if that matches your server
-policy:
+For a fresh VPS, SSH as root only long enough to create `ops` and copy the
+current SSH login keys:
 
 ```bash
 adduser ops
 usermod -aG sudo ops
+install -d -m 700 -o ops -g ops /home/ops/.ssh
+rsync -a --include='authorized_keys' --include='known_hosts' --exclude='*' /root/.ssh/ /home/ops/.ssh/
+chown -R ops:ops /home/ops/.ssh
+chmod 700 /home/ops/.ssh
+chmod 600 /home/ops/.ssh/authorized_keys 2>/dev/null || true
 ```
 
-Future setup runs can be done as `ops` with `sudo -H`.
+All project setup runs should be done as `ops` with `sudo -H`.
 
 ## 5. Choose A Server Setup Path
 
@@ -171,52 +176,247 @@ least one Forge app installed and you are adding another project or environment.
 In both paths, the setup prompt app name is always the base project slug:
 
 ```text
-daily-deal
-mediaforge-new
 forge-starter
+abc-project
 ```
 
-Do not type `daily-deal-staging`, `MediaForge-Staging`, or
-`MediaForge-Production` as the app name. The setup script appends the
-environment automatically.
+Do not type `abc-project-staging`, `MyProject-Staging`, or
+`MyProject-Production` as the app name. The setup script appends the environment
+automatically.
 
 ## 5A. Path A: New Server
 
-SSH in as root for first setup:
+SSH in as root only for the initial operator-user bootstrap:
 
 ```bash
 ssh root@<server-ip>
 ```
 
-Optional but recommended after first access:
+Then paste this whole block into the root shell. It writes a temp script first,
+so a helper failure does not close your SSH session:
 
 ```bash
-adduser ops
-usermod -aG sudo ops
+cat >/tmp/forge-new-server-bootstrap.sh <<'FORGE_BOOTSTRAP'
+set -euo pipefail
+
+if [[ "$(id -u)" != "0" ]]; then
+  echo "Run this new-server helper as root."
+  exit 1
+fi
+
+read -r -p "Operator sudo username [ops]: " OPS_USER
+OPS_USER="${OPS_USER:-ops}"
+if ! id "$OPS_USER" >/dev/null 2>&1; then
+  adduser --gecos "" "$OPS_USER"
+  usermod -aG sudo "$OPS_USER"
+else
+  usermod -aG sudo "$OPS_USER"
+fi
+
+install -d -m 700 -o "$OPS_USER" -g "$OPS_USER" "/home/$OPS_USER/.ssh"
+if [[ -d /root/.ssh ]]; then
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a \
+      --include='authorized_keys' \
+      --include='known_hosts' \
+      --exclude='*' \
+      /root/.ssh/ "/home/$OPS_USER/.ssh/"
+  else
+    [[ -f /root/.ssh/authorized_keys ]] && cp /root/.ssh/authorized_keys "/home/$OPS_USER/.ssh/authorized_keys"
+    [[ -f /root/.ssh/known_hosts ]] && cp /root/.ssh/known_hosts "/home/$OPS_USER/.ssh/known_hosts"
+  fi
+fi
+chown -R "$OPS_USER:$OPS_USER" "/home/$OPS_USER/.ssh"
+chmod 700 "/home/$OPS_USER/.ssh"
+if [[ -f "/home/$OPS_USER/.ssh/authorized_keys" ]]; then
+  chmod 600 "/home/$OPS_USER/.ssh/authorized_keys"
+fi
+
+SERVER_SIGNING_KEY="/etc/forge/deploy-signing.pub"
+if [[ ! -f "$SERVER_SIGNING_KEY" ]]; then
+  echo ""
+  echo "Paste the contents of your local deploy-signing.pub now."
+  echo "It starts with: -----BEGIN PUBLIC KEY-----"
+  echo "It ends with:   -----END PUBLIC KEY-----"
+  tmp_pub="$(mktemp)"
+  while IFS= read -r line; do
+    printf '%s\n' "$line" >> "$tmp_pub"
+    [[ "$line" == "-----END PUBLIC KEY-----" ]] && break
+  done
+  if ! grep -q -- "-----BEGIN PUBLIC KEY-----" "$tmp_pub" \
+    || ! grep -q -- "-----END PUBLIC KEY-----" "$tmp_pub"; then
+    rm -f "$tmp_pub"
+    echo "The pasted deploy signing public key did not look like a PEM public key."
+    exit 1
+  fi
+  install -d -m 755 -o root -g root /etc/forge
+  install -m 644 -o root -g root "$tmp_pub" "$SERVER_SIGNING_KEY"
+  rm -f "$tmp_pub"
+  echo "Installed server deploy signing public key: $SERVER_SIGNING_KEY"
+else
+  echo "Server deploy signing public key already exists: $SERVER_SIGNING_KEY"
+fi
+
+echo ""
+echo "Operator user is ready: $OPS_USER"
+echo "Root bootstrap is done."
+echo ""
+echo "Next:"
+echo "  1. Open a new SSH/Termius session as username: $OPS_USER"
+echo "  2. Use the same server login SSH key you used for root."
+echo "  3. Run: sudo whoami"
+echo "  4. Expected output: root"
+echo "  5. Then run Path B below to add the first project/environment."
+FORGE_BOOTSTRAP
+
+bash /tmp/forge-new-server-bootstrap.sh
 ```
 
-You can continue as root for the first setup, or reconnect as `ops` and use
-`sudo -H` for the remaining commands.
-
-Install the public deploy signing key on the server. From your local machine:
-
-```bash
-scp ~/.forge-deploy/deploy-signing.pub root@<server-ip>:/root/deploy-signing.pub
-```
-
-Configure one server reader token for the shared private deploy bucket when
-`scripts/setup.sh` asks to configure S3-compatible credentials. This token should
-be read/list only and can cover `_deployments/*` for the whole server.
-
-Then continue to [6. Prepare The Repository Clone](#6-prepare-the-repository-clone).
+This helper copies only SSH login files such as `authorized_keys` and
+`known_hosts`. It does not copy root private keys. All project setup work happens
+as `ops`.
 
 ## 5B. Path B: Existing Forge Server, Add Project Or Environment
 
-SSH in as your operator user or root:
+SSH in as your operator user:
 
 ```bash
 ssh ops@<server-ip>
 ```
+
+Then paste this whole block into the `ops` shell. It writes a temp script first,
+so a helper failure does not close your SSH session:
+
+```bash
+cat >/tmp/forge-add-project.sh <<'FORGE_ADD_PROJECT'
+set -euo pipefail
+
+if [[ "$(id -u)" == "0" ]]; then
+  echo "Run this helper as your operator user, for example: ssh ops@<server-ip>"
+  exit 1
+fi
+
+sudo -v
+
+ask() {
+  local prompt="$1"
+  local default="${2:-}"
+  local value
+  if [[ -n "$default" ]]; then
+    read -r -p "$prompt [$default]: " value
+    printf '%s' "${value:-$default}"
+  else
+    read -r -p "$prompt: " value
+    printf '%s' "$value"
+  fi
+}
+
+require_yes() {
+  local prompt="$1"
+  local value
+  read -r -p "$prompt Type Y when done: " value
+  if [[ "$value" != "Y" && "$value" != "y" ]]; then
+    echo "Stopped."
+    exit 1
+  fi
+}
+
+read_existing_deploy_value() {
+  local key="$1"
+  local file line value
+  while IFS= read -r file; do
+    line="$(sudo grep -m1 "^${key}=" "$file" 2>/dev/null || true)"
+    if [[ -n "$line" ]]; then
+      value="${line#*=}"
+      value="${value%\"}"
+      value="${value#\"}"
+      printf '%s' "$value"
+      return 0
+    fi
+  done < <(sudo find /opt -path '*/config/deploy.conf' -type f -print 2>/dev/null | sort)
+}
+
+SERVER_SIGNING_KEY="/etc/forge/deploy-signing.pub"
+if ! sudo test -f "$SERVER_SIGNING_KEY"; then
+  echo ""
+  echo "Paste the contents of your local deploy-signing.pub now."
+  echo "It starts with: -----BEGIN PUBLIC KEY-----"
+  echo "It ends with:   -----END PUBLIC KEY-----"
+  tmp_pub="$(mktemp)"
+  while IFS= read -r line; do
+    printf '%s\n' "$line" >> "$tmp_pub"
+    [[ "$line" == "-----END PUBLIC KEY-----" ]] && break
+  done
+  if ! grep -q -- "-----BEGIN PUBLIC KEY-----" "$tmp_pub" \
+    || ! grep -q -- "-----END PUBLIC KEY-----" "$tmp_pub"; then
+    rm -f "$tmp_pub"
+    echo "The pasted deploy signing public key did not look like a PEM public key."
+    exit 1
+  fi
+  sudo install -d -m 755 -o root -g root /etc/forge
+  sudo install -m 644 -o root -g root "$tmp_pub" "$SERVER_SIGNING_KEY"
+  rm -f "$tmp_pub"
+fi
+
+install -d -m 700 "$HOME/.ssh"
+GITHUB_KEY="$HOME/.ssh/github_forge_deploy"
+if [[ ! -f "$GITHUB_KEY" ]]; then
+  ssh-keygen -t ed25519 -C "forge-deploy@$(hostname)" -f "$GITHUB_KEY" -N ""
+fi
+chmod 600 "$GITHUB_KEY"
+chmod 644 "$GITHUB_KEY.pub"
+
+echo ""
+echo "Add this public key to your GitHub machine user SSH keys:"
+echo "--------------------------------------------------------"
+cat "$GITHUB_KEY.pub"
+echo "--------------------------------------------------------"
+echo "Then give that GitHub machine user read access to the repo you will clone."
+require_yes "After GitHub access is ready,"
+
+REPO_URL="$(ask "Git SSH repo URL" "git@github.com:<owner>/<repo>.git")"
+DEFAULT_DIR="$(basename "$REPO_URL" .git)"
+CLONE_DIR="$(ask "Temporary clone dir under /tmp" "$DEFAULT_DIR")"
+if [[ -e "/tmp/$CLONE_DIR" ]]; then
+  echo "/tmp/$CLONE_DIR already exists. Remove it or choose another clone dir."
+  exit 1
+fi
+
+GIT_SSH_COMMAND="ssh -i $GITHUB_KEY -o IdentitiesOnly=yes" \
+  git clone "$REPO_URL" "/tmp/$CLONE_DIR"
+
+DEFAULT_DEPLOY_BUCKET="$(read_existing_deploy_value DEPLOY_BUCKET || true)"
+DEFAULT_DEPLOY_REGION="$(read_existing_deploy_value DEPLOY_REGION || true)"
+DEFAULT_DEPLOY_ENDPOINT="$(read_existing_deploy_value DEPLOY_ENDPOINT || true)"
+DEFAULT_POLL_INTERVAL="$(read_existing_deploy_value POLL_INTERVAL || true)"
+
+DEPLOY_BUCKET="$(ask "Deploy artifact bucket" "$DEFAULT_DEPLOY_BUCKET")"
+DEPLOY_REGION="$(ask "Deploy artifact region" "${DEFAULT_DEPLOY_REGION:-auto}")"
+DEPLOY_ENDPOINT="$(ask "Deploy artifact endpoint (blank for AWS S3)" "$DEFAULT_DEPLOY_ENDPOINT")"
+POLL_INTERVAL="$(ask "Poll interval in seconds" "${DEFAULT_POLL_INTERVAL:-30}")"
+
+SETUP_ARGS=(
+  --deploy-signing-public-key-path "$SERVER_SIGNING_KEY"
+  --deploy-region "$DEPLOY_REGION"
+  --poll-interval "$POLL_INTERVAL"
+)
+if [[ -n "$DEPLOY_BUCKET" ]]; then
+  SETUP_ARGS+=(--deploy-bucket "$DEPLOY_BUCKET")
+fi
+if [[ -n "$DEPLOY_ENDPOINT" ]]; then
+  SETUP_ARGS+=(--deploy-endpoint "$DEPLOY_ENDPOINT")
+fi
+
+cd "/tmp/$CLONE_DIR"
+sudo -H bash scripts/setup.sh "${SETUP_ARGS[@]}"
+FORGE_ADD_PROJECT
+
+bash /tmp/forge-add-project.sh
+```
+
+This helper reuses the server-wide signing public key and existing deploy bucket
+defaults, creates or reuses the GitHub machine-user SSH key, clones the repo,
+then runs setup for the new app/environment.
 
 Check what is already installed:
 
@@ -238,39 +438,60 @@ deploy bucket, answer `n` when setup asks:
 Configure S3-compatible credentials now?
 ```
 
-Still fill the deploy bucket, region, endpoint, and public signing key prompts
-for each app environment.
+Path B prefills the deploy bucket, region, endpoint, poll interval, and public
+signing key path when it can find existing values. You can still change them at
+the setup prompts for a special case.
 
 Check the public signing key exists:
 
 ```bash
-sudo test -f /root/deploy-signing.pub && echo "public signing key exists"
+sudo test -f /etc/forge/deploy-signing.pub && echo "public signing key exists"
 ```
 
-If it does not exist, copy it from local:
+If it does not exist, the Path B helper asks you to paste the contents of
+`deploy-signing.pub` and installs it at `/etc/forge/deploy-signing.pub`.
+
+The helper above includes GitHub key creation, clone, and setup. Sections 6 and
+7 below are the manual equivalent if you do not want to use the copy-paste
+helper.
+
+## 6. Manual: Prepare GitHub Access And Clone
+
+Do this as `ops`, not `root`.
 
 ```bash
-scp ~/.forge-deploy/deploy-signing.pub ops@<server-ip>:/tmp/deploy-signing.pub
-ssh ops@<server-ip> 'sudo mv /tmp/deploy-signing.pub /root/deploy-signing.pub && sudo chmod 644 /root/deploy-signing.pub'
+ssh ops@<server-ip>
 ```
 
-If you are adding a **new repository**, create a new GitHub deploy key for that
-repo. If you are adding another environment for a repo already installed on this
-server, you can reuse the existing repo deploy key.
+There are two supported GitHub access styles:
 
-Then continue to [6. Prepare The Repository Clone](#6-prepare-the-repository-clone).
+1. **Machine user key:** one SSH key added to a GitHub machine user that has
+   read-only access to the repos this server may clone. This is easiest for many
+   repos.
+2. **Repo deploy key:** one SSH key added under a single repository's deploy
+   keys. This is stricter, but one key cannot be reused across every repo.
 
-## 6. Prepare The Repository Clone
-
-Each GitHub repository should have its own read-only deploy key. GitHub deploy
-keys are repository-scoped, so do not rely on one deploy key for all three repos.
-
-On the server, generate a key for the repository you are setting up if one does
-not already exist:
+For the machine user style, generate one server GitHub key as `ops`:
 
 ```bash
-ssh-keygen -t ed25519 -C "deploy@daily-deal-staging" -f ~/.ssh/daily_deal_deploy -N ""
-cat ~/.ssh/daily_deal_deploy.pub
+ssh-keygen -t ed25519 -C "forge-deploy@<server-name>" -f ~/.ssh/github_forge_deploy -N ""
+cat ~/.ssh/github_forge_deploy.pub
+```
+
+Add the printed public key to the GitHub machine user:
+
+```text
+GitHub machine user -> Settings -> SSH and GPG keys -> New SSH key
+```
+
+Then grant that machine user read-only access to the repositories this server
+needs to clone.
+
+For the repo deploy key style, generate one key per repository instead:
+
+```bash
+ssh-keygen -t ed25519 -C "deploy@abc-project" -f ~/.ssh/abc_project_deploy -N ""
+cat ~/.ssh/abc_project_deploy.pub
 ```
 
 Add the printed public key to GitHub:
@@ -280,19 +501,29 @@ Repository -> Settings -> Deploy keys -> Add deploy key
 Allow write access: off
 ```
 
-Clone the repository into `/tmp` using that key:
+Clone the repository into `/tmp` using the machine user key:
 
 ```bash
 cd /tmp
-GIT_SSH_COMMAND='ssh -i ~/.ssh/daily_deal_deploy -o IdentitiesOnly=yes' \
-  git clone git@github.com:<owner>/Daily-Deal.git daily-deal
-cd /tmp/daily-deal
+GIT_SSH_COMMAND='ssh -i ~/.ssh/github_forge_deploy -o IdentitiesOnly=yes' \
+  git clone git@github.com:<owner>/<repo>.git abc-project
+cd /tmp/abc-project
 ```
 
-For Mediaforge-new and Forge-Starter, create separate key files and clone their
-repositories the same way.
+Or clone using a repo deploy key:
 
-## 7. Run Setup For One App Environment
+```bash
+cd /tmp
+GIT_SSH_COMMAND='ssh -i ~/.ssh/abc_project_deploy -o IdentitiesOnly=yes' \
+  git clone git@github.com:<owner>/<repo>.git abc-project
+cd /tmp/abc-project
+```
+
+Do not copy all of `/root/.ssh` into `ops`. Only copy
+`/root/.ssh/authorized_keys` for server login. GitHub clone keys should live
+under `/home/ops/.ssh` and be owned by `ops`.
+
+## 7. Manual: Run Setup For One App Environment
 
 From the temporary clone:
 
@@ -303,33 +534,32 @@ sudo -H bash scripts/setup.sh
 Use these prompt values as the pattern:
 
 ```text
-App name: daily-deal
+App name: abc-project
 Environment (staging/production): staging
 Domain for this app: staging.example.com
-PostgreSQL username: daily_deal
-Database name: daily_deal_staging
-Password for 'daily_deal': leave blank to auto-generate
+PostgreSQL username: abc_project_staging
+Database name: abc_project_staging
+Password for 'abc_project_staging': leave blank to auto-generate
 Configure S3-compatible credentials now: y
 S3-compatible Access Key ID: <server reader access key id>
 S3-compatible Secret Access Key: <server reader secret access key>
 Default region: auto
 Default output format: json
-HTTP port for this app: 3000
-WebSocket port for this app: 3010
+HTTP port for this app: 4100
+WebSocket port for this app: 5100
 Obtain SSL certificate: y
 Deploy artifact bucket: team-deployments
 Deploy artifact region: auto
 Deploy artifact endpoint: https://<account-id>.r2.cloudflarestorage.com
 Poll interval in seconds: 30
-Deploy signing public key path: /root/deploy-signing.pub
+Deploy signing public key path: /etc/forge/deploy-signing.pub
 ```
 
 For app name, use the base project slug only:
 
 ```text
-daily-deal
-mediaforge-new
 forge-starter
+abc-project
 ```
 
 For environment, use:
@@ -343,22 +573,22 @@ Examples:
 
 | Desired install | App name prompt | Environment prompt | Resulting app id |
 |---|---|---|---|
-| Daily-Deal staging | `daily-deal` | `staging` | `daily-deal-staging` |
-| Daily-Deal production | `daily-deal` | `production` | `daily-deal-production` |
-| Mediaforge staging | `mediaforge-new` | `staging` | `mediaforge-new-staging` |
-| Mediaforge production | `mediaforge-new` | `production` | `mediaforge-new-production` |
+| ABCProject staging | `abc-project` | `staging` | `abc-project-staging` |
+| ABCProject production | `abc-project` | `production` | `abc-project-production` |
+| Forge-Starter staging | `forge-starter` | `staging` | `forge-starter-staging` |
+| Forge-Starter production | `forge-starter` | `production` | `forge-starter-production` |
 
 On the same server, every app/environment needs unique HTTP and WebSocket ports.
 Example port plan:
 
 | App id | HTTP | WebSocket |
 |---|---:|---:|
-| `daily-deal-staging` | 3000 | 3010 |
-| `daily-deal-production` | 3001 | 3011 |
-| `mediaforge-new-staging` | 3002 | 3012 |
-| `mediaforge-new-production` | 3003 | 3013 |
-| `forge-starter-staging` | 3004 | 3014 |
-| `forge-starter-production` | 3005 | 3015 |
+| `abc-project-staging` | 4100 | 5100 |
+| `abc-project-production` | 4101 | 5101 |
+| `forge-starter-staging` | 4102 | 5102 |
+| `forge-starter-production` | 4103 | 5103 |
+| `another-project-staging` | 4104 | 5104 |
+| `another-project-production` | 4105 | 5105 |
 
 If `/root/.aws` is already configured with the server reader token from a
 previous setup on the same server, you can answer `n` to configuring S3
@@ -368,15 +598,15 @@ key prompt for each app environment.
 After setup, edit runtime secrets:
 
 ```bash
-sudo nano /opt/daily-deal-staging/.env
+sudo nano /opt/abc-project-staging/.env
 ```
 
 Check these values:
 
 ```env
 APP__ENVIRONMENT=staging
-SERVER__PORT=3000
-WEBSOCKET__PORT=3010
+SERVER__PORT=4100
+WEBSOCKET__PORT=5100
 WEBSOCKET__ALLOWED_ORIGINS=["https://staging.example.com"]
 DATABASE__URL=postgres://...
 REDIS__URL=redis://127.0.0.1:6379
@@ -388,7 +618,7 @@ the deploy bucket.
 Remove the temporary clone when setup is finished:
 
 ```bash
-rm -rf /tmp/daily-deal
+rm -rf /tmp/abc-project
 ```
 
 Repeat this setup section for every app/environment on the server.
@@ -404,7 +634,7 @@ make deploy
 When prompted:
 
 ```text
-App name [daily-deal]: daily-deal
+App name [abc-project]: abc-project
 Environment (staging/production) [staging]: staging
 ```
 
@@ -417,27 +647,27 @@ The build script will:
 4. Upload the version folder to:
 
 ```text
-s3://team-deployments/_deployments/daily-deal/staging/{VERSION}/
+s3://team-deployments/_deployments/abc-project/staging/{VERSION}/
 ```
 
-5. Upload `_deployments/daily-deal/staging/VERSION` last.
+5. Upload `_deployments/abc-project/staging/VERSION` last.
 
 ## 9. Start Or Check The Server Poller
 
 On the server:
 
 ```bash
-sudo systemctl start daily-deal-staging-deploy-poll
-sudo journalctl -u daily-deal-staging-deploy-poll -f
+sudo systemctl start abc-project-staging-deploy-poll
+sudo journalctl -u abc-project-staging-deploy-poll -f
 ```
 
 Useful commands:
 
 ```bash
-sudo make -C /opt/daily-deal-staging status
-sudo make -C /opt/daily-deal-staging versions
-sudo make -C /opt/daily-deal-staging deploy-check
-sudo make -C /opt/daily-deal-staging doctor
+sudo make -C /opt/abc-project-staging status
+sudo make -C /opt/abc-project-staging versions
+sudo make -C /opt/abc-project-staging deploy-check
+sudo make -C /opt/abc-project-staging doctor
 ```
 
 Verify the public app:
@@ -467,8 +697,8 @@ isolated by app name and environment.
 If the server does not deploy:
 
 ```bash
-sudo journalctl -u daily-deal-staging-deploy-poll -n 200 --no-pager
-sudo make -C /opt/daily-deal-staging deploy-check
+sudo journalctl -u abc-project-staging-deploy-poll -n 200 --no-pager
+sudo make -C /opt/abc-project-staging deploy-check
 ```
 
 Common causes:

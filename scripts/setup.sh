@@ -13,6 +13,7 @@ readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd 2>/dev/null || echo "")"
 readonly SYSTEMD_DEST="/etc/systemd/system"
 readonly SYS_USER="forge"
+readonly SERVER_DEPLOY_SIGNING_PUBLIC_KEY_PATH="/etc/forge/deploy-signing.pub"
 
 # ---------------------------------------------------------------------------
 # Color codes & helpers
@@ -27,6 +28,25 @@ info()  { echo -e "${BLUE}[INFO]${NC}  $*"; }
 ok()    { echo -e "${GREEN}[OK]${NC}    $*"; }
 warn()  { echo -e "${YELLOW}[WARN]${NC}  $*"; }
 error() { echo -e "${RED}[ERROR]${NC} $*"; }
+
+usage() {
+    cat <<USAGE
+Usage: sudo bash scripts/setup.sh [options]
+
+Options:
+  --app-name <name>                         Prefill app name prompt
+  --environment <staging|production>        Prefill environment prompt
+  --domain <domain>                         Prefill domain prompt
+  --http-port <port>                        Prefill HTTP port prompt
+  --ws-port <port>                          Prefill WebSocket port prompt
+  --deploy-bucket <bucket>                  Prefill deploy artifact bucket prompt
+  --deploy-region <region>                  Prefill deploy artifact region prompt
+  --deploy-endpoint <url>                   Prefill deploy artifact endpoint prompt
+  --deploy-signing-public-key-path <path>   Prefill public signing key path prompt
+  --poll-interval <seconds>                 Prefill deploy poll interval prompt
+  -h, --help                                Show this help
+USAGE
+}
 
 ask() {
     local prompt="$1"
@@ -114,6 +134,229 @@ CONFIG
 is_installed() { command -v "$1" &>/dev/null; }
 is_service_active() { systemctl is-active --quiet "$1" 2>/dev/null; }
 is_service_enabled() { systemctl is-enabled --quiet "$1" 2>/dev/null; }
+
+require_option_value() {
+    local option="$1"
+    local value="${2:-}"
+
+    if [[ -z "${value}" ]]; then
+        error "${option} requires a value."
+        usage
+        exit 1
+    fi
+}
+
+is_valid_port() {
+    local port="$1"
+    [[ "${port}" =~ ^[0-9]+$ ]] && (( port >= 1 && port <= 65535 ))
+}
+
+require_valid_port() {
+    local label="$1"
+    local port="$2"
+
+    if ! is_valid_port "${port}"; then
+        error "${label} must be a TCP port between 1 and 65535. Got: ${port}"
+        exit 1
+    fi
+}
+
+port_is_listening() {
+    local port="$1"
+
+    if is_installed ss; then
+        ss -ltnH 2>/dev/null | awk -v port="${port}" '
+            {
+                n = split($4, parts, ":")
+                if (n > 1 && parts[n] == port) {
+                    found = 1
+                }
+            }
+            END { exit found ? 0 : 1 }
+        '
+        return $?
+    fi
+
+    if is_installed lsof; then
+        lsof -nP -iTCP:"${port}" -sTCP:LISTEN >/dev/null 2>&1
+        return $?
+    fi
+
+    return 1
+}
+
+port_in_existing_env() {
+    local port="$1"
+    local file key value
+
+    while IFS= read -r -d '' file; do
+        while IFS='=' read -r key value; do
+            case "${key}" in
+                SERVER__PORT|WEBSOCKET__PORT)
+                    value="${value%%#*}"
+                    value="$(printf '%s' "${value}" | tr -d '[:space:]"')"
+                    if [[ "${value}" == "${port}" ]]; then
+                        return 0
+                    fi
+                    ;;
+            esac
+        done < "${file}"
+    done < <(find /opt -maxdepth 3 -type f -name ".env" -print0 2>/dev/null)
+
+    return 1
+}
+
+port_is_used() {
+    local port="$1"
+    port_is_listening "${port}" || port_in_existing_env "${port}"
+}
+
+next_available_port() {
+    local start="$1"
+    local end="$2"
+    local candidate
+
+    for (( candidate=start; candidate<=end; candidate++ )); do
+        if ! port_is_used "${candidate}"; then
+            printf '%s' "${candidate}"
+            return 0
+        fi
+    done
+
+    error "No available TCP port found in range ${start}-${end}."
+    exit 1
+}
+
+ensure_port_available() {
+    local label="$1"
+    local port="$2"
+    local existing="${3:-}"
+
+    if [[ -n "${existing}" && "${port}" == "${existing}" ]]; then
+        return 0
+    fi
+
+    if port_is_used "${port}"; then
+        error "${label} port ${port} appears to already be used on this server."
+        error "Choose another port, or remove the old app/env that owns it."
+        exit 1
+    fi
+}
+
+ARG_APP_NAME=""
+ARG_ENVIRONMENT=""
+ARG_DOMAIN=""
+ARG_HTTP_PORT=""
+ARG_WS_PORT=""
+ARG_DEPLOY_BUCKET=""
+ARG_DEPLOY_REGION=""
+ARG_DEPLOY_ENDPOINT=""
+ARG_DEPLOY_SIGNING_PUBLIC_KEY_PATH=""
+ARG_POLL_INTERVAL=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --app-name)
+            require_option_value "$1" "${2:-}"
+            ARG_APP_NAME="$2"
+            shift 2
+            ;;
+        --app-name=*)
+            ARG_APP_NAME="${1#*=}"
+            shift
+            ;;
+        --environment|--env)
+            require_option_value "$1" "${2:-}"
+            ARG_ENVIRONMENT="$2"
+            shift 2
+            ;;
+        --environment=*|--env=*)
+            ARG_ENVIRONMENT="${1#*=}"
+            shift
+            ;;
+        --domain)
+            require_option_value "$1" "${2:-}"
+            ARG_DOMAIN="$2"
+            shift 2
+            ;;
+        --domain=*)
+            ARG_DOMAIN="${1#*=}"
+            shift
+            ;;
+        --http-port)
+            require_option_value "$1" "${2:-}"
+            ARG_HTTP_PORT="$2"
+            shift 2
+            ;;
+        --http-port=*)
+            ARG_HTTP_PORT="${1#*=}"
+            shift
+            ;;
+        --ws-port|--websocket-port)
+            require_option_value "$1" "${2:-}"
+            ARG_WS_PORT="$2"
+            shift 2
+            ;;
+        --ws-port=*|--websocket-port=*)
+            ARG_WS_PORT="${1#*=}"
+            shift
+            ;;
+        --deploy-bucket)
+            require_option_value "$1" "${2:-}"
+            ARG_DEPLOY_BUCKET="$2"
+            shift 2
+            ;;
+        --deploy-bucket=*)
+            ARG_DEPLOY_BUCKET="${1#*=}"
+            shift
+            ;;
+        --deploy-region)
+            require_option_value "$1" "${2:-}"
+            ARG_DEPLOY_REGION="$2"
+            shift 2
+            ;;
+        --deploy-region=*)
+            ARG_DEPLOY_REGION="${1#*=}"
+            shift
+            ;;
+        --deploy-endpoint)
+            require_option_value "$1" "${2:-}"
+            ARG_DEPLOY_ENDPOINT="$2"
+            shift 2
+            ;;
+        --deploy-endpoint=*)
+            ARG_DEPLOY_ENDPOINT="${1#*=}"
+            shift
+            ;;
+        --deploy-signing-public-key-path|--deploy-signing-pub)
+            require_option_value "$1" "${2:-}"
+            ARG_DEPLOY_SIGNING_PUBLIC_KEY_PATH="$2"
+            shift 2
+            ;;
+        --deploy-signing-public-key-path=*|--deploy-signing-pub=*)
+            ARG_DEPLOY_SIGNING_PUBLIC_KEY_PATH="${1#*=}"
+            shift
+            ;;
+        --poll-interval)
+            require_option_value "$1" "${2:-}"
+            ARG_POLL_INTERVAL="$2"
+            shift 2
+            ;;
+        --poll-interval=*)
+            ARG_POLL_INTERVAL="${1#*=}"
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            error "Unknown option: $1"
+            usage
+            exit 1
+            ;;
+    esac
+done
 
 header() {
     echo ""
@@ -337,8 +580,8 @@ SUMMARY_REDIS_URL=""
 SUMMARY_APP_KEY=""
 SUMMARY_CRYPT_KEY=""
 SUMMARY_DOMAIN=""
-SUMMARY_HTTP_PORT="3000"
-SUMMARY_WS_PORT="3010"
+SUMMARY_HTTP_PORT=""
+SUMMARY_WS_PORT=""
 SKIP_DEPLOY_POLL=false
 
 # =============================================================================
@@ -383,19 +626,19 @@ if [[ -n "${PROJECT_ROOT}" && -f "${APP_TOML}" ]]; then
     DEFAULT_APP_NAME="$(grep -oP '^\s*name\s*=\s*"\K[^"]+' "${APP_TOML}" 2>/dev/null || true)"
 fi
 
-APP_NAME="$(ask "App name" "${DEFAULT_APP_NAME}")"
+APP_NAME="$(ask "App name" "${ARG_APP_NAME:-${DEFAULT_APP_NAME}}")"
 if [[ -z "${APP_NAME}" ]]; then
     error "App name cannot be empty."
     exit 1
 fi
 
-ENVIRONMENT="$(ask "Environment (staging/production)" "production")"
+ENVIRONMENT="$(ask "Environment (staging/production)" "${ARG_ENVIRONMENT:-production}")"
 if [[ "${ENVIRONMENT}" != "staging" && "${ENVIRONMENT}" != "production" ]]; then
     error "Environment must be 'staging' or 'production'."
     exit 1
 fi
 
-DOMAIN="$(ask "Domain for this app (e.g. staging.my-saas.com)" "")"
+DOMAIN="$(ask "Domain for this app (e.g. staging.my-saas.com)" "${ARG_DOMAIN}")"
 SUMMARY_DOMAIN="${DOMAIN}"
 
 APP_ID="${APP_NAME}-${ENVIRONMENT}"
@@ -456,12 +699,36 @@ if [[ -f "${APP_DIR}/config/deploy.conf" ]]; then
     EXISTING_DEPLOY_SIGNING_PUBLIC_KEY_PATH="$(grep -oP '^DEPLOY_SIGNING_PUBLIC_KEY_PATH="\K[^"]+' "${APP_DIR}/config/deploy.conf" 2>/dev/null || true)"
 fi
 
+if [[ -n "${EXISTING_SERVER_PORT}" ]]; then
+    SUMMARY_HTTP_PORT="${EXISTING_SERVER_PORT}"
+else
+    SUMMARY_HTTP_PORT="$(next_available_port 4100 4999)"
+fi
+if [[ -n "${ARG_HTTP_PORT}" ]]; then
+    require_valid_port "HTTP port" "${ARG_HTTP_PORT}"
+    SUMMARY_HTTP_PORT="${ARG_HTTP_PORT}"
+fi
+
+if [[ -n "${EXISTING_WS_PORT}" ]]; then
+    SUMMARY_WS_PORT="${EXISTING_WS_PORT}"
+else
+    SUMMARY_WS_PORT="$(next_available_port 5100 5999)"
+fi
+if [[ -n "${ARG_WS_PORT}" ]]; then
+    require_valid_port "WebSocket port" "${ARG_WS_PORT}"
+    SUMMARY_WS_PORT="${ARG_WS_PORT}"
+fi
+ensure_port_available "HTTP" "${SUMMARY_HTTP_PORT}" "${EXISTING_SERVER_PORT}"
+ensure_port_available "WebSocket" "${SUMMARY_WS_PORT}" "${EXISTING_WS_PORT}"
+
 echo ""
 info "App Name:     ${APP_NAME}"
 info "Environment:  ${ENVIRONMENT}"
 info "App ID:       ${APP_ID}"
 info "App Dir:      ${APP_DIR}"
 info "Domain:       ${DOMAIN:-<none>}"
+info "HTTP Port:    ${SUMMARY_HTTP_PORT}"
+info "WS Port:      ${SUMMARY_WS_PORT}"
 if [[ -f "${APP_DIR}/.env" ]]; then
     ok "Re-run detected — existing values will be used as defaults."
 fi
@@ -679,8 +946,12 @@ if [[ -n "${DOMAIN}" ]]; then
             warn "Nginx config is missing a /ws websocket proxy. Add it manually so browsers can connect to wss://${DOMAIN}/ws."
         fi
     else
-        HTTP_PORT="$(ask "HTTP port for this app" "${EXISTING_SERVER_PORT:-3000}")"
-        WS_PORT="$(ask "WebSocket port for this app" "${EXISTING_WS_PORT:-3010}")"
+        HTTP_PORT="$(ask "HTTP port for this app" "${SUMMARY_HTTP_PORT}")"
+        WS_PORT="$(ask "WebSocket port for this app" "${SUMMARY_WS_PORT}")"
+        require_valid_port "HTTP port" "${HTTP_PORT}"
+        require_valid_port "WebSocket port" "${WS_PORT}"
+        ensure_port_available "HTTP" "${HTTP_PORT}" "${EXISTING_SERVER_PORT}"
+        ensure_port_available "WebSocket" "${WS_PORT}" "${EXISTING_WS_PORT}"
         SUMMARY_HTTP_PORT="${HTTP_PORT}"
         SUMMARY_WS_PORT="${WS_PORT}"
 
@@ -817,17 +1088,20 @@ fi
 # Deploy polling bucket config. This is intentionally separate from app .env
 # uploads: the bucket only stores signed release folders, never secrets.
 DEPLOY_CONF="${APP_DIR}/config/deploy.conf"
-DEPLOY_BUCKET="$(ask "Deploy artifact bucket" "${EXISTING_DEPLOY_BUCKET}")"
-DEPLOY_REGION="$(ask "Deploy artifact region (auto for R2)" "${EXISTING_DEPLOY_REGION:-auto}")"
-DEPLOY_ENDPOINT="$(ask "Deploy artifact endpoint (blank for AWS S3)" "${EXISTING_DEPLOY_ENDPOINT}")"
-DEPLOY_POLL_INTERVAL="$(ask "Poll interval in seconds" "${EXISTING_POLL_INTERVAL:-30}")"
+DEPLOY_BUCKET="$(ask "Deploy artifact bucket" "${ARG_DEPLOY_BUCKET:-${EXISTING_DEPLOY_BUCKET}}")"
+DEPLOY_REGION="$(ask "Deploy artifact region (auto for R2)" "${ARG_DEPLOY_REGION:-${EXISTING_DEPLOY_REGION:-auto}}")"
+DEPLOY_ENDPOINT="$(ask "Deploy artifact endpoint (blank for AWS S3)" "${ARG_DEPLOY_ENDPOINT:-${EXISTING_DEPLOY_ENDPOINT}}")"
+DEPLOY_POLL_INTERVAL="$(ask "Poll interval in seconds" "${ARG_POLL_INTERVAL:-${EXISTING_POLL_INTERVAL:-30}}")"
 DEPLOY_PREFLIGHT_ENABLED="${EXISTING_DEPLOY_PREFLIGHT_ENABLED:-1}"
 DEPLOY_HEALTH_TIMEOUT_SECONDS="${EXISTING_DEPLOY_HEALTH_TIMEOUT_SECONDS:-30}"
 DEPLOY_MIGRATION_LOCK_TIMEOUT_MS="${EXISTING_DEPLOY_MIGRATION_LOCK_TIMEOUT_MS:-0}"
 DEPLOY_SIGNING_PUBLIC_KEY_DEST="${APP_DIR}/config/deploy-signing.pub"
-DEFAULT_DEPLOY_SIGNING_PUBLIC_KEY_PATH="${EXISTING_DEPLOY_SIGNING_PUBLIC_KEY_PATH}"
-if [[ -z "${DEFAULT_DEPLOY_SIGNING_PUBLIC_KEY_PATH}" && -f "${DEPLOY_SIGNING_PUBLIC_KEY_DEST}" ]]; then
-    DEFAULT_DEPLOY_SIGNING_PUBLIC_KEY_PATH="${DEPLOY_SIGNING_PUBLIC_KEY_DEST}"
+DEFAULT_DEPLOY_SIGNING_PUBLIC_KEY_SOURCE="${ARG_DEPLOY_SIGNING_PUBLIC_KEY_PATH:-${EXISTING_DEPLOY_SIGNING_PUBLIC_KEY_PATH}}"
+if [[ -z "${DEFAULT_DEPLOY_SIGNING_PUBLIC_KEY_SOURCE}" && -f "${DEPLOY_SIGNING_PUBLIC_KEY_DEST}" ]]; then
+    DEFAULT_DEPLOY_SIGNING_PUBLIC_KEY_SOURCE="${DEPLOY_SIGNING_PUBLIC_KEY_DEST}"
+fi
+if [[ -z "${DEFAULT_DEPLOY_SIGNING_PUBLIC_KEY_SOURCE}" && -f "${SERVER_DEPLOY_SIGNING_PUBLIC_KEY_PATH}" ]]; then
+    DEFAULT_DEPLOY_SIGNING_PUBLIC_KEY_SOURCE="${SERVER_DEPLOY_SIGNING_PUBLIC_KEY_PATH}"
 fi
 
 if [[ -z "${DEPLOY_BUCKET}" ]]; then
@@ -836,7 +1110,7 @@ if [[ -z "${DEPLOY_BUCKET}" ]]; then
 fi
 
 if [[ "${SKIP_DEPLOY_POLL}" == false ]]; then
-    DEPLOY_SIGNING_PUBLIC_KEY_SOURCE="$(ask "Deploy signing public key path" "${DEFAULT_DEPLOY_SIGNING_PUBLIC_KEY_PATH}")"
+    DEPLOY_SIGNING_PUBLIC_KEY_SOURCE="$(ask "Deploy signing public key path" "${DEFAULT_DEPLOY_SIGNING_PUBLIC_KEY_SOURCE}")"
     if [[ -z "${DEPLOY_SIGNING_PUBLIC_KEY_SOURCE}" || ! -f "${DEPLOY_SIGNING_PUBLIC_KEY_SOURCE}" ]]; then
         error "Deploy signing public key is required when deploy polling is enabled."
         error "Create one from your private key with:"
