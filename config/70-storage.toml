@@ -8,10 +8,8 @@
 # -----------------------------------------------------------------------------
 # Storage
 # -----------------------------------------------------------------------------
-# Starter deployment uses Cloudflare R2 for both app storage and deployment
-# artifacts (_deployments/{app_name}/{environment}/). Populate credentials via
-# env in production: STORAGE__DISKS__R2__KEY, __SECRET, __BUCKET, __ENDPOINT,
-# __URL. See DEPLOY.md.
+# App storage can use Cloudflare R2. Deployment artifacts should use a separate
+# private deploy bucket via DEPLOY_* env vars; see DEPLOY.md.
 [storage]
 default = "r2"
 # Total multipart file bytes per request (0 = no storage-level cap).

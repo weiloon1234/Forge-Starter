@@ -124,6 +124,17 @@ non_negative_integer_or_default() {
     fi
 }
 
+safe_s3_key_segment() {
+    local label="$1"
+    local value="$2"
+
+    if [[ -z "$value" || ! "$value" =~ ^[a-z0-9][a-z0-9._-]*$ || "$value" == *..* ]]; then
+        log_error "$label must be a lowercase S3-safe segment: a-z, 0-9, dot, underscore, or dash; no slashes or '..'."
+        log_error "Got: ${value:-<empty>}"
+        return 1
+    fi
+}
+
 # -----------------------------------------------------------------------------
 # Load config from deploy.conf + optional server .env fallback
 # -----------------------------------------------------------------------------
@@ -147,6 +158,7 @@ load_config() {
     : "${DEPLOY_PREFLIGHT_ENABLED:=1}"
     : "${DEPLOY_HEALTH_TIMEOUT_SECONDS:=30}"
     : "${DEPLOY_MIGRATION_LOCK_TIMEOUT_MS:=0}"
+    : "${DEPLOY_SIGNING_PUBLIC_KEY_PATH:=$APP_DIR/config/deploy-signing.pub}"
 
     POLL_INTERVAL="$(non_negative_integer_or_default "$POLL_INTERVAL" 30)"
     DEPLOY_PREFLIGHT_ENABLED="$(non_negative_integer_or_default "$DEPLOY_PREFLIGHT_ENABLED" 1)"
@@ -165,6 +177,12 @@ load_config() {
         log_error "Set DEPLOY_BUCKET in $DEPLOY_CONF or $ENV_FILE."
         exit 1
     fi
+    if [[ ! -f "$DEPLOY_SIGNING_PUBLIC_KEY_PATH" || ! -r "$DEPLOY_SIGNING_PUBLIC_KEY_PATH" ]]; then
+        log_error "Deploy signing public key is missing or unreadable: $DEPLOY_SIGNING_PUBLIC_KEY_PATH"
+        exit 1
+    fi
+    safe_s3_key_segment "App name" "$APP_NAME" || exit 1
+    safe_s3_key_segment "Environment" "$ENVIRONMENT" || exit 1
 
     cd "$APP_DIR"
 
@@ -246,6 +264,11 @@ s3_download() {
     aws_s3 cp "$remote_path" "$local_path" --quiet 2>/dev/null
 }
 
+release_prefix_for_version() {
+    local version="$1"
+    printf '%s/%s' "$S3_PREFIX" "$version"
+}
+
 artifact_entry_allowed() {
     local entry="$1"
 
@@ -258,6 +281,20 @@ artifact_entry_allowed() {
             return 0
             ;;
     esac
+
+    return 1
+}
+
+artifact_entry_unsafe() {
+    local entry="$1"
+
+    if [[ -z "$entry" || "$entry" == /* || "$entry" == *\\* || "$entry" == *..* ]]; then
+        return 0
+    fi
+
+    if printf '%s' "$entry" | LC_ALL=C grep -q '[[:cntrl:]]'; then
+        return 0
+    fi
 
     return 1
 }
@@ -300,10 +337,15 @@ verify_artifact_zip() {
         if [[ "$entry" == "$BINARY_NAME" ]]; then
             has_binary=true
         fi
-        if ! artifact_entry_allowed "$entry" || artifact_entry_forbidden "$entry"; then
+        if artifact_entry_unsafe "$entry" || ! artifact_entry_allowed "$entry" || artifact_entry_forbidden "$entry"; then
             unsafe_entries+=("$entry")
         fi
     done < <(unzip -Z -1 "$zip_path")
+
+    while IFS= read -r entry; do
+        [[ -z "$entry" ]] && continue
+        unsafe_entries+=("$entry")
+    done < <(unzip -Z -l "$zip_path" | awk '$1 ~ /^l/ { print $NF }')
 
     if [[ "$has_binary" != true ]]; then
         log_error "Artifact is missing the compiled binary: $BINARY_NAME"
@@ -328,12 +370,35 @@ manifest_value() {
     env_file_value "$key" "$manifest"
 }
 
+verify_release_signature() {
+    local manifest_path="$1"
+    local signature_path="$2"
+
+    if [[ ! -f "$signature_path" ]]; then
+        log_error "Artifact manifest signature file is missing."
+        return 1
+    fi
+
+    if ! openssl dgst -sha256 \
+        -verify "$DEPLOY_SIGNING_PUBLIC_KEY_PATH" \
+        -signature "$signature_path" \
+        "$manifest_path" >/dev/null 2>&1; then
+        log_error "Artifact manifest signature verification failed."
+        return 1
+    fi
+
+    log_info "Artifact manifest signature verified."
+    return 0
+}
+
 verify_release_metadata() {
     local version="$1"
     local zip_path="$2"
     local checksum_path="$3"
     local manifest_path="$4"
-    local expected_sha actual_sha manifest_version manifest_artifact manifest_sha
+    local expected_sha actual_sha
+    local manifest_version manifest_app_name manifest_environment manifest_binary_name
+    local manifest_artifact manifest_sha manifest_runtime_only manifest_layout
 
     if [[ ! -f "$checksum_path" ]]; then
         log_error "Artifact checksum file is missing."
@@ -358,19 +423,44 @@ verify_release_metadata() {
     fi
 
     manifest_version="$(manifest_value "$manifest_path" VERSION || true)"
+    manifest_app_name="$(manifest_value "$manifest_path" APP_NAME || true)"
+    manifest_environment="$(manifest_value "$manifest_path" ENVIRONMENT || true)"
+    manifest_binary_name="$(manifest_value "$manifest_path" BINARY_NAME || true)"
     manifest_artifact="$(manifest_value "$manifest_path" ARTIFACT || true)"
     manifest_sha="$(manifest_value "$manifest_path" SHA256 || true)"
+    manifest_runtime_only="$(manifest_value "$manifest_path" RUNTIME_ONLY || true)"
+    manifest_layout="$(manifest_value "$manifest_path" LAYOUT || true)"
 
     if [[ "$manifest_version" != "$version" ]]; then
         log_error "Artifact manifest VERSION mismatch: expected $version, got ${manifest_version:-<empty>}."
         return 1
     fi
-    if [[ "$manifest_artifact" != "${BINARY_NAME}-${version}.zip" ]]; then
+    if [[ "$manifest_app_name" != "$APP_NAME" ]]; then
+        log_error "Artifact manifest APP_NAME mismatch: expected $APP_NAME, got ${manifest_app_name:-<empty>}."
+        return 1
+    fi
+    if [[ "$manifest_environment" != "$ENVIRONMENT" ]]; then
+        log_error "Artifact manifest ENVIRONMENT mismatch: expected $ENVIRONMENT, got ${manifest_environment:-<empty>}."
+        return 1
+    fi
+    if [[ "$manifest_binary_name" != "$BINARY_NAME" ]]; then
+        log_error "Artifact manifest BINARY_NAME mismatch: expected $BINARY_NAME, got ${manifest_binary_name:-<empty>}."
+        return 1
+    fi
+    if [[ "$manifest_artifact" != "app.zip" ]]; then
         log_error "Artifact manifest ARTIFACT mismatch: got ${manifest_artifact:-<empty>}."
         return 1
     fi
     if [[ "$manifest_sha" != "$actual_sha" ]]; then
         log_error "Artifact manifest SHA256 mismatch."
+        return 1
+    fi
+    if [[ "$manifest_runtime_only" != "1" ]]; then
+        log_error "Artifact manifest RUNTIME_ONLY mismatch: got ${manifest_runtime_only:-<empty>}."
+        return 1
+    fi
+    if [[ "$manifest_layout" != "versioned-v1" ]]; then
+        log_error "Artifact manifest LAYOUT mismatch: got ${manifest_layout:-<empty>}."
         return 1
     fi
 
@@ -593,12 +683,16 @@ run_migrations() {
 
 deploy_version() {
     local version="$1"
+    safe_s3_key_segment "Version" "$version" || return 1
+    local release_prefix
+    release_prefix="$(release_prefix_for_version "$version")"
     local tmp_dir
     tmp_dir=$(mktemp -d)
     chmod 755 "$tmp_dir"
-    local zip_file="$tmp_dir/${BINARY_NAME}-${version}.zip"
-    local checksum_file="$tmp_dir/${BINARY_NAME}-${version}.zip.sha256"
-    local manifest_file="$tmp_dir/${BINARY_NAME}-${version}.manifest"
+    local zip_file="$tmp_dir/app.zip"
+    local checksum_file="$tmp_dir/app.zip.sha256"
+    local manifest_file="$tmp_dir/release.manifest"
+    local signature_file="$tmp_dir/release.manifest.sig"
     local backup_dir="$tmp_dir/backup"
     local success=false
 
@@ -606,18 +700,23 @@ deploy_version() {
 
     # Download artifact zip
     log_info "Downloading artifact..."
-    if ! s3_download "$S3_PREFIX/${BINARY_NAME}-${version}.zip" "$zip_file"; then
+    if ! s3_download "$release_prefix/app.zip" "$zip_file"; then
         log_error "Failed to download artifact zip."
         rm -rf "$tmp_dir"
         return 1
     fi
-    if ! s3_download "$S3_PREFIX/${BINARY_NAME}-${version}.zip.sha256" "$checksum_file"; then
+    if ! s3_download "$release_prefix/app.zip.sha256" "$checksum_file"; then
         log_error "Failed to download artifact checksum."
         rm -rf "$tmp_dir"
         return 1
     fi
-    if ! s3_download "$S3_PREFIX/${BINARY_NAME}-${version}.manifest" "$manifest_file"; then
+    if ! s3_download "$release_prefix/release.manifest" "$manifest_file"; then
         log_error "Failed to download artifact manifest."
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+    if ! s3_download "$release_prefix/release.manifest.sig" "$signature_file"; then
+        log_error "Failed to download artifact manifest signature."
         rm -rf "$tmp_dir"
         return 1
     fi
@@ -625,7 +724,7 @@ deploy_version() {
     # Verify zip integrity
     if ! unzip -t "$zip_file" > /dev/null 2>&1; then
         log_error "Artifact zip is corrupt. Retrying once..."
-        if ! s3_download "$S3_PREFIX/${BINARY_NAME}-${version}.zip" "$zip_file"; then
+        if ! s3_download "$release_prefix/app.zip" "$zip_file"; then
             log_error "Retry download failed."
             rm -rf "$tmp_dir"
             return 1
@@ -635,6 +734,10 @@ deploy_version() {
             rm -rf "$tmp_dir"
             return 1
         fi
+    fi
+    if ! verify_release_signature "$manifest_file" "$signature_file"; then
+        rm -rf "$tmp_dir"
+        return 1
     fi
     if ! verify_release_metadata "$version" "$zip_file" "$checksum_file" "$manifest_file"; then
         rm -rf "$tmp_dir"
@@ -794,6 +897,7 @@ deploy_once() {
         log_error "Version is empty."
         return 1
     fi
+    safe_s3_key_segment "Version" "$version" || return 1
 
     log_info "Starting one-shot deploy for version: $version"
     if deploy_version "$version"; then
@@ -807,7 +911,7 @@ deploy_once() {
 
 deploy_check() {
     local version="${1:-}"
-    local tmp_dir zip_file checksum_file manifest_file extract_dir
+    local tmp_dir zip_file checksum_file manifest_file signature_file extract_dir release_prefix
 
     load_config
 
@@ -824,24 +928,29 @@ deploy_check() {
         log_error "Version is empty."
         return 1
     fi
+    safe_s3_key_segment "Version" "$version" || return 1
+    release_prefix="$(release_prefix_for_version "$version")"
 
     tmp_dir=$(mktemp -d)
     chmod 755 "$tmp_dir"
-    zip_file="$tmp_dir/${BINARY_NAME}-${version}.zip"
-    checksum_file="$tmp_dir/${BINARY_NAME}-${version}.zip.sha256"
-    manifest_file="$tmp_dir/${BINARY_NAME}-${version}.manifest"
+    zip_file="$tmp_dir/app.zip"
+    checksum_file="$tmp_dir/app.zip.sha256"
+    manifest_file="$tmp_dir/release.manifest"
+    signature_file="$tmp_dir/release.manifest.sig"
     extract_dir="$tmp_dir/extracted"
 
     log_info "Checking deploy artifact version: $version"
-    if ! s3_download "$S3_PREFIX/${BINARY_NAME}-${version}.zip" "$zip_file" \
-        || ! s3_download "$S3_PREFIX/${BINARY_NAME}-${version}.zip.sha256" "$checksum_file" \
-        || ! s3_download "$S3_PREFIX/${BINARY_NAME}-${version}.manifest" "$manifest_file"; then
-        log_error "Failed to download deploy artifact, checksum, or manifest."
+    if ! s3_download "$release_prefix/app.zip" "$zip_file" \
+        || ! s3_download "$release_prefix/app.zip.sha256" "$checksum_file" \
+        || ! s3_download "$release_prefix/release.manifest" "$manifest_file" \
+        || ! s3_download "$release_prefix/release.manifest.sig" "$signature_file"; then
+        log_error "Failed to download deploy artifact, checksum, manifest, or signature."
         rm -rf "$tmp_dir"
         return 1
     fi
 
     if ! unzip -t "$zip_file" > /dev/null 2>&1 \
+        || ! verify_release_signature "$manifest_file" "$signature_file" \
         || ! verify_release_metadata "$version" "$zip_file" "$checksum_file" "$manifest_file" \
         || ! verify_artifact_zip "$zip_file"; then
         rm -rf "$tmp_dir"
@@ -874,13 +983,19 @@ doctor_current() {
 
 list_versions() {
     load_config
-    aws_s3 ls "${S3_PREFIX}/" \
-        | awk -v binary="$BINARY_NAME" '$4 ~ "^" binary "-.*\\.zip$" {
-            name = $4
-            sub("^" binary "-", "", name)
-            sub("\\.zip$", "", name)
-            print $1, $2, name
-        }'
+    aws_s3 ls "${S3_PREFIX}/" --recursive \
+        | awk -v prefix="_deployments/${APP_NAME}/${ENVIRONMENT}/" '
+            index($4, prefix) == 1 && $4 ~ /\/release\.manifest$/ {
+                key = $4
+                sub("^" prefix, "", key)
+                split(key, parts, "/")
+                if (parts[1] != "") {
+                    print $1, $2, parts[1]
+                }
+            }
+        ' \
+        | sort -r \
+        | awk '!seen[$3]++'
 }
 
 usage() {

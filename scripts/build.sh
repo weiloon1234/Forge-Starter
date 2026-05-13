@@ -3,7 +3,7 @@ set -euo pipefail
 
 # =============================================================================
 # Forge — Local Build & Deploy to S3/R2
-# Builds inside Docker, uploads artifact zip + VERSION file.
+# Builds inside Docker, signs a release manifest, and uploads a versioned artifact folder.
 #
 # Sensitive .env files are never uploaded. The selected .env.{environment} file
 # is read locally only for deploy upload settings and public VITE_* frontend values.
@@ -137,7 +137,7 @@ frontend_portals() {
 }
 
 read_app_name_from_config() {
-    local config="$PROJECT_DIR/config/forge.toml"
+    local config="$PROJECT_DIR/config/00-app.toml"
     [[ -f "$config" ]] || return 0
 
     awk '
@@ -150,6 +150,28 @@ read_app_name_from_config() {
             exit
         }
     ' "$config"
+}
+
+safe_s3_key_segment() {
+    local label="$1"
+    local value="$2"
+
+    if [[ -z "$value" || ! "$value" =~ ^[a-z0-9][a-z0-9._-]*$ || "$value" == *..* ]]; then
+        error "$label must be a lowercase S3-safe segment: a-z, 0-9, dot, underscore, or dash; no slashes or '..'."
+        error "Got: ${value:-<empty>}"
+        exit 1
+    fi
+}
+
+require_readable_file() {
+    local label="$1"
+    local path="$2"
+
+    if [[ -z "$path" || ! -f "$path" || ! -r "$path" ]]; then
+        error "$label is required and must be a readable file."
+        error "Set DEPLOY_SIGNING_PRIVATE_KEY_PATH in your deploy env file."
+        exit 1
+    fi
 }
 
 prepare_vite_env_files() {
@@ -281,11 +303,22 @@ VERSION="$VERSION"
 APP_NAME="$APP_NAME"
 ENVIRONMENT="$DEPLOY_ENV"
 BINARY_NAME="$BINARY_NAME"
-ARTIFACT="$ZIP_NAME"
+ARTIFACT="app.zip"
 SHA256="$sha256"
 BUILT_AT="$built_at"
 RUNTIME_ONLY="1"
+LAYOUT="versioned-v1"
 EOF
+}
+
+sign_artifact_manifest() {
+    local manifest_path="$1"
+    local signature_path="$2"
+
+    openssl dgst -sha256 \
+        -sign "$DEPLOY_SIGNING_PRIVATE_KEY_PATH" \
+        -out "$signature_path" \
+        "$manifest_path"
 }
 
 artifact_entry_allowed() {
@@ -300,6 +333,20 @@ artifact_entry_allowed() {
             return 0
             ;;
     esac
+
+    return 1
+}
+
+artifact_entry_unsafe() {
+    local entry="$1"
+
+    if [[ -z "$entry" || "$entry" == /* || "$entry" == *\\* || "$entry" == *..* ]]; then
+        return 0
+    fi
+
+    if printf '%s' "$entry" | LC_ALL=C grep -q '[[:cntrl:]]'; then
+        return 0
+    fi
 
     return 1
 }
@@ -344,10 +391,15 @@ verify_artifact_zip() {
         if [[ "$entry" == "$BINARY_NAME" ]]; then
             has_binary=true
         fi
-        if ! artifact_entry_allowed "$entry" || artifact_entry_forbidden "$entry"; then
+        if artifact_entry_unsafe "$entry" || ! artifact_entry_allowed "$entry" || artifact_entry_forbidden "$entry"; then
             unsafe_entries+=("$entry")
         fi
     done < <(unzip -Z -1 "$zip_path")
+
+    while IFS= read -r entry; do
+        [[ -z "$entry" ]] && continue
+        unsafe_entries+=("$entry")
+    done < <(unzip -Z -l "$zip_path" | awk '$1 ~ /^l/ { print $NF }')
 
     if [[ "$has_binary" != true ]]; then
         error "Artifact is missing the compiled binary: $BINARY_NAME"
@@ -393,37 +445,45 @@ aws_s3() {
 prune_bucket_releases() {
     local retain="$1"
     local listing
-    local old_files=()
-    local file
+    local old_versions=()
+    local version
 
-    info "Applying bucket retention: keeping newest ${retain} artifact zip(s)."
-    if ! listing="$(aws_s3 ls "${S3_BASE}/" 2>/dev/null)"; then
+    info "Applying bucket retention: keeping newest ${retain} release folder(s)."
+    if ! listing="$(aws_s3 ls "${S3_BASE}/" --recursive 2>/dev/null)"; then
         warn "Could not list bucket artifacts for retention cleanup."
         return 0
     fi
 
-    while IFS= read -r file; do
-        [[ -n "$file" ]] && old_files+=("$file")
+    while IFS= read -r version; do
+        [[ -n "$version" ]] && old_versions+=("$version")
     done < <(
         printf '%s\n' "$listing" \
-            | awk -v binary="$BINARY_NAME" '$4 ~ "^" binary "-.*\\.zip$" { print $1 "T" $2 " " $4 }' \
+            | awk -v prefix="_deployments/${APP_NAME}/${DEPLOY_ENV}/" '
+                index($4, prefix) == 1 && $4 ~ /\/release\.manifest$/ {
+                    key = $4
+                    sub("^" prefix, "", key)
+                    split(key, parts, "/")
+                    if (parts[1] != "") {
+                        print $1 "T" $2 " " parts[1]
+                    }
+                }
+            ' \
             | sort -r \
+            | awk '!seen[$2]++ { print $0 }' \
             | tail -n +"$(( retain + 1 ))" \
             | awk '{ print $2 }'
     )
 
-    if [[ ${#old_files[@]} -eq 0 ]]; then
+    if [[ ${#old_versions[@]} -eq 0 ]]; then
         ok "No old bucket artifacts to remove."
         return 0
     fi
 
-    for file in "${old_files[@]}"; do
-        info "Removing old bucket artifact: $file"
-        if ! aws_s3 rm "${S3_BASE}/${file}"; then
-            warn "Failed to remove old bucket artifact: $file"
+    for version in "${old_versions[@]}"; do
+        info "Removing old bucket release folder: $version"
+        if ! aws_s3 rm "${S3_BASE}/${version}/" --recursive; then
+            warn "Failed to remove old bucket release folder: $version"
         fi
-        aws_s3 rm "${S3_BASE}/${file}.sha256" &>/dev/null || true
-        aws_s3 rm "${S3_BASE}/${file%.zip}.manifest" &>/dev/null || true
     done
 }
 
@@ -478,6 +538,12 @@ if ! command -v zip &>/dev/null || ! command -v unzip &>/dev/null; then
 fi
 ok "zip/unzip found"
 
+if ! command -v openssl &>/dev/null; then
+    error "'openssl' is required to sign deploy artifacts."
+    exit 1
+fi
+ok "openssl found"
+
 if ! docker info &>/dev/null 2>&1; then
     error "Docker is not running. Start Docker Desktop and try again."
     exit 1
@@ -528,6 +594,7 @@ S3_ENDPOINT="$(first_config_value "$ENV_FILE" DEPLOY_ENDPOINT STORAGE__DISKS__R2
 DEPLOY_RETAIN_RELEASES="$(first_config_value "$ENV_FILE" DEPLOY_RETAIN_RELEASES || true)"
 DEPLOY_DOCKER_CLEANUP="$(first_config_value "$ENV_FILE" DEPLOY_DOCKER_CLEANUP || true)"
 DEPLOY_DOCKER_PLATFORM="$(first_config_value "$ENV_FILE" DEPLOY_DOCKER_PLATFORM || true)"
+DEPLOY_SIGNING_PRIVATE_KEY_PATH="$(first_config_value "$ENV_FILE" DEPLOY_SIGNING_PRIVATE_KEY_PATH || true)"
 : "${S3_REGION:=auto}"
 : "${S3_ENDPOINT:=}"
 : "${DEPLOY_RETAIN_RELEASES:=5}"
@@ -542,6 +609,9 @@ if [[ -z "$S3_BUCKET" ]]; then
     error "Set DEPLOY_BUCKET in $ENV_FILE or export DEPLOY_BUCKET before running make deploy."
     exit 1
 fi
+require_readable_file "Deploy signing private key" "$DEPLOY_SIGNING_PRIVATE_KEY_PATH"
+safe_s3_key_segment "App name" "$APP_NAME"
+safe_s3_key_segment "Environment" "$DEPLOY_ENV"
 
 echo "-------------------------------------------"
 ok "App name:     $APP_NAME"
@@ -550,9 +620,10 @@ ok "Environment:  $DEPLOY_ENV"
 ok "Bucket:       $S3_BUCKET"
 ok "Region:       $S3_REGION"
 ok "Endpoint:     ${S3_ENDPOINT:-<none>}"
-ok "Retention:    keep newest ${DEPLOY_RETAIN_RELEASES} zip(s)"
+ok "Retention:    keep newest ${DEPLOY_RETAIN_RELEASES} release folder(s)"
 ok "Docker clean: $DEPLOY_DOCKER_CLEANUP"
 ok "Platform:     $DEPLOY_DOCKER_PLATFORM"
+ok "Signing key:  $DEPLOY_SIGNING_PRIVATE_KEY_PATH"
 echo ""
 
 # ---------------------------------------------------------------------------
@@ -576,6 +647,7 @@ cd "$PROJECT_DIR"
 GIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "nohash")
 TIMESTAMP=$(date +%Y%m%d%H%M%S)
 VERSION="${GIT_HASH}-${TIMESTAMP}"
+safe_s3_key_segment "Version" "$VERSION"
 info "Version: $VERSION"
 
 # ---------------------------------------------------------------------------
@@ -617,7 +689,7 @@ ok "Artifacts extracted"
 # ---------------------------------------------------------------------------
 # Create zip
 # ---------------------------------------------------------------------------
-ZIP_NAME="${BINARY_NAME}-${VERSION}.zip"
+ZIP_NAME="app.zip"
 ZIP_PATH="$TEMP_DIR/$ZIP_NAME"
 
 info "Creating archive: $ZIP_NAME"
@@ -631,11 +703,15 @@ ZIP_SHA256="$(sha256_file "$ZIP_PATH")"
 BUILT_AT="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 CHECKSUM_NAME="${ZIP_NAME}.sha256"
 CHECKSUM_PATH="$TEMP_DIR/$CHECKSUM_NAME"
-MANIFEST_NAME="${BINARY_NAME}-${VERSION}.manifest"
+MANIFEST_NAME="release.manifest"
 MANIFEST_PATH="$TEMP_DIR/$MANIFEST_NAME"
+SIGNATURE_NAME="release.manifest.sig"
+SIGNATURE_PATH="$TEMP_DIR/$SIGNATURE_NAME"
 printf '%s  %s\n' "$ZIP_SHA256" "$ZIP_NAME" > "$CHECKSUM_PATH"
 write_artifact_manifest "$MANIFEST_PATH" "$ZIP_SHA256" "$BUILT_AT"
+sign_artifact_manifest "$MANIFEST_PATH" "$SIGNATURE_PATH"
 ok "Artifact checksum: $ZIP_SHA256"
+ok "Artifact manifest signed"
 
 # ---------------------------------------------------------------------------
 # S3/R2 upload helper
@@ -649,25 +725,31 @@ s3_cp() {
 
 # S3 path: s3://{bucket}/_deployments/{app_name}/{environment}/
 S3_BASE="s3://${S3_BUCKET}/_deployments/${APP_NAME}/${DEPLOY_ENV}"
+S3_RELEASE_BASE="${S3_BASE}/${VERSION}"
 
 # ---------------------------------------------------------------------------
 # Upload artifact zip
 # ---------------------------------------------------------------------------
 UPLOAD_START=$(date +%s)
-S3_ZIP_PATH="${S3_BASE}/${ZIP_NAME}"
+S3_ZIP_PATH="${S3_RELEASE_BASE}/${ZIP_NAME}"
 info "Uploading $ZIP_NAME to $S3_ZIP_PATH"
 s3_cp "$ZIP_PATH" "$S3_ZIP_PATH"
 ok "Artifact uploaded"
 
-S3_CHECKSUM_PATH="${S3_BASE}/${CHECKSUM_NAME}"
+S3_CHECKSUM_PATH="${S3_RELEASE_BASE}/${CHECKSUM_NAME}"
 info "Uploading checksum to $S3_CHECKSUM_PATH"
 s3_cp "$CHECKSUM_PATH" "$S3_CHECKSUM_PATH"
 ok "Checksum uploaded"
 
-S3_MANIFEST_PATH="${S3_BASE}/${MANIFEST_NAME}"
+S3_MANIFEST_PATH="${S3_RELEASE_BASE}/${MANIFEST_NAME}"
 info "Uploading manifest to $S3_MANIFEST_PATH"
 s3_cp "$MANIFEST_PATH" "$S3_MANIFEST_PATH"
 ok "Manifest uploaded"
+
+S3_SIGNATURE_PATH="${S3_RELEASE_BASE}/${SIGNATURE_NAME}"
+info "Uploading manifest signature to $S3_SIGNATURE_PATH"
+s3_cp "$SIGNATURE_PATH" "$S3_SIGNATURE_PATH"
+ok "Manifest signature uploaded"
 
 # ---------------------------------------------------------------------------
 # Upload VERSION file last so pollers never see half-published releases

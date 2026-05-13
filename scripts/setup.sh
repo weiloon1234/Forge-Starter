@@ -64,6 +64,8 @@ configure_s3_credentials() {
     local access_key secret_key region output_format aws_dir
 
     info "Cloudflare R2 uses S3-compatible credentials."
+    info "Use a read-only deploy artifact token on the server."
+    info "The local deploy machine should use a separate write token."
     info "Use the R2 Access Key ID for the first value, and the R2 Secret Access Key for the hidden secret value."
     info "These credentials are written for root because deploy-poll runs as root."
 
@@ -280,7 +282,7 @@ versions:
 	current=""; \
 	if [[ -f "$(APP_DIR)/VERSION" ]]; then current="$$(tr -d '[:space:]' < "$(APP_DIR)/VERSION")"; fi; \
 	versions_output="$$($(SUDO) env DEPLOY_CONF="$(DEPLOY_CONF)" "$(DEPLOY_SCRIPT)" versions)"; \
-	latest="$$(printf '%s\n' "$$versions_output" | awk 'NF >= 3 { latest=$$3 } END { print latest }')"; \
+	latest="$$(printf '%s\n' "$$versions_output" | awk 'NF >= 3 { print $$3; exit }')"; \
 	echo "Current: $${current:-<none>}"; \
 	echo "Latest:  $${latest:-<none>}"; \
 	if [[ -z "$$latest" ]]; then \
@@ -376,7 +378,7 @@ ok "Ubuntu ${DISTRO_VERSION} detected."
 header "App Identity"
 
 DEFAULT_APP_NAME=""
-APP_TOML="${PROJECT_ROOT}/config/app.toml"
+APP_TOML="${PROJECT_ROOT}/config/00-app.toml"
 if [[ -n "${PROJECT_ROOT}" && -f "${APP_TOML}" ]]; then
     DEFAULT_APP_NAME="$(grep -oP '^\s*name\s*=\s*"\K[^"]+' "${APP_TOML}" 2>/dev/null || true)"
 fi
@@ -420,6 +422,7 @@ EXISTING_DEPLOY_ENDPOINT=""
 EXISTING_DEPLOY_PREFLIGHT_ENABLED=""
 EXISTING_DEPLOY_HEALTH_TIMEOUT_SECONDS=""
 EXISTING_DEPLOY_MIGRATION_LOCK_TIMEOUT_MS=""
+EXISTING_DEPLOY_SIGNING_PUBLIC_KEY_PATH=""
 
 if [[ -f "${APP_DIR}/.env" ]]; then
     info "Found existing .env at ${APP_DIR}/.env — loading as defaults."
@@ -450,6 +453,7 @@ if [[ -f "${APP_DIR}/config/deploy.conf" ]]; then
     EXISTING_DEPLOY_PREFLIGHT_ENABLED="$(grep -oP '^DEPLOY_PREFLIGHT_ENABLED="\K[^"]+' "${APP_DIR}/config/deploy.conf" 2>/dev/null || true)"
     EXISTING_DEPLOY_HEALTH_TIMEOUT_SECONDS="$(grep -oP '^DEPLOY_HEALTH_TIMEOUT_SECONDS="\K[^"]+' "${APP_DIR}/config/deploy.conf" 2>/dev/null || true)"
     EXISTING_DEPLOY_MIGRATION_LOCK_TIMEOUT_MS="$(grep -oP '^DEPLOY_MIGRATION_LOCK_TIMEOUT_MS="\K[^"]+' "${APP_DIR}/config/deploy.conf" 2>/dev/null || true)"
+    EXISTING_DEPLOY_SIGNING_PUBLIC_KEY_PATH="$(grep -oP '^DEPLOY_SIGNING_PUBLIC_KEY_PATH="\K[^"]+' "${APP_DIR}/config/deploy.conf" 2>/dev/null || true)"
 fi
 
 echo ""
@@ -811,7 +815,7 @@ if [[ -f "${DEPLOY_POLL_SRC}" ]]; then
 fi
 
 # Deploy polling bucket config. This is intentionally separate from app .env
-# uploads: the bucket only stores artifact zips and VERSION, never secrets.
+# uploads: the bucket only stores signed release folders, never secrets.
 DEPLOY_CONF="${APP_DIR}/config/deploy.conf"
 DEPLOY_BUCKET="$(ask "Deploy artifact bucket" "${EXISTING_DEPLOY_BUCKET}")"
 DEPLOY_REGION="$(ask "Deploy artifact region (auto for R2)" "${EXISTING_DEPLOY_REGION:-auto}")"
@@ -820,10 +824,31 @@ DEPLOY_POLL_INTERVAL="$(ask "Poll interval in seconds" "${EXISTING_POLL_INTERVAL
 DEPLOY_PREFLIGHT_ENABLED="${EXISTING_DEPLOY_PREFLIGHT_ENABLED:-1}"
 DEPLOY_HEALTH_TIMEOUT_SECONDS="${EXISTING_DEPLOY_HEALTH_TIMEOUT_SECONDS:-30}"
 DEPLOY_MIGRATION_LOCK_TIMEOUT_MS="${EXISTING_DEPLOY_MIGRATION_LOCK_TIMEOUT_MS:-0}"
+DEPLOY_SIGNING_PUBLIC_KEY_DEST="${APP_DIR}/config/deploy-signing.pub"
+DEFAULT_DEPLOY_SIGNING_PUBLIC_KEY_PATH="${EXISTING_DEPLOY_SIGNING_PUBLIC_KEY_PATH}"
+if [[ -z "${DEFAULT_DEPLOY_SIGNING_PUBLIC_KEY_PATH}" && -f "${DEPLOY_SIGNING_PUBLIC_KEY_DEST}" ]]; then
+    DEFAULT_DEPLOY_SIGNING_PUBLIC_KEY_PATH="${DEPLOY_SIGNING_PUBLIC_KEY_DEST}"
+fi
 
 if [[ -z "${DEPLOY_BUCKET}" ]]; then
     warn "Deploy artifact bucket is empty. Deploy polling will be disabled."
     SKIP_DEPLOY_POLL=true
+fi
+
+if [[ "${SKIP_DEPLOY_POLL}" == false ]]; then
+    DEPLOY_SIGNING_PUBLIC_KEY_SOURCE="$(ask "Deploy signing public key path" "${DEFAULT_DEPLOY_SIGNING_PUBLIC_KEY_PATH}")"
+    if [[ -z "${DEPLOY_SIGNING_PUBLIC_KEY_SOURCE}" || ! -f "${DEPLOY_SIGNING_PUBLIC_KEY_SOURCE}" ]]; then
+        error "Deploy signing public key is required when deploy polling is enabled."
+        error "Create one from your private key with:"
+        error "  openssl rsa -in deploy-signing.key -pubout -out deploy-signing.pub"
+        exit 1
+    fi
+    if [[ "${DEPLOY_SIGNING_PUBLIC_KEY_SOURCE}" != "${DEPLOY_SIGNING_PUBLIC_KEY_DEST}" ]]; then
+        cp "${DEPLOY_SIGNING_PUBLIC_KEY_SOURCE}" "${DEPLOY_SIGNING_PUBLIC_KEY_DEST}"
+    fi
+    chmod 644 "${DEPLOY_SIGNING_PUBLIC_KEY_DEST}"
+    chown "${SYS_USER}:${SYS_USER}" "${DEPLOY_SIGNING_PUBLIC_KEY_DEST}"
+    ok "Deploy signing public key installed: ${DEPLOY_SIGNING_PUBLIC_KEY_DEST}"
 fi
 
 cat > "${DEPLOY_CONF}" <<CONF
@@ -844,6 +869,7 @@ DEPLOY_MIGRATION_LOCK_TIMEOUT_MS="${DEPLOY_MIGRATION_LOCK_TIMEOUT_MS}"
 DEPLOY_BUCKET="${DEPLOY_BUCKET}"
 DEPLOY_REGION="${DEPLOY_REGION}"
 DEPLOY_ENDPOINT="${DEPLOY_ENDPOINT}"
+DEPLOY_SIGNING_PUBLIC_KEY_PATH="${DEPLOY_SIGNING_PUBLIC_KEY_DEST}"
 CONF
 ok "deploy.conf written."
 write_server_makefile
